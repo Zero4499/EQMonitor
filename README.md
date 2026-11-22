@@ -1,110 +1,130 @@
-# EQMonitor - 地震速報・監視アプリケーション
+# QuakePush · 地震海啸推送 (Earthquake & Tsunami Push)
 
-[![Github All Releases](https://img.shields.io/github/downloads/EQMonitor/EQMonitor/total.svg)](https://github.com/EQMonitor/EQMonitor/tags)
-[![GitHub release (latest by date including pre-releases)](https://img.shields.io/github/v/release/EQMonitor/EQMonitor?color=blue&include_prereleases&label=Release)](https://github.com/EQMonitor/EQMonitor/releases/latest)
+English | [简体中文](./README.zh-CN.md)
 
-|                                                                                    Android                                                                                     |                                                                                                iOS                                                                                                |
-| :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-| [<img src="https://github.com/YumNumm/YumNumm/raw/main/resources/img/google-play-badge.png" height="50">](https://play.google.com/store/apps/details?id=net.yumnumm.eqmonitor) | [<img src="https://github.com/YumNumm/YumNumm/raw/main/resources/img/appstore-badge.png" height="50">](https://apps.apple.com/ja/app/eqmonitor-%E5%9C%B0%E9%9C%87%E9%80%9F%E5%A0%B1/id6447546703) |
+A personal Android build that turns the open-source **[EQMonitor](https://github.com/YumNumm/EQMonitor)** app into a
+global earthquake / tsunami notification client, using **USGS** and **NOAA/NWS tsunami.gov** feeds instead of the
+Japan-only JMA feeds, plus a second, server-independent direct-feed path.
 
-> [!WARNING] > [利用規約 - Term of Service](https://github.com/EQMonitor/EQMonitor/blob/main/assets/docs/term_of_service.md)を必ずご確認の上ご利用ください。
+> **Attribution first:** this project is a **fork / derivative of EQMonitor v3.0.1** by
+> [@YumNumm](https://github.com/YumNumm), licensed under the MIT License.
+> **The entire UI — layouts, widgets, design-system, colors, icons-from-the-design-system, animations, settings screens,
+> Material 3 / M3E component styling, and the app icon grid/splash scaffolding — comes from the upstream project.**
+> This fork only adds/removes functional layers (data sources, notification channels, i18n strings, list screens, launcher
+> icon artwork) on top of that UI. All UI credit belongs to the upstream authors and contributors.
 
-![iPad1](https://github.com/YumNumm/EQMonitor/assets/73390859/4196623d-222e-4eac-991a-fee5a976be76)
+---
 
-## 概要
+## What is different from upstream EQMonitor
 
-EQMonitorは、日本全国の地震情報をいち早く受信できるアプリケーションです。
+| Area | Upstream EQMonitor | This fork (QuakePush) |
+| --- | --- | --- |
+| Data source | JMA (Japan) earthquake info / EEW via private backend | **USGS** `all_day.geojson` (global) + **tsunami.gov** Atom feeds (NOAA) |
+| Push transport | Upstream private backend + FCM | **ntfy** topic (link 1) + **in-app direct polling** (link 2) |
+| Notification channels | Upstream channels | `global_earthquake`, `global_tsunami`, `global_alert` (full-screen + alarm usage) |
+| Application ID | `net.yumnumm.eqmonitor` | **`sbs.ourstv.quakepush`** (own signing key, not the official one) |
+| UI language | Japanese (+ upstream locales) | **Runtime switch: 简体中文 / English** (persisted) |
+| Screens | Japan-oriented map / EEW / intensity views | Global push status home, **earthquake list (color-graded by magnitude)**, **tsunami bulletin list**, simplified settings |
+| Debug chrome | Debug banner / version ribbon shown in debug builds | Removed, so debug builds look like release |
+| Backend | Requires private `eqmonitor-backend` | **No backend required** — everything works with public feeds |
 
-**_機能_**
+Everything not listed above — the design system, the overall look & feel, the settings page structure, the notice/about
+widgets, the adaptive-icon pipeline — is upstream EQMonitor code and is kept as-is wherever possible.
 
-- **地震情報・緊急地震速報の通知**
+---
 
-  気象庁により発表された地震情報や、緊急地震速報を受信し、通知します。
+## Features
 
-- **過去の地震履歴の閲覧**
+- **Two independent push paths**
+  1. **Cloud host → ntfy**: `tool/quake-push/pusher.py` polls USGS + tsunami.gov and publishes to an ntfy topic; the app
+     subscribes with a plain `dart:io` HTTP NDJSON stream (exponential backoff 2 s → 60 s).
+  2. **Direct polling in-app**: the app itself polls USGS `all_day.geojson` (90 s) and tsunami.gov `PHEBAtom.xml` /
+     `PAAQAtom.xml` (180 s), deduplicates by event id, and posts notifications locally.
+     Both paths are deduplicated against each other, so the same event never alerts twice.
+- **Alert-grade notifications**: magnitude ≥ 7, PAGER `red`, or tsunami `Warning` / `Threat` go to the `global_alert`
+  channel (importance max, `USAGE_ALARM`, `category=alarm`, ongoing, `fullScreenIntent`).
+- **Event lists**: earthquake tab with magnitude color grading (grey-blue → blue → green → yellow → orange → red, with an
+  on-screen legend), PAGER and tsunami flags, detail dialog; tsunami tab color-coded by bulletin severity
+  (Warning/Threat red, Watch/Advisory orange, Information blue).
+- **UI language switch** (Chinese / English) inside Settings, applied instantly and persisted in `shared_preferences`.
+  Notification text of the direct feed follows the same setting.
+- **HyperOS / MIUI friendly**: explicit channel descriptions, `showBadge`, ticker text, and a settings shortcut to the
+  system notification channel screen.
 
-  過去に発表された地震情報を遡って確認できます。
+## Screenshots
 
-- **緊急地震速報のリアルタイム表示**
+Captured on a Pixel 6 emulator (Android 16, 1080×2400). The PNGs are kept **out of git** so the repository stays light;
+run the app and grab your own with `adb exec-out screencap -p > shot.png`, or look for them in the fork's release notes.
 
-  緊急地震速報が発表された際に、P波・S波の予想到達範囲、予想最大震度、震央地を表示します。
-  緊急地震速報は、リアルタイムに更新され、インターネットに接続されていれば、どこからでも確認できます。
+What to look for: the push-status home with two green links, the earthquake list with the magnitude legend row and
+colored left bars, the tsunami tab, the Settings page with the 简体中文 / English selector, and the English UI.
+**Every layout in those captures is the upstream EQMonitor UI** — this fork only added the color grading, the legend row
+and the language selector.
 
-- **強震モニタの表示**
+## Notification channels
 
-  防災科学技術研究所の提供するWebサービス 強震モニタ を表示します。
-  (※ 強震モニタは、揺れの様子を直感的に捉えることを目的としています。また、リアルタイムで観測値を処理しているため、ノイズ等により観測値が変動します。
-  そのため、本アプリケーションで表示される観測値は、あくまで参考値としてご利用ください。)
+| Channel id | Purpose | Importance / behaviour |
+| --- | --- | --- |
+| `global_earthquake` | Global earthquakes (USGS), M below alert threshold | Default, sound enabled |
+| `global_tsunami` | Tsunami bulletins (tsunami.gov) | Default, sound enabled |
+| `global_alert` | Alert grade: M ≥ 7 / PAGER red / tsunami Warning–Threat | Max importance, alarm usage, ongoing, full-screen intent |
 
-## 環境構築
+## Build
 
-下記のコマンドをターミナルから実行してください。
-
-1. プロジェクトをcloneします。
+Requirements: Flutter (this fork was built with Flutter 3.47 / Dart 3.x), JDK 17, Android SDK 36, and a `key.properties`
+next to `app/android/` pointing at your own keystore.
 
 ```bash
-git clone https://github.com/EQMonitor/EQMonitor.git
-cd EQMonitor
+# in app/
+flutter pub get
+flutter build apk --debug \
+  --dart-define=FLAVOR=dev \
+  --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
+  --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
+  --dart-define=APP_NAME=QuakePush \
+  --dart-define=IS_PRODUCTION=false \
+  --dart-define=SKIP_ONBOARDING=true
 ```
 
-> [!NOTE]
-> 本リポジトリは、submoduleとして[`YumNumm/eqmonitor-backend`](https://github.com/YumNumm/eqmonitor-backend)を含んでいます。
-> eqmonitor-backendはPrivate Repositoryであるため、クローンできない場合があります。
-> 通常のアプリテストにバックエンドは不要です。
-> バックエンド実装をオープンソースにする予定はありません。
+Signing config (`app/android/key.properties`, see `app/android/key.properties.example`):
 
-1. [mise-en-place](https://mise.jdx.dev/)をインストールしてください
+```properties
+storeFile=/absolute/path/to/your.jks
+storePassword=***
+keyAlias=***
+keyPassword=***
+```
 
-1. Flutter pluginを登録します。`mise.toml`にも同じURLを宣言しているため、通常は省略できます。
+Notes taken from actually building this fork:
 
-   ```bash
-   mise plugin install flutter https://github.com/YumNumm/mise-flutter.git
-   ```
+- The upstream private backend (`/ws`, REST) is **not used** by this fork's own features, but the upstream bootstrap code
+  still expects those URLs — pass placeholder `--dart-define` values as above.
+- `app/environment/environment` is a git symlink upstream; the `.env` files are not available, so everything goes through
+  `--dart-define`.
+- Missing `assets/platform/` + the bundled asset pack only produce "unable to find directory entry" warnings; the build
+  still succeeds. The upstream map/AssetPack feature is not part of this fork.
+- **Release builds (R8) do not show local notifications on this device** (channels are created and the service reports
+  connected, but `show()` never displays). Debug builds work, therefore the shipped APK is a debug build with the debug
+  banner removed.
+- **Known limitation**: the ntfy stream lives only while the app process is alive; after the system kills the app, use the
+  ntfy client as a fallback for the same topic. A Kotlin foreground service is not implemented yet.
 
-1. Flutterなどの依存関係をダウンロードします。
+### Binary assets not in git
 
-   ```bash
-   mise install
-   mise exec -- flutter --version --machine
-   ```
+The launcher / notification icons and the in-app icon are **locally generated PNGs**. They are not committed here
+(binary assets, and they are my own artwork rather than upstream design-system assets); drop in your own `ic_launcher`,
+`ic_launcher_round` and `ic_notification_icon` under `app/android/app/src/main/res/`. Everything else needed to build is
+in the repository.
 
-1. Swift Package Managerを利用するために、以下のコマンドを実行してください
+### Push server
 
-    - [Swift Package Manager for app developers](https://docs.flutter.dev/packages-and-plugins/swift-package-manager/for-app-developers)
+`tool/quake-push/pusher.py` is the reference poller used by this fork (any small VPS with Python 3.12, standard library
+only). It publishes markdown messages to an ntfy topic; server, topic and thresholds are environment variables.
 
-    ```bash
-    mise exec -- flutter config --enable-swift-package-manager
-    ```
+## License & credits
 
-1. Dart workspaceの依存関係を解決し、[melos](https://melos.invertase.dev/)で各packageをbootstrapします。
-
-   ```bash
-   mise exec -- dart pub get --enforce-lockfile
-   mise exec -- dart run melos bootstrap
-   ```
-
-   - これにより、各パッケージの依存関係が解決されます。
-
-1. `environment/.env.example` を `environment/.env.dev` へコピーし、必要な設定値を用意してください。
-
-1. `app/` から `mise exec -- flutter run --dart-define-from-file=../environment/.env.dev` で起動します。
-
-   > [!NOTE]
-   > **iOS**: AppIntent / Widget 用の slim `app/assets/parameters/jma_code_table.json` はリポジトリに同梱済みです。
-   > **同梱 Asset Pack**: 地図・パラメータ一式は git に含めません。ビルド前にリポジトリのルートで公開 R2 配信から配置してください:
-   >
-   > ```bash
-   > mise exec -- tool/asset_pack/stage_from_r2.sh --target bundled
-   > ```
-   >
-   > 詳細は [知見ガイド](docs/knowledge/README.md) のビルド・配布を参照してください。
-
-## コントリビューション
-
-[CONTRIBUTING.md](./docs/CONTRIBUTING.md)を参照してください。
-
-## 開発ドキュメント
-
-- [知見ガイド](docs/knowledge/README.md): 分野別の要約、関連資料、改善課題への入口
-- [共通エージェントガイド](.agents/index.md): セットアップ、検証コマンド、開発ルール
-- [テスト方針](docs/knowledge/test_strategy.md): TDD は必須とせず、変更リスクに応じて検証方法を選択
+- Upstream: **EQMonitor**, MIT License, Copyright (c) 2026 Ryotaro Onoue — <https://github.com/YumNumm/EQMonitor>
+- This fork keeps the upstream `LICENSE` untouched. Any file added here is released under the same MIT terms.
+- The design system, UI components and visual identity are upstream work; see `THIRD-PARTY-NOTICES.md` at the repository
+  root for the full attribution list.
+- Not affiliated with EQMonitor, USGS, NOAA or JMA. Personal, unofficial build.
