@@ -69,7 +69,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId = "net.yumnumm.eqmonitor"
+        applicationId = "sbs.ourstv.quakepush"
         dartDefines["appIdSuffix"]?.let {
             applicationIdSuffix = it
         }
@@ -79,16 +79,17 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         resValue("string", "app_name", dartDefines["appName"] ?: "EQMonitor")
-        manifestPlaceholders["appIcon"] =
-            if (dartDefines["IS_BETA_DISTRIBUTION"] == "true") {
-                "@mipmap/ic_launcher_dev"
-            } else {
-                "@mipmap/ic_launcher"
-            }
     }
 
     signingConfigs {
         create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String?
+            keyPassword = keystoreProperties["keyPassword"] as String?
+            storeFile = (keystoreProperties["storeFile"] as String?)?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String?
+        }
+        // 独立签名：不使用上游 EQMonitor 的密钥，安装后与官方版互不覆盖
+        create("standalone") {
             keyAlias = keystoreProperties["keyAlias"] as String?
             keyPassword = keystoreProperties["keyPassword"] as String?
             storeFile = (keystoreProperties["storeFile"] as String?)?.let { file(it) }
@@ -106,15 +107,15 @@ android {
                 "proguard-rules.pro",
             )
             multiDexEnabled = true
-            resValue("string", "app_name", "EQMonitor")
+            resValue("string", "app_name", "地震海啸推送")
             // クラッシュログのシンボリケート用に native-debug-symbols.zip を生成する
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
             }
         }
         getByName("debug") {
-            versionNameSuffix = ".d"
-            resValue("string", "app_name", "EQMonitor (Debug)")
+            signingConfig = signingConfigs.getByName("standalone")
+            resValue("string", "app_name", "地震海啸推送")
         }
     }
 }

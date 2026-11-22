@@ -14,6 +14,9 @@ import 'package:eqmonitor/core/component/error/fatal_error_screen.dart';
 import 'package:eqmonitor/core/data/preferences/shared/shared_preferences.dart'
     as data_prefs;
 import 'package:eqmonitor/core/model/environment.dart';
+import 'package:eqmonitor/core/feed/quake_feed.dart';
+import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:eqmonitor/core/provider/app_group_settings_writer.dart';
 import 'package:eqmonitor/core/provider/app_links_interaction.dart';
 import 'package:eqmonitor/core/provider/application_documents_directory.dart';
@@ -28,7 +31,6 @@ import 'package:eqmonitor/core/provider/shared_preferences.dart';
 import 'package:eqmonitor/core/provider/travel_time/provider/travel_time_provider.dart';
 import 'package:eqmonitor/core/realtime/data_source/eqmonitor/eqmonitor_ws_status_notifier.dart';
 import 'package:eqmonitor/core/realtime/realtime_event_provider.dart';
-import 'package:eqmonitor/core/startup/non_essential_startup_step.dart';
 import 'package:eqmonitor/core/startup/startup_profiler.dart';
 import 'package:eqmonitor/core/startup/startup_profiler_provider.dart';
 import 'package:eqmonitor/core/theme/build_theme.dart';
@@ -53,6 +55,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -81,8 +84,6 @@ Future<void> main() async {
         talker.error(error, stackTrace);
       }
     }());
-    // ErrorCard は context.designSystem を参照するため、アプリ本体と同じ
-    // 既定テーマ (DesignSystemThemeExtension を含む) を渡す。
     final defaultTheme = AppTheme.eqmonitorDefault();
     runApp(
       ProviderScope(
@@ -99,8 +100,6 @@ Future<void> main() async {
             body: Center(
               child: ErrorCard(
                 error: error,
-                // ブートストラップ失敗時のフォールバックでは Provider が未 override のため
-                // 詳細/問い合わせを押すと未実装 Provider で二次クラッシュする。抑制する。
                 showDetails: false,
                 showContact: false,
               ),
@@ -113,11 +112,19 @@ Future<void> main() async {
 }
 
 /// アプリの起動シーケンス本体。`main()` から一度だけ呼ばれる。
-class const AppBootstrap._() {
+class AppBootstrap {
+  const new _();
+
   static Future<void> run() async {
     final profiler = StartupProfiler();
     final buildConfig = BuildConfig.fromEnvironment();
     final isTelemetryEnabled = !kIsWeb && !buildConfig.isProduction;
+
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      await BackgroundLocationTracker.initialize(
+        callbackDispatcher: backgroundLocationCallbackDispatcher,
+      );
+    }
 
     await SystemChrome.setEnabledSystemUIMode(
       .edgeToEdge,
@@ -143,28 +150,22 @@ class const AppBootstrap._() {
       ),
       logger: TalkerLogger(formatter: const ColoredLoggerFormatter()),
     );
-    const isCrashlyticsEnabled = !kIsWeb && !kDebugMode;
-    if (isCrashlyticsEnabled) {
+    if (!kIsWeb && !kDebugMode) {
       talker.configure(observer: CrashlyticsTalkerObserver());
     }
 
     FlutterError.onError = (error) {
       final exception = error.exception;
-      talker.handle(exception, error.stack, 'Uncaught fatal exception');
       if (exception is ParallelWaitError) {
-        talker.log(exception.errors.toString());
+        talker
+          ..handle(exception, error.stack, 'Uncaught fatal exception')
+          ..log(exception.errors.toString());
         final stackTrace = error.stack;
         if (stackTrace != null) {
           talker.log(stackTrace.toString());
         }
       }
-      // silent はフレームワークが想定内として扱うエラー (画像の取得失敗など)。
-      if (isCrashlyticsEnabled && !error.silent) {
-        GuardedUnawaitedUtil.run(
-          () => FirebaseCrashlytics.instance.recordFlutterError(error),
-          onError: (recordError, stack) => talker.error(recordError, stack),
-        );
-      }
+      talker.handle(error.exception, error.stack, 'Uncaught fatal exception');
     };
     if (!kDebugMode) {
       ErrorWidget.builder = FatalErrorWidgetBuilder.build;
@@ -180,47 +181,16 @@ class const AppBootstrap._() {
           ..log(exception.errors.toString())
           ..log(exception.stackTrace.toString());
       }
-      if (isCrashlyticsEnabled) {
-        GuardedUnawaitedUtil.run(
-          () => FirebaseCrashlytics.instance.recordError(
-            exception,
-            stackTrace,
-            fatal: true,
-          ),
-          onError: (recordError, stack) => talker.error(recordError, stack),
-        );
-      }
       return true;
     };
 
-    final nonEssentialStep = NonEssentialStartupStep(
-      onError: (name, error, stackTrace) => talker.error(
-        'Non-essential startup step failed: $name',
-        error,
-        stackTrace,
-      ),
-    );
-
-    // 以降の Provider 起動 (監視開始・API リクエスト) より前に完了している必要があるため、
-    // 失敗は許容するが await は外さない。
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      await nonEssentialStep.run(
-        name: 'background_location_tracker_initialize',
-        action: () => BackgroundLocationTracker.initialize(
-          callbackDispatcher: backgroundLocationCallbackDispatcher,
-        ),
-      );
-    }
-    await nonEssentialStep.run(
-      name: 'firebase_app_check_activate',
-      action: () => FirebaseAppCheck.instance.activate(
-        providerAndroid: kDebugMode
-            ? const AndroidDebugProvider()
-            : const AndroidPlayIntegrityProvider(),
-        providerApple: kDebugMode
-            ? const AppleDebugProvider()
-            : const AppleAppAttestProvider(),
-      ),
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestProvider(),
     );
 
     final deviceInfo = DeviceInfoPlugin();
@@ -238,18 +208,16 @@ class const AppBootstrap._() {
       (
         kIsWeb
             ? Future<Null>.value()
-            : nonEssentialStep.run(
-                name: 'kyoshin_color_map_load',
-                action: const KyoshinColorMapDataSource().load,
-              ),
+            : const KyoshinColorMapDataSource().load(),
         core.initializeTimeZones(),
       ).wait,
     ).wait;
     profiler.mark('parallel_init');
     LicenseInitializer.init();
 
-    // テレメトリは必須機能ではないため、DB パス (iOS は App Group コンテナ) を
-    // 解決できない場合は記録・送信を無効化して起動を継続する。
+    // 界面语言（简体中文 / English）は前回の選択を復元する
+    await AppLocaleSetting.load();
+
     final telemetryDbPath = isTelemetryEnabled
         ? await Future<String?>.sync(TelemetryDbPathResolver.resolve).onError((
             error,
@@ -267,9 +235,7 @@ class const AppBootstrap._() {
 
     if (!kIsWeb) {
       unawaited(
-        FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
-          !kDebugMode,
-        ),
+        FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode),
       );
     }
 
@@ -329,32 +295,45 @@ class const AppBootstrap._() {
     profiler.mark('before_run_app');
     runApp(UncontrolledProviderScope(container: container, child: const App()));
 
-    // ダウンローダー・通知プラグインは override 値を生まないため runApp 後に遅延初期化する。
-    // 例外が発生しても起動フローを止めず talker に記録する。
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       GuardedUnawaitedUtil.run(
         () => FileDownloader().start(autoCleanDatabase: true),
         onError: (error, stack) => talker.error(error, stack),
       );
+      GuardedUnawaitedUtil.run(
+        () => MobileAds.instance.initialize(),
+        onError: (error, stack) => talker.error(error, stack),
+      );
     }
     if (!kIsWeb) {
+      // USGS / tsunami.gov の自建 ntfy 推送を購読する
+      GuardedUnawaitedUtil.run(
+        () async => container.read(ntfyPushServiceProvider).start(),
+        onError: (error, stack) => talker.error(error, stack),
+      );
+      // 第二链路：App 直接轮询 USGS / tsunami.gov
+      GuardedUnawaitedUtil.run(
+        () async => container.read(directFeedWatcherProvider).start(),
+        onError: (error, stack) => talker.error(error, stack),
+      );
       GuardedUnawaitedUtil.run(() async {
         await container.read(localNotificationRepositoryProvider).initialize();
-        await FirebaseMessaging.instance
-            .setForegroundNotificationPresentationOptions(
-              alert: true,
-              sound: true,
-              badge: true,
-            );
+        try {
+          await FirebaseMessaging.instance
+              .setForegroundNotificationPresentationOptions(
+                alert: true,
+                sound: true,
+                badge: true,
+              );
+        } on Object catch (e, s) {
+          talker.error(e, s);
+        }
       }, onError: (error, stack) => talker.error(error, stack));
     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       profiler.mark('home_first_frame');
       if (isTelemetryEnabled && !isTelemetryDisabled) {
-        // バックグラウンドで完了する travel_time_load / parameter_load が
-        // timingsMicros に記録されてからテレメトリを送信する。
-        // 各ロードの失敗は計測の欠落として許容し、record() の失敗は talker に委ねる。
         Future<void> awaitQuietly(Future<Object?> f) async {
           try {
             await f;
