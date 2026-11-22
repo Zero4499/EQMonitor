@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 开屏不再显示任何图片：纯适明占位，避免出现一张静止的 Q 渐变图。
+     Android 12+ 仍然需要 windowSplashScreenAnimatedIcon，所以给一个空矢量。 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+</vector>

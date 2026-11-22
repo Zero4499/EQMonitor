@@ -1,1 +1,3 @@
 -keep class org.maplibre.android.** { *; }
+-keep class com.dexterous.flutterlocalnotifications.** { *; }
+-keepattributes *Annotation*

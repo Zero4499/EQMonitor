@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Launcher / notification icons are referenced from Dart strings, so resource shrinking would strip them. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@mipmap/ic_launcher,@mipmap/ic_launcher_round,@mipmap/launcher_icon,@mipmap/launcher_icon_round,@mipmap/ic_launcher_foreground,@drawable/ic_notification_icon" />

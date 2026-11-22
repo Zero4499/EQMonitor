@@ -101,13 +101,14 @@ android {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
-            isShrinkResources = true
+            // 资源压缩会把只被 Dart 字符串引用的通知小图标裁掉，release 包就再也弹不出通知
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
             multiDexEnabled = true
-            resValue("string", "app_name", "地震海啸推送")
+            resValue("string", "app_name", "QuakePush")
             // クラッシュログのシンボリケート用に native-debug-symbols.zip を生成する
             ndk {
                 debugSymbolLevel = "SYMBOL_TABLE"
@@ -115,7 +116,7 @@ android {
         }
         getByName("debug") {
             signingConfig = signingConfigs.getByName("standalone")
-            resValue("string", "app_name", "地震海啸推送")
+            resValue("string", "app_name", "QuakePush")
         }
     }
 }

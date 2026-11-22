@@ -18,17 +18,11 @@
 
 
     <style name="Theme.App.Starting" parent="Theme.SplashScreen">
-        <!-- Set the splash screen background, animated icon, and animation duration. -->
         <item name="windowSplashScreenBackground">@color/splash_bg</item>
 
-        <!-- Use windowSplashScreenAnimatedIcon to add either a drawable or an
-             animated drawable. One of these is required. -->
-        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_anim</item>
-        <!-- Required for animated icons -->
-        <item name="windowSplashScreenAnimationDuration">2000</item>
+        <!-- 开屏不显示图标：用空白矢量占位，直接过渡到首页地图。 -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_blank</item>
 
-        <!-- Set the theme of the Activity that directly follows your splash screen. -->
-        <!-- Required -->
         <item name="postSplashScreenTheme">@style/Theme.Design.NoActionBar</item>
     </style>
 
