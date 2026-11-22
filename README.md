@@ -15,25 +15,28 @@ Japan-only JMA feeds, plus a second, server-independent direct-feed path.
 
 ---
 
-## Download the APK (split per ABI)
+## Download (release builds, split per ABI)
 
-Builds are hosted on CDN (this repository has no release assets). **All of them are debug builds with the debug banner
-removed** — release/R8 builds do not show local notifications, see the build notes below.
+Release APKs are attached to the GitHub release:
+**<https://github.com/Zero4499/EQMonitor/releases/tag/quakepush-v3.0.1>**
 
-| Package | ABI | Size | Download |
+| Package | ABI | Size | Direct link |
 | --- | --- | --- | --- |
-| **arm64-v8a** — almost every phone since ~2016 (incl. Redmi K80 / HyperOS) | `arm64-v8a` | 208.8 MB | <https://aka.doubaocdn.com/s/GTPFIZLDUH> |
-| **armeabi-v7a** — older 32-bit ARM devices | `armeabi-v7a` | 185.8 MB | <https://aka.doubaocdn.com/s/6y0k20HsFV> |
-| x86_64 — emulators only | `x86_64` | 194.9 MB | <https://aka.doubaocdn.com/s/eIHRbiqGqO> |
+| **arm64-v8a** — almost every phone since ~2016 (incl. Redmi K80 / HyperOS) | `arm64-v8a` | 80.5 MB | [download](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-arm64-v8a.apk) |
+| **armeabi-v7a** — older 32-bit ARM devices | `armeabi-v7a` | 77.1 MB | [download](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-armeabi-v7a.apk) |
+| x86_64 — emulators only | `x86_64` | 82.6 MB | [download](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-x86_64.apk) |
 
-Install just **one** of them, replacing any earlier copy:
+These are **signed release builds** (`isMinifyEnabled = true`, `isShrinkResources = false`) — notifications work in
+release, see the build notes. They all share the application id `sbs.ourstv.quakepush`, so install only one:
 
 ```bash
-adb install -r QuakePush-v3.0.1-arm64-v8a-debug.apk
+adb install -r QuakePush-v3.0.1-arm64-v8a.apk
 ```
 
-They all share the application id `sbs.ourstv.quakepush`, so installing a second ABI overwrites the first. If you are
-unsure about your ABI, `arm64-v8a` is the safe choice for any phone from the last decade.
+Debug builds (with Flutter's debug overhead, ~|180–210 MB per ABI) are still available on CDN if you want debug symbols:
+[arm64-v8a](https://aka.doubaocdn.com/s/GTPFIZLDUH) ·
+[armeabi-v7a](https://aka.doubaocdn.com/s/6y0k20HsFV) ·
+[x86_64](https://aka.doubaocdn.com/s/eIHRbiqGqO).
 
 ---
 
@@ -83,12 +86,12 @@ widgets, the adaptive-icon pipeline — is upstream EQMonitor code and is kept a
 
 ## Screenshots
 
-Captured on this fork's build (Android 16 emulator, 1080×2400). PNGs are kept **out of git**; the images below are CDN
-copies of the real running app.
+Captured from real runs of **this release build** (Android 16 emulator, 1080×2400). PNGs are kept out of git; images
+below are CDN copies.
 
-| Map-first home (中文) | Panel expanded | Settings (language) |
-| --- | --- | --- |
-| ![home](https://aka.doubaocdn.com/s/hGfENvQIen) | ![sheet](https://aka.doubaocdn.com/s/J6aSOQBnNm) | ![settings](https://aka.doubaocdn.com/s/JY6X8v9jtE) |
+| Map-first home (中文) | Notification working in release | Panel expanded | Settings (language) |
+| --- | --- | --- | --- |
+| ![home](https://aka.doubaocdn.com/s/21gV5dPhVC) | ![notif](https://aka.doubaocdn.com/s/oRd365wdRU) | ![sheet](https://aka.doubaocdn.com/s/J6aSOQBnNm) | ![settings](https://aka.doubaocdn.com/s/JY6X8v9jtE) |
 
 The launcher icon is a personal mark (blue gradient square, white circled “Q”), not an upstream design-system asset:
 ![icon](https://aka.doubaocdn.com/s/x5COitJjsV)
@@ -110,21 +113,9 @@ Requirements: Flutter (this fork was built with Flutter 3.47 / Dart 3.x), JDK 17
 next to `app/android/` pointing at your own keystore.
 
 ```bash
-# in app/
+# in app/, per-ABI release packages (this is what the release assets are built from)
 flutter pub get
-flutter build apk --debug \
-  --dart-define=FLAVOR=dev \
-  --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
-  --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
-  --dart-define=APP_NAME=QuakePush \
-  --dart-define=IS_PRODUCTION=false \
-  --dart-define=SKIP_ONBOARDING=true
-```
-
-Per-ABI packages (that is what the download table above is built from):
-
-```bash
-flutter build apk --debug --split-per-abi \
+flutter build apk --release --split-per-abi \
   --dart-define=FLAVOR=dev \
   --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
   --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
@@ -151,11 +142,12 @@ Notes taken from actually building this fork:
 - Missing `assets/platform/` + the bundled asset pack only produce "unable to find directory entry" warnings; the build
   still succeeds. The upstream map style that depends on that asset pack cannot be used, so the fork points MapLibre at a
   public, key-free vector style instead (`https://tiles.openfreemap.org/styles/positron`) with the same MapLibre widgets.
-- **Release builds (R8) do not show local notifications on this device** (channels are created and the service reports
-  connected, but `show()` never displays). Debug builds work, therefore the shipped APKs are debug builds with the debug
-  banner removed.
-- `--split-per-abi` produces `app-armeabi-v7a-debug.apk`, `app-arm64-v8a-debug.apk` and `app-x86_64-debug.apk`
-  (~186–209 MB each, debug symbols make them large).
+- **Release notifications**: R8 resource shrinking used to strip `ic_notification_icon` (referenced only from Dart strings),
+  which is why older release builds created channels but never displayed anything. `isShrinkResources` is now `false` and
+  `res/raw/keep.xml` pins the icons — verified by posting a test message to the ntfy topic and seeing it arrive in the
+  notification shade of a release build (screenshot above).
+- `--split-per-abi` produces `app-armeabi-v7a-release.apk`, `app-arm64-v8a-release.apk` and `app-x86_64-release.apk`
+  (77–83 MB each); the debug variants are ~180–210 MB because of debug symbols.
 - **Known limitation**: the ntfy stream lives only while the app process is alive; after the system kills the app, use the
   ntfy client as a fallback for the same topic. A Kotlin foreground service is not implemented yet.
 
