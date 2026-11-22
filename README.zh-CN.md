@@ -13,6 +13,27 @@
 
 ---
 
+## 下载安装包（按 ABI 分包）
+
+安装包放在 CDN 上（本仓库没有 release 资产）。**全部是去掉了 debug 标识的 debug 包** —— release（R8）包在本机不弹通知，
+详见下方构建说明。
+
+| 安装包 | ABI | 体积 | 下载 |
+| --- | --- | --- | --- |
+| **arm64-v8a** —— 几乎全部 2016 年以后的手机（含红米 K80 / 澎湃 OS） | `arm64-v8a` | 208.8 MB | <https://aka.doubaocdn.com/s/GTPFIZLDUH> |
+| **armeabi-v7a** —— 较早的 32 位 ARM 设备 | `armeabi-v7a` | 185.8 MB | <https://aka.doubaocdn.com/s/6y0k20HsFV> |
+| x86_64 —— 仅模拟器 | `x86_64` | 194.9 MB | <https://aka.doubaocdn.com/s/eIHRbiqGqO> |
+
+只装其中一个，覆盖旧版本即可：
+
+```bash
+adb install -r QuakePush-v3.0.1-arm64-v8a-debug.apk
+```
+
+三个包共用包名 `sbs.ourstv.quakepush`，装第二个会直接覆盖第一个。不确定自己的 ABI 就用 `arm64-v8a`。
+
+---
+
 ## 与上游的差异
 
 | 项目 | 上游 EQMonitor | 本 fork（地震海啸推送） |
@@ -22,7 +43,8 @@
 | 通知渠道 | 上游渠道 | `global_earthquake`、`global_tsunami`、`global_alert`（全屏 + 闹钟级） |
 | 包名 | `net.yumnumm.eqmonitor` | **`sbs.ourstv.quakepush`**（自建签名，与官方签名不同） |
 | 界面语言 | 日文为主 | **运行时可切换：简体中文 / English**（持久保存） |
-| 页面 | 日本向地图 / 紧急地震速报 / 震度 | 推送状态首页、**地震列表（按震级分级配色）**、**海啸公报列表**、精简设置 |
+| 首页 | 地图铺满 + 可拖动面板（map-first） | **保持同样的 map-first 结构**，只是图层换成全球 USGS 震中 |
+| 页面 | 日本向地图 / 紧急地震速报 / 震度 | 全球地图首页 + **地震列表（按震级分级配色）** + **海啸公报列表** + 精简设置 |
 | Debug 标识 | debug 包显示 DEBUG 丝带与版本角标 | 已移除，debug 包外观与正式版一致 |
 | 后端依赖 | 需要私有 `eqmonitor-backend` | **不需要任何后端**，只用公开数据源 |
 
@@ -32,6 +54,10 @@
 
 ## 功能
 
+- **地图即首页，和上游一样**：MapLibre 地图铺满整屏（引擎与 `MapOptions` / `MapLibreMap` / `CircleStyleLayer` 用法
+  都与 EQMonitor 一致），已加载的 USGS 事件按震级配色、控大小画成震中圆圈。内容放在上游同款的
+  `DraggableScrollableSheet`（44% ⇄ 88%，带吸附）里浮在地图上方：筛选 chips（全部 / M2.5+ / M4.5+ / M6+ 带实时计数）、
+  双链路状态、最强三条、列表与设置入口、最近 20 条。
 - **双链路推送**
   1. **云主机 → ntfy**：`tool/quake-push/pusher.py` 轮询 USGS + tsunami.gov 并发布到 ntfy 主题，
      App 用 `dart:io` 的 HTTP NDJSON 流订阅（断线指数退避 2 s → 60 s）。
@@ -42,15 +68,22 @@
 - **事件列表**：地震 Tab 按震级分档配色（灰蓝 → 蓝 → 绿 → 金黄 → 橙 → 橙红 → 红），顶部带颜色图例，
   显示 PAGER 与海啸评估、点击弹详情；海啸 Tab 按公报级别配色（Warning/Threat 红、Watch/Advisory 橙、Information 蓝）。
 - **界面语言切换**（中文 / 英文），在设置页即时生效，写入 `shared_preferences`；直连链路的通知文案也跟着切换。
+- **轻量动效**，与上游观感一致：面板 420 ms `easeOutCubic` 淡入 + 上移，chip 与状态圆点变色有过渡，
+  事件计数交叉淡入，面板在两个停留高度间吸附。
 - **澎湃 OS / MIUI 适配**：渠道补非空描述、`showBadge`、ticker 文案，并提供直达系统通知渠道设置页的入口。
 
 ## 截图
 
-截图在 Pixel 6 模拟器（Android 16，1080 × 2400）实拍。**PNG 不放进 git**，避免仓库变重；
-可以自己跑起来用 `adb exec-out screencap -p > shot.png` 复现，或看本 fork 的 release 说明。
+在本 fork 的构建上实拍（Android 16 模拟器，1080 × 2400）。**PNG 不放进 git**，下面的图是真实运行画面的 CDN 副本。
 
-重点看：双链路全绿的状态首页、带图例行与左侧色条的地震列表、海啸 Tab、带「简体中文 / English」选择器的设置页、
-以及英文界面。**这些截图里的布局全部是上游 EQMonitor 的 UI**，本 fork 只加了分级配色、图例行和语言选择器。
+| 地图首页（中文） | 面板拉到最高 | 设置页（语言切换） |
+| --- | --- | --- |
+| ![首页](https://aka.doubaocdn.com/s/hGfENvQIen) | ![面板](https://aka.doubaocdn.com/s/J6aSOQBnNm) | ![设置](https://aka.doubaocdn.com/s/JY6X8v9jtE) |
+
+启动器图标是自制标识（蓝色渐变方块 + 白色圆圈 Q），不是上游设计系统素材：
+![图标](https://aka.doubaocdn.com/s/x5COitJjsV)
+
+**截图里的布局全部是上游 EQMonitor 的 UI**，本 fork 只加了分级配色、图例、上游地图上的震中图层、语言选择器与图标。
 
 ## 通知渠道
 
@@ -77,6 +110,18 @@ flutter build apk --debug \
   --dart-define=SKIP_ONBOARDING=true
 ```
 
+按 ABI 分包（上方下载表就是这样做出来的）：
+
+```bash
+flutter build apk --debug --split-per-abi \
+  --dart-define=FLAVOR=dev \
+  --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
+  --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
+  --dart-define=APP_NAME="地震海啸推送" \
+  --dart-define=IS_PRODUCTION=false \
+  --dart-define=SKIP_ONBOARDING=true
+```
+
 签名配置（`app/android/key.properties`，模板见 `app/android/key.properties.example`）：
 
 ```properties
@@ -90,10 +135,13 @@ keyPassword=***
 
 - 上游私有后端的 `/ws`、REST 地址本 fork 的功能**不使用**，但上游启动流程仍会读，所以照上面传占位值。
 - 上游 `app/environment/environment` 是 git 符号链接，`.env` 文件取不到，全部改用 `--dart-define` 注入。
-- 缺 `assets/platform/` 与打包资源只会打印 "unable to find directory entry" 警告，不影响构建；地图/AssetPack
-  功能不在本 fork 范围内。
+- 缺 `assets/platform/` 与打包资源只会打印 "unable to find directory entry" 警告，不影响构建；依赖该资源包的
+  上游地图样式用不了，所以本 fork 把 MapLibre 指向公开免密钥的矢量样式
+  （`https://tiles.openfreemap.org/styles/positron`），控件仍然是上游那套。
 - **release（开 R8）在这台设备上本地通知不弹**（渠道已建、service 报 connected，但 `show()` 不显示）；
-  debug 正常，所以发布的是去掉 debug 标识的 debug 包。
+  debug 正常，所以发布的都是去掉 debug 标识的 debug 包。
+- `--split-per-abi` 产出 `app-armeabi-v7a-debug.apk`、`app-arm64-v8a-debug.apk`、`app-x86_64-debug.apk`，
+  每个 186–209 MB（debug 符号让它偏大）。
 - **已知限制**：ntfy 长连接只在 App 进程活着时有效，被系统杀掉后请用 ntfy 客户端订阅同一主题兜底；
   Kotlin 前台服务尚未实现。
 
