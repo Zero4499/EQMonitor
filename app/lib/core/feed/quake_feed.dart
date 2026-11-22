@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:eqmonitor/core/fcm/local_notification_repository.dart';
+import 'package:eqmonitor/core/filter/push_filter.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -12,7 +13,7 @@ import 'package:xml/xml.dart';
 /// 第二链路：App 直接读 USGS / tsunami.gov 官方源。
 ///
 /// 主链路是云主机 quake-pusher → ntfy；云主机挂了或 ntfy 不可用时，
-/// 这条直连链路仍然能自己拉数据、自己弹通知，同时供列表页 / 首页地图使用。
+/// 这条直连链路仍然能自己拉数据、自己弹通知，同时供列表页使用。
 const usgsFeedUrl =
     'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson';
 
@@ -277,7 +278,15 @@ class DirectFeedWatcher {
       _seenQuakes.addAll(events.map((e) => e.id));
       _emit(.ok);
       final isEn = AppLocaleSetting.value.languageCode == 'en';
+      final filter = PushFilterSetting.value;
       for (final event in newest) {
+        // 推送条件在设置页里可调：震级下限 / 只推警报级
+        if (!filter.allowsQuake(
+          magnitude: event.magnitude,
+          major: event.isMajor,
+        )) {
+          continue;
+        }
         await repository.showSimpleNotification(
           title: event.isMajor
               ? (isEn
@@ -313,7 +322,12 @@ class DirectFeedWatcher {
       _seenTsunami.addAll(bulletins.map((b) => b.id));
       _emit(.ok);
       final isEn = AppLocaleSetting.value.languageCode == 'en';
+      final filter = PushFilterSetting.value;
       for (final bulletin in newest) {
+        // 海啸门槛：全部 / 关注级以上 / 只要警报
+        if (!filter.allowsTsunami(bulletin.title)) {
+          continue;
+        }
         await repository.showSimpleNotification(
           title: bulletin.isSevere
               ? (isEn
