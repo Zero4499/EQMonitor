@@ -1,188 +1,194 @@
-import 'dart:math';
-
-import 'package:eqapi_types/eqapi_types.dart';
-import 'package:eqmonitor/core/component/sheet/basic_modal_sheet.dart';
-import 'package:eqmonitor/core/provider/jma_code_table_provider.dart';
+import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
+import 'package:eqmonitor/core/feed/quake_feed.dart';
+import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:eqmonitor/core/router/router.dart';
-import 'package:eqmonitor/feature/eew/data/eew_telegram.dart';
-import 'package:eqmonitor/feature/home/ui/component/eew/eew_widget.dart';
-import 'package:eqmonitor/feature/home/ui/component/map/home_map_view.dart';
-import 'package:eqmonitor/feature/home/ui/component/shake-detect/shake_detection_card.dart';
-import 'package:eqmonitor/feature/home/ui/component/sheet/home_earthquake_history_sheet.dart';
-import 'package:eqmonitor/feature/shake_detection/provider/shake_detection_provider.dart';
-import 'package:flutter/material.dart';
+import 'package:eqmonitor/feature/home/ui/component/sheet/component/home_sheet_card.dart';
+import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/usgs_push_tile.dart';
+import 'package:eqmonitor/page/event_list_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
 
 class HomePage extends HookConsumerWidget {
-  const HomePage({super.key});
+  const new({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return const Scaffold(
-      body: Stack(
-        children: [
-          HomeMapView(),
-          BasicModalSheet(child: _SheetBody()),
-          _DebugButton(),
-        ],
-      ),
-    );
-  }
-}
+    final colorTheme = context.designSystem.colorTheme;
 
-class _DebugButton extends StatelessWidget {
-  const _DebugButton();
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerRight,
-      child: FloatingActionButton.small(
-        onPressed:
-            () async => Navigator.of(context).push<void>(
-              ModalBottomSheetRoute(
-                isScrollControlled: false,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
-                builder: (context) => const _DebugModal(),
-              ),
-            ),
-        child: const Icon(Icons.bug_report),
-      ),
+    return Scaffold(
+      backgroundColor: colorTheme.surfaceContainerLow,
+      appBar: AppBar(title: Text(ref.watch(appStringsProvider).appTitle)),
+      body: const _SheetBody(),
     );
   }
 }
 
 class _SheetBody extends ConsumerWidget {
-  const _SheetBody();
+  const new();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return SingleChildScrollView(
-      child: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const EewWidgets(),
-            const _ShakeDetectionList(),
-            const HomeEarthquakeHistorySheet(),
-            ListTile(
-              title: const Text('津波情報'),
-              leading: const Icon(Icons.tsunami),
-              onTap: () async => const TsunamiHistoryRoute().push<void>(context),
-            ),
-            ListTile(
-              title: const Text('設定'),
-              leading: const Icon(Icons.settings),
-              onTap: () async => const SettingsRoute().push<void>(context),
-            ),
-            ListTile(
-              title: const Text('デバッグページ'),
-              leading: const Icon(Icons.bug_report),
-              onTap: () async => const DebugRoute().push<void>(context),
-            ),
-          ],
-        ),
-      ),
+    final spacing = context.designSystem.spacing;
+
+    return ListView(
+      padding: EdgeInsets.fromLTRB(spacing.md, spacing.md, spacing.md, spacing.md),
+      children: const [
+        _PushStatusCard(),
+        SizedBox(height: 12),
+        _HomeActionsCard(),
+      ],
     );
   }
 }
 
-class _ShakeDetectionList extends ConsumerWidget {
-  const _ShakeDetectionList();
+/// 主推送状态卡：显示两条链路的实时状态，点击打开测试面板。
+class _PushStatusCard extends ConsumerWidget {
+  const new();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shakeDetectionEvents = ref.watch(shakeDetectionProvider);
+    final designSystem = context.designSystem;
+    final colorTheme = designSystem.colorTheme;
+    final spacing = designSystem.spacing;
+    final typography = designSystem.typography;
+    final s = ref.watch(appStringsProvider);
+    final ntfyStatus =
+        ref.watch(ntfyPushStatusProvider).value ?? NtfyPushStatus.idle;
+    final directStatus =
+        ref.watch(directFeedStatusProvider).value ?? DirectFeedStatus.idle;
+    final ntfyConnected = ntfyStatus == NtfyPushStatus.connected;
+    final directOk = directStatus == DirectFeedStatus.ok;
+    final anyAlive = ntfyConnected || directOk;
+    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
 
-    return switch (shakeDetectionEvents) {
-      AsyncData(:final value) when value.isNotEmpty => Column(
-        children:
-            value.map((event) => ShakeDetectionCard(event: event)).toList(),
-      ),
-      _ => const SizedBox.shrink(),
-    };
+    return HomeSheetCard(
+      children: [
+        HomeSheetCardHeader(title: s.pushCardTitle),
+        InkWell(
+          onTap: () async => openUsgsPushSheet(context),
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              spacing.lg,
+              spacing.sm,
+              spacing.lg,
+              spacing.md,
+            ),
+            child: Row(
+              spacing: spacing.md,
+              children: [
+                Icon(
+                  anyAlive ? Icons.podcasts : Icons.portable_wifi_off,
+                  color: anyAlive ? Colors.teal : colorTheme.outline,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: .start,
+                    spacing: 4,
+                    children: [
+                      Text(
+                        anyAlive ? s.bothLinksRunning : s.bothLinksDown,
+                        style: typography.titleSmall,
+                      ),
+                      _LinkRow(
+                        label: s.linkNtfy,
+                        value: isEnglish
+                            ? ntfyStatus.labelEn
+                            : ntfyStatus.label,
+                        ok: ntfyConnected,
+                      ),
+                      _LinkRow(
+                        label: s.linkDirect,
+                        value: isEnglish
+                            ? directStatus.labelEn
+                            : directStatus.label,
+                        ok: directOk,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
-class _DebugModal extends ConsumerWidget {
-  const _DebugModal();
+class _LinkRow extends StatelessWidget {
+  const new({required this.label, required this.value, required this.ok});
+
+  final String label;
+  final String value;
+  final bool ok;
+
+  @override
+  Widget build(BuildContext context) {
+    final colorTheme = context.designSystem.colorTheme;
+    final typography = context.designSystem.typography;
+    return Row(
+      children: [
+        Icon(
+          ok ? Icons.check_circle : Icons.remove_circle_outline,
+          size: 14,
+          color: ok ? Colors.teal : colorTheme.outline,
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            '$label · $value',
+            style: typography.bodySmall.copyWith(
+              color: colorTheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// 列表入口 + 设置入口。
+class _HomeActionsCard extends ConsumerWidget {
+  const new();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('DEBUG')),
-      body: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            title: const Text('ADD EEW SAMPLE'),
-            onTap: () async {
-              final eew = EewV1(
-                id: Random().nextInt(1000000000),
-                eventId: Random().nextInt(1000000000),
-                type: 'type',
-                schemaType: 'schemaType',
-                status: 'TEST',
-                infoType: 'infoType',
-                reportTime: DateTime.now(),
-                isCanceled: false,
-                isLastInfo: Random().nextBool(),
-                isWarning: Random().nextBool(),
-                isPlum: Random().nextBool(),
-                accuracy: null,
-                serialNo: Random().nextInt(100),
-                latitude: 30 + Random().nextDouble() * 10,
-                longitude: 130 + Random().nextDouble() * 10,
-                arrivalTime: DateTime.now(),
-                hypoName: 'テスト震源地',
-                magnitude: (Random().nextDouble() * 100).toInt() / 10,
-                depth: Random().nextInt(15) * 10,
-                originTime: DateTime.now(),
-                forecastMaxIntensity:
-                    JmaForecastIntensity.values[Random().nextInt(
-                      JmaForecastIntensity.values.length,
-                    )],
-                regions:
-                    [
-                      for (final region
-                          in ref.read(jmaCodeTableProvider).areaEpicenter.items)
-                        () {
-                          if (Random().nextDouble() > 0.9) {
-                            return EstimatedIntensityRegion(
-                              code: region.code,
-                              name: region.name,
-                              arrivalTime: null,
-                              isPlum: false,
-                              isWarning: false,
-                              forecastMaxInt: ForecastMaxInt(
-                                from: JmaForecastIntensity.one,
-                                to:
-                                    JmaForecastIntensityOver
-                                        .values[Random().nextInt(
-                                      JmaForecastIntensityOver.values.length,
-                                    )],
-                              ),
-                              forecastMaxLgInt: ForecastMaxLgInt(
-                                from: JmaForecastLgIntensity.one,
-                                to:
-                                    JmaForecastLgIntensityOver
-                                        .values[Random().nextInt(
-                                      JmaForecastLgIntensityOver.values.length,
-                                    )],
-                              ),
-                            );
-                          }
-                        }(),
-                    ].nonNulls.toList(),
-              );
-              print(eew.regions);
-              ref.read(eewProvider.notifier).upsert(eew);
-            },
+    final spacing = context.designSystem.spacing;
+    final typography = context.designSystem.typography;
+    final s = ref.watch(appStringsProvider);
+
+    return HomeSheetCard(
+      children: [
+        Theme(
+          data: Theme.of(context).copyWith(visualDensity: .compact),
+          child: Column(
+            crossAxisAlignment: .stretch,
+            children: [
+              ListTile(
+                title: Text(s.eventListTitle, style: typography.titleSmall),
+                subtitle: Text(s.eventListSubtitle),
+                leading: const Icon(Icons.list_alt),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async => Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => const EventListPage(),
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                title: Text(s.settingsTitle, style: typography.titleSmall),
+                leading: const Icon(Icons.settings_outlined),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () async => const SettingsRoute().push<void>(context),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        SizedBox(height: spacing.xs),
+      ],
     );
   }
 }
