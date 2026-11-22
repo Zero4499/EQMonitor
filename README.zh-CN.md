@@ -13,24 +13,28 @@
 
 ---
 
-## 下载安装包（按 ABI 分包）
+## 下载安装包（release 构建，按 ABI 分包）
 
-安装包放在 CDN 上（本仓库没有 release 资产）。**全部是去掉了 debug 标识的 debug 包** —— release（R8）包在本机不弹通知，
-详见下方构建说明。
+安装包已作为 GitHub Release 资产上传：
+**<https://github.com/Zero4499/EQMonitor/releases/tag/quakepush-v3.0.1>**
 
-| 安装包 | ABI | 体积 | 下载 |
+| 安装包 | ABI | 体积 | 直链 |
 | --- | --- | --- | --- |
-| **arm64-v8a** —— 几乎全部 2016 年以后的手机（含红米 K80 / 澎湃 OS） | `arm64-v8a` | 208.8 MB | <https://aka.doubaocdn.com/s/GTPFIZLDUH> |
-| **armeabi-v7a** —— 较早的 32 位 ARM 设备 | `armeabi-v7a` | 185.8 MB | <https://aka.doubaocdn.com/s/6y0k20HsFV> |
-| x86_64 —— 仅模拟器 | `x86_64` | 194.9 MB | <https://aka.doubaocdn.com/s/eIHRbiqGqO> |
+| **arm64-v8a** —— 几乎全部 2016 年以后的手机（含红米 K80 / 澎湃 OS） | `arm64-v8a` | 80.5 MB | [下载](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-arm64-v8a.apk) |
+| **armeabi-v7a** —— 较早的 32 位 ARM 设备 | `armeabi-v7a` | 77.1 MB | [下载](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-armeabi-v7a.apk) |
+| x86_64 —— 仅模拟器 | `x86_64` | 82.6 MB | [下载](https://github.com/Zero4499/EQMonitor/releases/download/quakepush-v3.0.1/QuakePush-v3.0.1-x86_64.apk) |
 
-只装其中一个，覆盖旧版本即可：
+都是**已签名的 release 包**（`isMinifyEnabled = true`、`isShrinkResources = false`），通知在 release 也能弹，详见下方构建说明。
+三个包共用包名 `sbs.ourstv.quakepush`，只装一个：
 
 ```bash
-adb install -r QuakePush-v3.0.1-arm64-v8a-debug.apk
+adb install -r QuakePush-v3.0.1-arm64-v8a.apk
 ```
 
-三个包共用包名 `sbs.ourstv.quakepush`，装第二个会直接覆盖第一个。不确定自己的 ABI 就用 `arm64-v8a`。
+debug 包（带 Flutter debug 开销，每个 ABI 约 180–210 MB）还放在 CDN 上，要调试符号可用：
+[arm64-v8a](https://aka.doubaocdn.com/s/GTPFIZLDUH) ·
+[armeabi-v7a](https://aka.doubaocdn.com/s/6y0k20HsFV) ·
+[x86_64](https://aka.doubaocdn.com/s/eIHRbiqGqO)。
 
 ---
 
@@ -74,11 +78,11 @@ adb install -r QuakePush-v3.0.1-arm64-v8a-debug.apk
 
 ## 截图
 
-在本 fork 的构建上实拍（Android 16 模拟器，1080 × 2400）。**PNG 不放进 git**，下面的图是真实运行画面的 CDN 副本。
+来自**本 release 包**的真实运行画面（Android 16 模拟器，1080 × 2400）。PNG 不进 git，下面图片是 CDN 副本。
 
-| 地图首页（中文） | 面板拉到最高 | 设置页（语言切换） |
-| --- | --- | --- |
-| ![首页](https://aka.doubaocdn.com/s/hGfENvQIen) | ![面板](https://aka.doubaocdn.com/s/J6aSOQBnNm) | ![设置](https://aka.doubaocdn.com/s/JY6X8v9jtE) |
+| 地图首页（中文） | release 包真弹通知 | 面板拉到最高 | 设置页（语言切换） |
+| --- | --- | --- | --- |
+| ![首页](https://aka.doubaocdn.com/s/21gV5dPhVC) | ![通知](https://aka.doubaocdn.com/s/oRd365wdRU) | ![面板](https://aka.doubaocdn.com/s/J6aSOQBnNm) | ![设置](https://aka.doubaocdn.com/s/JY6X8v9jtE) |
 
 启动器图标是自制标识（蓝色渐变方块 + 白色圆圈 Q），不是上游设计系统素材：
 ![图标](https://aka.doubaocdn.com/s/x5COitJjsV)
@@ -99,21 +103,9 @@ adb install -r QuakePush-v3.0.1-arm64-v8a-debug.apk
 `key.properties` 指向**你自己的**签名密钥。
 
 ```bash
-# 在 app/ 目录
+# 在 app/，按 ABI 出 release 包（上方 Release 资产就是这样构建的）
 flutter pub get
-flutter build apk --debug \
-  --dart-define=FLAVOR=dev \
-  --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
-  --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
-  --dart-define=APP_NAME=QuakePush \
-  --dart-define=IS_PRODUCTION=false \
-  --dart-define=SKIP_ONBOARDING=true
-```
-
-按 ABI 分包（上方下载表就是这样做出来的）：
-
-```bash
-flutter build apk --debug --split-per-abi \
+flutter build apk --release --split-per-abi \
   --dart-define=FLAVOR=dev \
   --dart-define=REST_API_URL=https://dev.v2.api.eqmonitor.app \
   --dart-define=WS_API_URL=wss://dev.v2.api.eqmonitor.app/ws \
@@ -138,10 +130,11 @@ keyPassword=***
 - 缺 `assets/platform/` 与打包资源只会打印 "unable to find directory entry" 警告，不影响构建；依赖该资源包的
   上游地图样式用不了，所以本 fork 把 MapLibre 指向公开免密钥的矢量样式
   （`https://tiles.openfreemap.org/styles/positron`），控件仍然是上游那套。
-- **release（开 R8）在这台设备上本地通知不弹**（渠道已建、service 报 connected，但 `show()` 不显示）；
-  debug 正常，所以发布的都是去掉 debug 标识的 debug 包。
-- `--split-per-abi` 产出 `app-armeabi-v7a-debug.apk`、`app-arm64-v8a-debug.apk`、`app-x86_64-debug.apk`，
-  每个 186–209 MB（debug 符号让它偏大）。
+- **release 包通知**：R8 的资源收缩会把只被 Dart 字符串引用的 `ic_notification_icon` 裁掉，导致旧 release 包渠道建了却
+  永远不显示。现已 `isShrinkResources = false`，并用 `res/raw/keep.xml` 钉住图标 —— 实测往 ntfy 主题发一条消息，
+  release 包能在通知栏收到（见上方截图）。
+- `--split-per-abi` 产出 `app-armeabi-v7a-release.apk`、`app-arm64-v8a-release.apk`、`app-x86_64-release.apk`，
+  每个 77–83 MB；debug 版因为带符号会到 180–210 MB。
 - **已知限制**：ntfy 长连接只在 App 进程活着时有效，被系统杀掉后请用 ntfy 客户端订阅同一主题兜底；
   Kotlin 前台服务尚未实现。
 
