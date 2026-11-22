@@ -4,7 +4,8 @@ import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// 震级配色：分档按 1 级一个台阶，这样 M1~M3 也能看出层次。
+/// 震级配色（借鉴各地震 App 的惯例：小震低调，大震醒目）。
+/// 分档按 1 级一个台阶，这样地球上每天都在发生的 M1~M3 也能看出层次。
 Color magnitudeColor(double? magnitude) {
   final mag = magnitude ?? 0;
   if (mag < 1.5) {
@@ -28,6 +29,7 @@ Color magnitudeColor(double? magnitude) {
   return const Color(0xFFD62828); // 红：巨大地震
 }
 
+/// 图例分档（与 magnitudeColor 一一对应）。
 const _magnitudeBands = <(String, double)>[
   ('<1.5', 1.0),
   ('1.5', 1.5),
@@ -53,6 +55,8 @@ Color tsunamiColor(String title) {
   return const Color(0xFF2FA8E1);
 }
 
+/// 地震 / 海啸列表。数据来自 App 直连 USGS 与 tsunami.gov（第二链路），
+/// 不依赖云主机和 ntfy，云主机挂了也能看。
 class EventListPage extends HookConsumerWidget {
   const new({super.key});
 
@@ -84,7 +88,8 @@ class _QuakeTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final colorTheme = context.designSystem.colorTheme;
+    final designSystem = context.designSystem;
+    final colorTheme = designSystem.colorTheme;
     final s = ref.watch(appStringsProvider);
     final async = ref.watch(usgsEventsProvider);
 
@@ -100,7 +105,7 @@ class _QuakeTab extends ConsumerWidget {
                 children: [
                   const Icon(Icons.cloud_off, size: 36),
                   const SizedBox(height: 12),
-                  Text('${s.loadFailedUsgs} · $error'),
+                  Text('${s.loadFailedUsgs}：$error'),
                   const SizedBox(height: 12),
                   FilledButton.tonal(
                     onPressed: () => ref.invalidate(usgsEventsProvider),
@@ -125,68 +130,59 @@ class _QuakeTab extends ConsumerWidget {
                   itemBuilder: (context, index) {
                     final event = events[index];
                     final color = magnitudeColor(event.magnitude);
-                    return Container(
-                      decoration: BoxDecoration(
-                        border: Border(
-                          left: BorderSide(color: color, width: 4),
-                        ),
+              return Container(
+                decoration: BoxDecoration(
+                  border: Border(
+                    left: BorderSide(color: color, width: 4),
+                  ),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: color.withValues(alpha: 0.14),
+                    child: Text(
+                      event.magnitudeLabel,
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
                       ),
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: color.withValues(alpha: 0.14),
-                          child: Text(
-                            event.magnitudeLabel,
-                            style: Theme.of(
-                              context,
-                            ).textTheme.labelLarge?.copyWith(
-                              color: color,
-                              fontWeight: FontWeight.w700,
-                            ),
+                    ),
+                  ),
+                  title: Text(
+                    event.place,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  subtitle: Text(
+                    '${_formatTime(event.time)}'
+                    '${event.pagerAlert == null ? '' : ' · PAGER ${event.pagerAlert}'}'
+                    '${event.tsunami == 1 ? ' · 🌊' : ''}',
+                    style: TextStyle(color: colorTheme.onSurfaceVariant),
+                  ),
+                  trailing: Icon(Icons.chevron_right, size: 18, color: color),
+                  onTap: () {
+                    showDialog<void>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text('${event.magnitudeLabel} ${event.place}'),
+                        content: Text(
+                          '${s.detailTime}：${_formatTime(event.time)}\n'
+                          '${s.detailPager}：${event.pagerAlert ?? s.valueNone}\n'
+                          '${s.detailTsunamiEval}：'
+                          '${event.tsunami == 1 ? s.valueYes : s.valueNo}\n'
+                          '${s.detailEventId}：${event.id}',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: Text(s.close),
                           ),
-                        ),
-                        title: Text(
-                          event.place,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: Text(
-                          '${_formatTime(event.time)}'
-                          '${event.pagerAlert == null ? '' : ' · PAGER ${event.pagerAlert}'}'
-                          '${event.tsunami == 1 ? ' · 🌊' : ''}',
-                          style: TextStyle(color: colorTheme.onSurfaceVariant),
-                        ),
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          size: 18,
-                          color: color,
-                        ),
-                        onTap: () {
-                          showDialog<void>(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text(
-                                '${event.magnitudeLabel} ${event.place}',
-                              ),
-                              content: Text(
-                                '${s.detailTime} · ${_formatTime(event.time)}\n'
-                                '${s.detailPager} · ${event.pagerAlert ?? s.valueNone}\n'
-                                '${s.detailTsunamiEval} · '
-                                '${event.tsunami == 1 ? s.valueYes : s.valueNo}\n'
-                                '${s.detailEventId} · ${event.id}',
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: () =>
-                                      Navigator.of(context).pop(),
-                                  child: Text(s.close),
-                                ),
-                              ],
-                            ),
-                          );
-                        },
+                        ],
                       ),
                     );
                   },
+                ),
+              );
+            },
                 ),
               ),
             ],
@@ -197,6 +193,7 @@ class _QuakeTab extends ConsumerWidget {
   }
 }
 
+/// 震级颜色图例，让用户一眼看懂列表左侧色条。
 class _MagnitudeLegend extends StatelessWidget {
   const _MagnitudeLegend();
 
@@ -209,9 +206,7 @@ class _MagnitudeLegend extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorTheme.surfaceContainerHighest.withValues(alpha: 0.4),
         border: Border(
-          bottom: BorderSide(
-            color: colorTheme.outlineVariant.withValues(alpha: 0.5),
-          ),
+          bottom: BorderSide(color: colorTheme.outlineVariant.withValues(alpha: 0.5)),
         ),
       ),
       child: Wrap(
@@ -273,7 +268,7 @@ class _TsunamiTab extends ConsumerWidget {
                 children: [
                   const Icon(Icons.cloud_off, size: 36),
                   const SizedBox(height: 12),
-                  Text('${s.loadFailedTsunami} · $error'),
+                  Text('${s.loadFailedTsunami}：$error'),
                   const SizedBox(height: 12),
                   FilledButton.tonal(
                     onPressed: () => ref.invalidate(tsunamiBulletinsProvider),

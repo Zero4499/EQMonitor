@@ -6,7 +6,11 @@ import 'package:eqmonitor/core/fcm/local_notification_repository.dart';
 import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-/// 自建 USGS / tsunami.gov 推送链路（ntfy）。
+/// 自建 USGS / tsunami.gov 推送链路。
+///
+/// 云主机（quake-pusher）轮询 USGS 与 tsunami.gov，把事件发布到 ntfy 主题；
+/// 本服务在 App 前台订阅同一主题的 JSON 流，收到消息后直接弹本地通知。
+/// 不依赖 FCM，因此在没有 Google 服务的环境里也能工作。
 const ntfyServerUrl = 'https://ntfy.sh';
 const ntfyTopic = 'quake-52e3e857741b43fb';
 
@@ -146,8 +150,7 @@ class NtfyPushService {
     }
     final title = (json['title'] as String?)?.trim();
     final message = (json['message'] as String?)?.trim();
-    if ((title == null || title.isEmpty) &&
-        (message == null || message.isEmpty)) {
+    if ((title == null || title.isEmpty) && (message == null || message.isEmpty)) {
       return;
     }
     _received++;
@@ -155,7 +158,7 @@ class NtfyPushService {
         (title?.contains('🌊') ?? false) || (title?.contains('海啸') ?? false);
     final effectiveTitle = title != null && title.isNotEmpty
         ? title
-        : 'USGS 地震情報';
+        : 'USGS 地震情报';
     // 云主机已按规则映射：M7+ / PAGER red / 海啸 Warning・Threat → priority 5
     final priority = (json['priority'] as num?)?.toInt() ?? 3;
     unawaited(
@@ -169,16 +172,17 @@ class NtfyPushService {
     );
   }
 
+  /// 端到端测试：把一条测试消息发布到 ntfy 主题，
+  /// 服务器会把它广播回来，本机订阅流收到后弹出通知。
   Future<bool> sendEndToEndTest() async {
-    final client = HttpClient()
-      ..connectionTimeout = const Duration(seconds: 12);
+    final client = HttpClient()..connectionTimeout = const Duration(seconds: 12);
     try {
       final request = await client.postUrl(Uri.parse(ntfyServerUrl));
       request.headers.contentType = ContentType.json;
       request.write(
         jsonEncode({
           'topic': ntfyTopic,
-          'title': '🧪 QuakePush 推送测试',
+          'title': '🧪 QuakeDroid 推送测试',
           'message':
               '**端到端链路测试**\n'
               '云主机 quake-pusher → ntfy.sh → App 订阅流\n'
@@ -197,6 +201,8 @@ class NtfyPushService {
     }
   }
 
+  /// 本地测试：不经过网络，直接弹一条本地通知，用来验证
+  /// 通知权限 / 通道 / 声音是否正常。
   Future<void> showLocalTest() => repository.showSimpleNotification(
     title: '🧪 本地通知测试',
     body:
@@ -207,6 +213,7 @@ class NtfyPushService {
     tag: 'local-test',
   );
 
+  /// 警报级测试：全屏 + 闹钟音量 + 持续通知，验证 M7+ / 海啸警报的弹出方式。
   Future<void> showAlertTest() => repository.showSimpleNotification(
     title: '🚨 警报级测试：M7.0 地震 / 海啸警报',
     body:

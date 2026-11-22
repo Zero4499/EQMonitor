@@ -1,6 +1,7 @@
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/i18n/tri.dart';
 import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:eqmonitor/core/router/router.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/usgs_push_tile.dart';
@@ -10,6 +11,7 @@ import 'package:eqmonitor/page/quake_map.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 首页：与 EQMonitor 一致——地图铺满屏幕，内容以可拖动面板浮在下方。
 class HomePage extends HookConsumerWidget {
@@ -105,7 +107,7 @@ class _HomeSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colorTheme = context.designSystem.colorTheme;
     final s = ref.watch(appStringsProvider);
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    final language = ref.watch(appLocaleProvider).languageCode;
     final events = (ref.watch(usgsEventsProvider).value ?? const <UsgsEvent>[])
         .where((e) => e.hasLocation)
         .where((e) => (e.magnitude ?? 0) >= minMagnitude)
@@ -153,22 +155,25 @@ class _HomeSheet extends ConsumerWidget {
                   _FilterRow(
                     minMagnitude: minMagnitude,
                     count: events.length,
-                    isEnglish: isEnglish,
+                    language: language,
                     onChanged: onMinMagnitudeChanged,
                   ),
                   const SizedBox(height: 10),
                   const _PushStatusCard(),
                   const SizedBox(height: 10),
-                  _TopEvents(eventList: events, isEnglish: isEnglish),
+                  _TopEvents(eventList: events, language: language),
                   const SizedBox(height: 10),
-                  _ActionsCard(isEnglish: isEnglish, s: s),
+                  _ActionsCard(language: language, s: s),
                   const SizedBox(height: 10),
-                  _AllEvents(eventList: events, isEnglish: isEnglish),
+                  _AllEvents(eventList: events, language: language),
                   const SizedBox(height: 8),
                   Text(
-                    isEnglish
-                        ? 'Basemap © OpenStreetMap contributors · OpenFreeMap (ODbL) · events from USGS'
-                        : '底图 © OpenStreetMap contributors · OpenFreeMap（ODbL）· 事件来自 USGS',
+                    tri3(
+                      language,
+                      zh: '底图 © U.S. Geological Survey · The National Map · 事件来自 USGS',
+                      en: 'Basemap © U.S. Geological Survey · The National Map · events from USGS',
+                      ja: '地図 © U.S. Geological Survey · The National Map · 地震情報は USGS',
+                    ),
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colorTheme.onSurfaceVariant,
@@ -188,21 +193,24 @@ class _FilterRow extends StatelessWidget {
   const new({
     required this.minMagnitude,
     required this.count,
-    required this.isEnglish,
+    required this.language,
     required this.onChanged,
   });
 
   final double minMagnitude;
   final int count;
-  final bool isEnglish;
+  final String language;
   final ValueChanged<double> onChanged;
 
   @override
   Widget build(BuildContext context) {
     const bands = <double>[0, 2.5, 4.5, 6];
-    final labels = isEnglish
-        ? <String>['All', 'M2.5+', 'M4.5+', 'M6+']
-        : <String>['全部', 'M2.5+', 'M4.5+', 'M6+'];
+    final labels = <String>[
+      tri3(language, zh: '全部', en: 'All', ja: 'すべて'),
+      'M2.5+',
+      'M4.5+',
+      'M6+',
+    ];
 
     return Row(
       children: [
@@ -230,7 +238,7 @@ class _FilterRow extends StatelessWidget {
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 220),
           child: Text(
-            isEnglish ? '$count' : '$count 条',
+            tri3(language, zh: '$count 条', en: '$count', ja: '$count 件'),
             key: ValueKey(count),
             style: Theme.of(context).textTheme.labelMedium,
           ),
@@ -256,7 +264,7 @@ class _PushStatusCard extends ConsumerWidget {
     final ntfyConnected = ntfyStatus == NtfyPushStatus.connected;
     final directOk = directStatus == DirectFeedStatus.ok;
     final anyAlive = ntfyConnected || directOk;
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    final language = ref.watch(appLocaleProvider).languageCode;
 
     return _Card(
       child: InkWell(
@@ -291,14 +299,16 @@ class _PushStatusCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     _LinkRow(
                       label: s.linkNtfy,
-                      value: isEnglish ? ntfyStatus.labelEn : ntfyStatus.label,
+                      value: language == 'zh'
+                          ? ntfyStatus.label
+                          : ntfyStatus.labelEn,
                       ok: ntfyConnected,
                     ),
                     _LinkRow(
                       label: s.linkDirect,
-                      value: isEnglish
-                          ? directStatus.labelEn
-                          : directStatus.label,
+                      value: language == 'zh'
+                          ? directStatus.label
+                          : directStatus.labelEn,
                       ok: directOk,
                     ),
                   ],
@@ -347,10 +357,10 @@ class _LinkRow extends StatelessWidget {
 }
 
 class _TopEvents extends StatelessWidget {
-  const new({required this.eventList, required this.isEnglish});
+  const new({required this.eventList, required this.language});
 
   final List<UsgsEvent> eventList;
-  final bool isEnglish;
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -367,18 +377,28 @@ class _TopEvents extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  isEnglish ? 'Largest events' : '最强事件',
+                  tri3(
+                    language,
+                    zh: '最强事件',
+                    en: 'Largest events',
+                    ja: '最大の地震',
+                  ),
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
                 const Spacer(),
-                _Legend(isEnglish: isEnglish),
+                const _Legend(),
               ],
             ),
             if (top.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Text(
-                  isEnglish ? 'No events above the filter.' : '当前筛选下没有事件。',
+                  tri3(
+                    language,
+                    zh: '当前筛选下没有事件。',
+                    en: 'No events above the filter.',
+                    ja: '条件に合う地震はありません。',
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),
@@ -387,7 +407,7 @@ class _TopEvents extends StatelessWidget {
                 onTap: () async => showUsgsEventDetail(
                   context,
                   event,
-                  isEnglish: isEnglish,
+                  language: language,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 7),
@@ -424,10 +444,10 @@ class _TopEvents extends StatelessWidget {
 
 /// 最近事件列表（面板拉到最高时可滚动查看）。
 class _AllEvents extends StatelessWidget {
-  const new({required this.eventList, required this.isEnglish});
+  const new({required this.eventList, required this.language});
 
   final List<UsgsEvent> eventList;
-  final bool isEnglish;
+  final String language;
 
   @override
   Widget build(BuildContext context) {
@@ -441,7 +461,12 @@ class _AllEvents extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isEnglish ? 'Recent events' : '最近事件',
+              tri3(
+                language,
+                zh: '最近事件',
+                en: 'Recent events',
+                ja: '最近の地震',
+              ),
               style: Theme.of(context).textTheme.titleSmall,
             ),
             const SizedBox(height: 4),
@@ -450,7 +475,7 @@ class _AllEvents extends StatelessWidget {
                 onTap: () async => showUsgsEventDetail(
                   context,
                   event,
-                  isEnglish: isEnglish,
+                  language: language,
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(vertical: 6),
@@ -498,9 +523,7 @@ class _AllEvents extends StatelessWidget {
 }
 
 class _Legend extends StatelessWidget {
-  const new({required this.isEnglish});
-
-  final bool isEnglish;
+  const new();
 
   @override
   Widget build(BuildContext context) {
@@ -525,9 +548,9 @@ class _Legend extends StatelessWidget {
 }
 
 class _ActionsCard extends ConsumerWidget {
-  const new({required this.isEnglish, required this.s});
+  const new({required this.language, required this.s});
 
-  final bool isEnglish;
+  final String language;
   final AppStrings s;
 
   @override

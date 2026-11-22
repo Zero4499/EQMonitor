@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:eqmonitor/core/fcm/channels.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -72,6 +73,54 @@ class NotificationPermissions {
       return await _android?.requestExactAlarmsPermission();
     } on Object {
       return null;
+    }
+  }
+
+  /// 当前是否已获得「通知策略访问」（勿扰例外）权限。
+  static Future<bool?> hasDndAccess() async {
+    try {
+      return await _android?.hasNotificationPolicyAccess();
+    } on Object {
+      return null;
+    }
+  }
+
+  /// 申请「通知策略访问」：只有拿到这个权限，渠道的 bypassDnd 才会被系统认，
+  /// 应用也才会出现在系统「勿扰模式 → 允许的应用」列表里。
+  ///
+  /// 拿到权限后需要把渠道删了重建一次：Android 不允许改已存在渠道的
+  /// bypassDnd 字段，老渠道在没权限时被系统压成 false，重建后才会带上。
+  static Future<bool?> requestDndAccess() async {
+    final plugin = _android;
+    if (plugin == null) {
+      return null;
+    }
+    try {
+      final already = await plugin.hasNotificationPolicyAccess();
+      if (already == true) {
+        await _recreateChannels();
+        return true;
+      }
+      final granted = await plugin.requestNotificationPolicyAccess();
+      if (granted == true) {
+        await _recreateChannels();
+      }
+      return granted;
+    } on Object {
+      // 部分 ROM 没有这个入口，忽略
+      return null;
+    }
+  }
+
+  /// 删掉并重建本应用的全部通知渠道，让 bypassDnd 标记在拿到策略访问后重新生效。
+  static Future<void> _recreateChannels() async {
+    final plugin = _android;
+    if (plugin == null) {
+      return;
+    }
+    for (final channel in notificationChannels) {
+      await plugin.deleteNotificationChannel(channelId: channel.id);
+      await plugin.createNotificationChannel(channel);
     }
   }
 

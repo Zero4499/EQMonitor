@@ -1,3 +1,4 @@
+import 'package:eqmonitor/core/i18n/tri.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -23,11 +24,23 @@ enum TsunamiLevel {
     .advisory => 'Advisory and above',
     .warning => 'Warnings only',
   };
+
+  String get labelJa => switch (this) {
+    .all => 'すべての情報',
+    .advisory => '注意報以上',
+    .warning => '警報のみ',
+  };
+
+  String label(String language) => switch (language) {
+    'en' => labelEn,
+    'ja' => labelJa,
+    _ => labelZh,
+  };
 }
 
 /// 推送条件：震级下限、海啸门槛、是否只推警报级。
 class PushFilter {
-  const PushFilter({
+  const new({
     this.minMagnitude = 4.5,
     this.tsunamiLevel = TsunamiLevel.warning,
     this.alertOnly = false,
@@ -131,24 +144,42 @@ class PushFilterNotifier extends Notifier<PushFilter> {
   }
 }
 
-/// i18n 里没定义的推送条件文案，直接放这里（中英双语）。
-String pushFilterTitle({required bool isEnglish}) =>
-    isEnglish ? 'Push conditions' : '推送条件';
+/// i18n 里没定义的推送条件文案，直接放这里（中英日）。
+String pushFilterTitle({required String language}) => tri3(
+  language,
+  zh: '推送条件',
+  en: 'Push conditions',
+  ja: 'プッシュ条件',
+);
 
-String pushFilterMinMagnitude({required bool isEnglish}) =>
-    isEnglish ? 'Minimum magnitude' : '最小震级';
+String pushFilterMinMagnitude({required String language}) => tri3(
+  language,
+  zh: '最小震级',
+  en: 'Minimum magnitude',
+  ja: '最小マグニチュード',
+);
 
-String pushFilterTsunami({required bool isEnglish}) =>
-    isEnglish ? 'Tsunami level' : '海啸级别';
+String pushFilterTsunami({required String language}) => tri3(
+  language,
+  zh: '海啸级别',
+  en: 'Tsunami level',
+  ja: '津波レベル',
+);
 
-String pushFilterAlertOnly({required bool isEnglish}) =>
-    isEnglish ? 'Alert grade only' : '只推警报级';
+String pushFilterAlertOnly({required String language}) => tri3(
+  language,
+  zh: '只推警报级',
+  en: 'Alert grade only',
+  ja: 'アラート級のみ',
+);
 
-String pushFilterAlertOnlySubtitle({required bool isEnglish}) => isEnglish
-    ? 'Only M7+ / PAGER red / tsunami warning'
-    : '只推 M7+ / PAGER red / 海啸警报';
+String pushFilterAlertOnlySubtitle({required String language}) => tri3(
+  language,
+  zh: '只推 M7+ / PAGER red / 海啸警报',
+  en: 'Only M7+ / PAGER red / tsunami warning',
+  ja: 'M7+ / PAGER red / 津波警報のみ',
+);
 
-String pushFilterSummary(PushFilter filter, {required bool isEnglish}) =>
-    isEnglish
-        ? 'M${filter.minMagnitude.toStringAsFixed(1)}+ · ${filter.tsunamiLevel.labelEn}'
-        : 'M${filter.minMagnitude.toStringAsFixed(1)}+ · ${filter.tsunamiLevel.labelZh}';
+String pushFilterSummary(PushFilter filter, {required String language}) =>
+    'M${filter.minMagnitude.toStringAsFixed(1)}+ · '
+    '${filter.tsunamiLevel.label(language)}';

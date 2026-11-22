@@ -3,6 +3,7 @@ import 'package:eqmonitor/core/gen/assets.gen.dart';
 import 'package:eqmonitor/core/gen/fonts.gen.dart';
 import 'package:eqmonitor/core/filter/push_filter.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/i18n/tri.dart';
 import 'package:eqmonitor/core/notification/notification_permissions.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
 import 'package:eqmonitor/core/router/router.dart';
@@ -18,7 +19,6 @@ class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final s = ref.watch(appStringsProvider);
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
 
     return Scaffold(
       appBar: AppBar(title: Text(s.settingsTitle)),
@@ -54,23 +54,75 @@ class SettingsPage extends ConsumerWidget {
               ),
               ListTile(
                 title: Text(
-                  isEnglish
-                      ? 'Grant all notification permissions'
-                      : '一键申请全部通知权限',
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '一键申请全部通知权限',
+                    en: 'Grant all notification permissions',
+                    ja: '通知権限をまとめて許可',
+                  ),
                 ),
                 subtitle: Text(
-                  isEnglish
-                      ? 'Notifications · full-screen intent · exact alarms · DND · battery whitelist'
-                      : '通知 · 全屏 intent · 精确闹钟 · 勿扰访问 · 电池白名单',
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '通知 · 全屏 intent · 精确闹钟 · 勿扰访问 · 电池白名单',
+                    en: 'Notifications · full-screen intent · exact alarms · DND · battery whitelist',
+                    ja: '通知 · 全画面 intent · 正確なアラーム · サイレントモード · バッテリー最適化除外',
+                  ),
                 ),
                 leading: const Icon(Icons.verified_user_outlined),
                 onTap: () async =>
                     NotificationPermissions.requestAllIfNeeded(force: true),
               ),
+              ListTile(
+                title: Text(
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '勿扰模式例外',
+                    en: 'Do Not Disturb exception',
+                    ja: 'サイレントモードの例外',
+                  ),
+                ),
+                subtitle: Text(
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '把本应用加进系统的勿扰白名单，否则勿扰模式下通知不响',
+                    en: 'Whitelist this app in system Do Not Disturb settings',
+                    ja: 'サイレントモード中も鳴らすため、システム側で許可します',
+                  ),
+                ),
+                leading: const Icon(Icons.do_not_disturb_off_outlined),
+                onTap: () async {
+                  final granted = await NotificationPermissions.requestDndAccess();
+                  if (!context.mounted) {
+                    return;
+                  }
+                  final lang = ref.watch(appLocaleProvider).languageCode;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        tri3(
+                          lang,
+                          zh: granted == true
+                              ? '已加入勿扰例外，通知在静音模式下也会响'
+                              : '请在打开的系统页面里把本应用打开为允许例外',
+                          en: granted == true
+                              ? 'Allowed to interrupt Do Not Disturb'
+                              : 'Please allow this app in the system settings that just opened',
+                          ja: granted == true
+                              ? 'サイレントモード中も通知が鳴ります'
+                              : '開いたシステム設定でこのアプリを許可してください',
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           SettingsSectionHeader(
-            text: pushFilterTitle(isEnglish: isEnglish),
+            text: pushFilterTitle(
+              language: ref.watch(appLocaleProvider).languageCode,
+            ),
           ),
           const _PushFilterSection(),
           SettingsSectionHeader(text: s.settingsLanguage),
@@ -91,14 +143,14 @@ class SettingsPage extends ConsumerWidget {
   }
 }
 
-/// 界面语言切换（简体中文 / English）。
+/// 界面语言切换（简体中文 / English / 日本語）。
 class _LanguageSelector extends ConsumerWidget {
   const new();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final current = ref.watch(appLocaleProvider);
-    final isEnglish = current.languageCode == 'en';
+    final lang = current.languageCode;
 
     return M3ESegmentedColumn(
       padding: EdgeInsets.zero,
@@ -107,7 +159,7 @@ class _LanguageSelector extends ConsumerWidget {
         ListTile(
           title: const Text('简体中文'),
           leading: const Icon(Icons.translate),
-          trailing: !isEnglish
+          trailing: lang == 'zh'
               ? const Icon(Icons.check_circle, color: Colors.teal)
               : null,
           onTap: () async => _apply(ref, const Locale('zh', 'CN')),
@@ -115,10 +167,18 @@ class _LanguageSelector extends ConsumerWidget {
         ListTile(
           title: const Text('English'),
           leading: const Icon(Icons.language),
-          trailing: isEnglish
+          trailing: lang == 'en'
               ? const Icon(Icons.check_circle, color: Colors.teal)
               : null,
           onTap: () async => _apply(ref, const Locale('en', 'US')),
+        ),
+        ListTile(
+          title: const Text('日本語'),
+          leading: const Icon(Icons.translate),
+          trailing: lang == 'ja'
+              ? const Icon(Icons.check_circle, color: Colors.teal)
+              : null,
+          onTap: () async => _apply(ref, const Locale('ja', 'JP')),
         ),
       ],
     );
@@ -137,7 +197,7 @@ class _PushFilterSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(pushFilterProvider);
     final notifier = ref.read(pushFilterProvider.notifier);
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    final language = ref.watch(appLocaleProvider).languageCode;
     const magnitudes = <double>[2.5, 4.5, 6];
 
     Widget chips(List<Widget> children) => Padding(
@@ -154,7 +214,7 @@ class _PushFilterSection extends ConsumerWidget {
     );
 
     Widget tsunamiChip(TsunamiLevel level) => ChoiceChip(
-      label: Text(isEnglish ? level.labelEn : level.labelZh),
+      label: Text(level.label(language)),
       selected: filter.tsunamiLevel == level,
       onSelected: (_) async => notifier.change(
         filter.copyWith(tsunamiLevel: level),
@@ -166,20 +226,20 @@ class _PushFilterSection extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16),
       children: [
         ListTile(
-          title: Text(pushFilterMinMagnitude(isEnglish: isEnglish)),
+          title: Text(pushFilterMinMagnitude(language: language)),
           subtitle: chips([
             for (final value in magnitudes) magnitudeChip(value),
           ]),
         ),
         ListTile(
-          title: Text(pushFilterTsunami(isEnglish: isEnglish)),
+          title: Text(pushFilterTsunami(language: language)),
           subtitle: chips([
             for (final level in TsunamiLevel.values) tsunamiChip(level),
           ]),
         ),
         SwitchListTile(
-          title: Text(pushFilterAlertOnly(isEnglish: isEnglish)),
-          subtitle: Text(pushFilterAlertOnlySubtitle(isEnglish: isEnglish)),
+          title: Text(pushFilterAlertOnly(language: language)),
+          subtitle: Text(pushFilterAlertOnlySubtitle(language: language)),
           value: filter.alertOnly,
           onChanged: (value) async =>
               notifier.change(filter.copyWith(alertOnly: value)),
@@ -187,7 +247,7 @@ class _PushFilterSection extends ConsumerWidget {
         ListTile(
           dense: true,
           title: Text(
-            pushFilterSummary(filter, isEnglish: isEnglish),
+            pushFilterSummary(filter, language: language),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ),

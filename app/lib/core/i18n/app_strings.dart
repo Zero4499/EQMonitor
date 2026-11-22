@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _localePrefsKey = 'app_ui_locale_v1';
 
-/// 界面语言（简体中文 / English）。
+/// 界面语言（简体中文 / English / 日本語）。
 class AppLocaleSetting {
   const AppLocaleSetting._();
 
@@ -51,7 +51,7 @@ class AppLocaleNotifier extends Notifier<Locale> {
   }
 }
 
-/// 目前提供的两种界面语言。
+/// 目前提供的界面语言。
 const appSupportedLocales = <Locale>[
   Locale('zh', 'CN'),
   Locale('en', 'US'),
@@ -116,6 +116,13 @@ class AppStrings {
     required this.timeUnknown,
     required this.pushTileTitle,
     required this.pushTileSubtitleNtfy,
+    required this.sheetClose,
+    required this.sheetServerLabel,
+    required this.sheetTopicLabel,
+    required this.e2eOk,
+    required this.e2eFail,
+    required this.localOk,
+    required this.alertOk,
   });
 
   final String appTitle;
@@ -169,9 +176,24 @@ class AppStrings {
   final String timeUnknown;
   final String pushTileTitle;
   final String pushTileSubtitleNtfy;
+  final String sheetClose;
+  final String sheetServerLabel;
+  final String sheetTopicLabel;
+  final String e2eOk;
+  final String e2eFail;
+  final String localOk;
+  final String alertOk;
 
-  static AppStrings of(Locale locale) =>
-      locale.languageCode == 'en' ? en : zh;
+  static AppStrings of(Locale locale) {
+    switch (locale.languageCode) {
+      case 'en':
+        return en;
+      case 'ja':
+        return ja;
+      default:
+        return zh;
+    }
+  }
 
   static const zh = AppStrings(
     appTitle: 'QuakePush',
@@ -194,7 +216,7 @@ class AppStrings {
         'EQMonitor 原版（v3.0.1）+ ntfy 推送改造，界面与素材来自上游项目。\n'
         '数据来源：USGS 地震速报 / tsunami.gov 海啸公报（PTWC / NTWC）。\n'
         '上游项目：github.com/YumNumm/EQMonitor (MIT License)。',
-    settingsVersionTag: '简体中文改造版 · ntfy 推送',
+    settingsVersionTag: '多语言改造版 · ntfy 推送',
     notificationPageTitle: '通知设置',
     pushChannelSection: '推送通道',
     systemSection: '系统',
@@ -233,6 +255,13 @@ class AppStrings {
     timeUnknown: '时间未知',
     pushTileTitle: 'USGS / 海啸推送（ntfy）',
     pushTileSubtitleNtfy: '云主机轮询 USGS + tsunami.gov',
+    sheetClose: '关闭',
+    sheetServerLabel: '服务器',
+    sheetTopicLabel: '主题',
+    e2eOk: '已发布到 ntfy，订阅流收到后会自动弹通知。',
+    e2eFail: '发布失败，检查网络或主题名。',
+    localOk: '已弹出本地通知（不走网络）。',
+    alertOk: '已弹出警报级通知（全屏 + 闹钟音量 + 持续）。',
   );
 
   static const en = AppStrings(
@@ -257,7 +286,7 @@ class AppStrings {
         'assets come from the upstream project.\n'
         'Data: USGS earthquake feed / tsunami.gov bulletins (PTWC / NTWC).\n'
         'Upstream: github.com/YumNumm/EQMonitor (MIT License).',
-    settingsVersionTag: 'English UI build · ntfy push',
+    settingsVersionTag: 'Multi-language build · ntfy push',
     notificationPageTitle: 'Notification settings',
     pushChannelSection: 'Push channels',
     systemSection: 'System',
@@ -300,5 +329,81 @@ class AppStrings {
     timeUnknown: 'Time unknown',
     pushTileTitle: 'USGS / Tsunami push (ntfy)',
     pushTileSubtitleNtfy: 'Server polls USGS + tsunami.gov',
+    sheetClose: 'Close',
+    sheetServerLabel: 'Server',
+    sheetTopicLabel: 'Topic',
+    e2eOk: 'Published to ntfy; the subscription shows a notification.',
+    e2eFail: 'Publish failed. Check the network or topic name.',
+    localOk: 'Local notification shown (no network).',
+    alertOk: 'Alert-level notification shown (full screen + alarm + ongoing).',
+  );
+
+  static const ja = AppStrings(
+    appTitle: 'QuakePush',
+    pushCardTitle: '地震・津波プッシュ',
+    bothLinksRunning: '2 経路とも稼働中',
+    bothLinksDown: '2 経路とも切断',
+    linkNtfy: 'サーバー → ntfy',
+    linkDirect: 'アプリ直結ソース',
+    eventListTitle: '地震・津波リスト',
+    eventListSubtitle: '過去 24 時間の USGS 地震 + tsunami.gov 情報',
+    mapTitle: '世界の地震マップ',
+    mapSubtitle: '世界地図 + 震源ドット（マグニチュード別に色分け）',
+    settingsTitle: '設定',
+    settingsNotificationSection: '通知',
+    settingsNotificationTile: '通知設定',
+    settingsNotificationSubtitle: 'プッシュ経路・テスト通知',
+    settingsLanguage: '表示言語',
+    settingsAboutSection: 'このアプリについて',
+    settingsAboutBody:
+        'EQMonitor 本家（v3.0.1）+ ntfy プッシュ対応の改変版。UI と素材は上流プロジェクトのものです。\n'
+        'データ: USGS 地震情報 / tsunami.gov 津波情報（PTWC / NTWC）。\n'
+        '上流: github.com/YumNumm/EQMonitor (MIT License)。',
+    settingsVersionTag: '多言語版 · ntfy プッシュ',
+    notificationPageTitle: '通知設定',
+    pushChannelSection: 'プッシュ経路',
+    systemSection: 'システム',
+    systemChannelTile: 'Android 通知チャンネル',
+    systemChannelSubtitle: 'バナー・ロック画面表示・サウンドなど OS 側の通知動作を管理します。',
+    limitsSection: '制限と補足',
+    limitsBody:
+        'アプリが動いている間は端末側で接続を維持します。OS に終了された場合は ntfy 公式クライアントで同じトピックを購読しておくと安心です。',
+    panelTitle: 'USGS / 津波プッシュのテスト',
+    link1Label: '経路 1 · サーバー → ntfy',
+    link2Label: '経路 2 · アプリ直結 USGS / tsunami.gov',
+    e2eTest: 'エンドツーエンド送信テスト',
+    localTest: 'ローカル通知テスト',
+    alertTest: 'アラート級テスト（全画面 + アラーム）',
+    openSystemNotificationSettings: 'システムの通知設定を開く',
+    panelNote:
+        '2 経路あります。経路 1 はサーバー → ntfy、経路 2 はアプリが USGS と tsunami.gov を直接'
+        'ポーリングするので、サーバーや ntfy が落ちても届きます。イベント ID で重複を除いています。\n'
+        'アラート級（M7+・PAGER red・津波 Warning/Threat）は global_alert を使い、全画面 + アラーム音量 + 常駐通知になります。\n'
+        'HyperOS 4 の場合: バナー通知とロック画面通知を許可し、バッテリー節約を「制限なし」、自動起動を許可してください。',
+    tabQuakes: '地震（USGS）',
+    tabTsunami: '津波情報',
+    listEmptyQuakes: '過去 24 時間の地震はありません',
+    listEmptyTsunami: '津波情報はありません',
+    retry: '再試行',
+    close: '閉じる',
+    loadFailedUsgs: 'USGS の取得に失敗しました',
+    loadFailedTsunami: 'tsunami.gov の取得に失敗しました',
+    detailTime: '時刻',
+    detailPager: 'PAGER',
+    detailTsunamiEval: '津波評価',
+    detailEventId: 'イベント ID',
+    valueYes: 'はい',
+    valueNo: 'いいえ',
+    valueNone: 'なし',
+    timeUnknown: '時刻不明',
+    pushTileTitle: 'USGS / 津波プッシュ（ntfy）',
+    pushTileSubtitleNtfy: 'サーバーが USGS + tsunami.gov を監視',
+    sheetClose: '閉じる',
+    sheetServerLabel: 'サーバー',
+    sheetTopicLabel: 'トピック',
+    e2eOk: 'ntfy に publish しました。購読側で通知が出るはずです。',
+    e2eFail: 'publish に失敗しました。ネットワークとトピック名を確認してください。',
+    localOk: 'ローカル通知を表示しました（ネットワークは使いません）。',
+    alertOk: 'アラート級通知を表示しました（全画面 + アラーム + 常駐）。',
   );
 }

@@ -17,6 +17,9 @@ const notificationChannels = <AndroidNotificationChannel>[
     description: 'Global earthquake alerts from the USGS feed',
     importance: Importance.high,
     showBadge: true,
+    // 勿扰模式下也允许响：需要在系统里给本应用「通知策略访问」权限，
+    // 否则这个标记会被系统当成 false（见 NotificationPermissions）。
+    bypassDnd: true,
   ),
   AndroidNotificationChannel(
     'global_tsunami',
@@ -25,6 +28,7 @@ const notificationChannels = <AndroidNotificationChannel>[
     description: 'Tsunami bulletins and warnings from tsunami.gov',
     importance: Importance.high,
     showBadge: true,
+    bypassDnd: true,
   ),
   AndroidNotificationChannel(
     'global_alert',
@@ -36,17 +40,19 @@ const notificationChannels = <AndroidNotificationChannel>[
     playSound: true,
     enableVibration: true,
     audioAttributesUsage: AudioAttributesUsage.alarm,
+    bypassDnd: true,
   ),
   AndroidNotificationChannel(
     'service_fallback',
     'QuakePush fallback',
     description: 'Fallback channel when no channel id is supplied',
+    bypassDnd: true,
   ),
 ];
 
 /// 启动时删除的渠道：上游 EQMonitor 的全部渠道 + 历史遗留 id。
 ///
-/// 用户要求“把 EQ 的通知全删了，只留自己的”，因此这里把上游渠道逐个删掉，
+/// 用户要求「把 EQ 的通知全删了，只留自己的」，因此这里把上游渠道逐个删掉，
 /// 已经装过旧版本的用户升级后也不会再看到 `EEW` / `津波` 之类的渠道。
 const legacyNotificationChannelIds = <String>[
   // 旧版历史 id

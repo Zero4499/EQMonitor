@@ -11,9 +11,8 @@ class NotificationSettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = AppStrings.of(AppLocaleSetting.value);
     return Scaffold(
-      appBar: AppBar(title: Text(s.notificationPageTitle)),
+      appBar: AppBar(title: Text(AppStrings.of(AppLocaleSetting.value).notificationPageTitle)),
       body: const _Body(),
     );
   }
@@ -54,10 +53,9 @@ class _AndroidNotificationSettingsTile extends StatelessWidget {
     if (Theme.of(context).platform != TargetPlatform.android) {
       return const SizedBox.shrink();
     }
-    final s = AppStrings.of(AppLocaleSetting.value);
     return ListTile(
-      title: Text(s.systemChannelTile),
-      subtitle: Text(s.systemChannelSubtitle),
+      title: Text(AppStrings.of(AppLocaleSetting.value).systemChannelTile),
+      subtitle: Text(AppStrings.of(AppLocaleSetting.value).systemChannelSubtitle),
       leading: const Icon(Icons.tune_outlined),
       trailing: const Icon(Icons.open_in_new),
       onTap: () async =>

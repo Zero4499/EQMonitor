@@ -4,40 +4,38 @@ import 'dart:convert';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/hook/use_map_operation_queue.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/provider/log/talker.dart';
 import 'package:eqmonitor/core/util/map/map_geo_json_source_updater.dart';
+import 'package:eqmonitor/core/util/map/quake_basemap.dart';
 import 'package:eqmonitor/core/util/map/remove_map_style_resources.dart';
 import 'package:eqmonitor/feature/map/ui/map_operation_queue_scope.dart';
 import 'package:eqmonitor/feature/map/ui/maplibre_event_provider.dart';
 import 'package:eqmonitor/page/event_detail_sheet.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 
-/// QuakePush 的底图：与 EQMonitor 首页同类的浅色矢量底图。
+/// QuakePush 的地震底图：USGS 官网同款的 USGS Topo 栅格瓦片。
 ///
-/// 之前试过 OSM 官方栅格，但栅格瓦片把各国语言文字全画在同一张图上（俄文、日文、
-/// 越南文混在一起），观感很糟。这里回到矢量的 Positron 样式：只保留国界、淡灰陆地
-/// 与少量拉丁地名，放大后才会出现细节文字，视觉与 EQMonitor 一致。
-///
-/// 样式由 OpenFreeMap 提供（基于 OpenStreetMap 数据，免密钥），署名写在首页面板底部。
-const _mapStyleUrl = 'https://tiles.openfreemap.org/styles/positron';
-
-String quakeMapStyleString() => _mapStyleUrl;
+/// 样式由 [quakeBasemapStyleString] 在本地拼好（栅格源 + 背景色），
+/// 地质板块边界由 [BasemapLayers] 在样式加载后画上去。
+String quakeMapStyleString() => quakeBasemapStyleString();
 
 /// 首页背后的全球地震地图：底图 + 震中圆点图层。
 ///
 /// 与 EQMonitor 首页结构一致：地图铺满屏幕，内容卡片浮在上面。
 /// 点一下震中点即可弹出该事件的详情（与列表里点条目是同一个弹窗）。
 class QuakeMap extends HookConsumerWidget {
-  const QuakeMap({super.key, this.minMagnitude = 0});
+  const new({super.key, this.minMagnitude = 0});
 
   final double minMagnitude;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controllerRef = useRef<MapController?>(null);
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    final language = ref.watch(appLocaleProvider).languageCode;
     final eventsAsync = ref.watch(usgsEventsProvider);
     final events = (eventsAsync.value ?? const <UsgsEvent>[])
         .where((e) => e.hasLocation)
@@ -64,12 +62,12 @@ class QuakeMap extends HookConsumerWidget {
                   controller: controllerRef.value,
                   click: event,
                   events: events,
-                  isEnglish: isEnglish,
+                  language: language,
                 ),
               );
             }
           },
-          children: [EpicenterLayer(events: events)],
+          children: [BasemapLayers(), EpicenterLayer(events: events)],
         ),
       ),
     );
@@ -81,7 +79,7 @@ class QuakeMap extends HookConsumerWidget {
     required MapController? controller,
     required MapEventClick click,
     required List<UsgsEvent> events,
-    required bool isEnglish,
+    required String language,
   }) async {
     if (controller == null || events.isEmpty) {
       return;
@@ -106,7 +104,7 @@ class QuakeMap extends HookConsumerWidget {
     if (target == null || !context.mounted) {
       return;
     }
-    await showUsgsEventDetail(context, target, isEnglish: isEnglish);
+    await showUsgsEventDetail(context, target, language: language);
   }
 
   /// 找出离点击位置最近、且在 44 逻辑像素以内的震中。
@@ -139,7 +137,7 @@ class QuakeMap extends HookConsumerWidget {
 
 /// 震中圆点图层（MapLibre circle 图层，按震级着色与缩放）。
 class EpicenterLayer extends HookConsumerWidget {
-  const EpicenterLayer({required this.events, super.key});
+  const new({required this.events, super.key});
 
   final List<UsgsEvent> events;
 
@@ -294,4 +292,61 @@ class EpicenterLayer extends HookConsumerWidget {
       'circle-stroke-color': '#FFFFFF',
     },
   );
+}
+
+/// 板块边界图层：样式加载完之后，把内置的 USGS 板块边界 GeoJSON 画到
+/// 栅格底图之上、震中图层之下。
+///
+/// 样式加载是异步的，这里排队等地图操作队列，再加源、加图层；
+/// 失败时打日志，不影响震中圆点图层。
+class BasemapLayers extends HookConsumerWidget {
+  const BasemapLayers({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final styleController = MapController.maybeOf(context)?.style;
+    final enqueue = useMapOperationQueue();
+
+    useEffect(() {
+      if (styleController == null) {
+        return null;
+      }
+      unawaited(enqueue(() => _addPlateBoundaries(styleController)));
+      return null;
+    }, [styleController]);
+
+    return const SizedBox.shrink();
+  }
+
+  Future<void> _addPlateBoundaries(StyleController controller) async {
+    try {
+      final data = await rootBundle.loadString(plateBoundaryAsset);
+      await controller.addSource(
+        GeoJsonSource(id: plateBoundarySourceId, data: data),
+      );
+      await controller.addLayer(
+        const LineStyleLayer(
+          id: plateBoundaryLayerId,
+          sourceId: plateBoundarySourceId,
+          paint: {
+            'line-color': '#B5471F',
+            'line-width': [
+              'interpolate',
+              ['linear'],
+              ['zoom'],
+              1,
+              0.8,
+              4,
+              1.5,
+              8,
+              2.6,
+            ],
+            'line-opacity': 0.85,
+          },
+        ),
+      );
+    } on Object catch (e, s) {
+      talker.handle(e, s, '板块边界图层加载失败');
+    }
+  }
 }

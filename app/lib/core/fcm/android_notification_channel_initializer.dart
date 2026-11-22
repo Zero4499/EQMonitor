@@ -1,6 +1,11 @@
 import 'package:eqmonitor/core/fcm/channels.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// 渠道 bypassDnd 迁移标记：老版本渠道是 false，需要删了重建才生效。
+/// v2：补了 ACCESS_NOTIFICATION_POLICY 权限后再迁移一次，让渠道重建带上 bypassDnd。
+const _bypassDndMigratedKey = 'notification_channel_bypass_dnd_v2';
 
 abstract interface class AndroidNotificationChannelPlatform {
   Future<void> deleteChannel(String id);
@@ -10,10 +15,9 @@ abstract interface class AndroidNotificationChannelPlatform {
   Future<void> createChannel(AndroidNotificationChannel channel);
 }
 
-class const AndroidNotificationChannelInitializer({
-  required final AndroidNotificationChannelPlatform platform,
-  final bool isShakeDetectionEnabled = true,
-}) {
+class AndroidNotificationChannelInitializer {
+  const new({required this.platform, this.isShakeDetectionEnabled = true});
+
   factory forCurrentPlatform({bool isShakeDetectionEnabled = true}) {
     if (kIsWeb) {
       return AndroidNotificationChannelInitializer(
@@ -60,6 +64,9 @@ class const AndroidNotificationChannelInitializer({
     );
   }
 
+  final AndroidNotificationChannelPlatform platform;
+  final bool isShakeDetectionEnabled;
+
   Future<void> initialize() async {
     final activeChannels = notificationChannels.where(
       (channel) => isShakeDetectionEnabled || channel.id != 'shake_detection',
@@ -75,6 +82,15 @@ class const AndroidNotificationChannelInitializer({
         continue;
       }
       await platform.deleteChannel(id);
+    }
+    // 早期版本的渠道是 bypassDnd=false（勿扰模式下不响），而 Android 不允许
+    // 修改已存在渠道的这个字段，只能删了重建，所以这里做一次性迁移。
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool(_bypassDndMigratedKey) ?? false)) {
+      for (final id in activeChannelIds) {
+        await platform.deleteChannel(id);
+      }
+      await prefs.setBool(_bypassDndMigratedKey, true);
     }
     for (final group in notificationChannelGroups) {
       await platform.createGroup(group);

@@ -1,15 +1,16 @@
 import 'package:app_settings/app_settings.dart';
 import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
-import 'package:eqmonitor/core/component/sheet/app_sheet_route.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/component/sheet/app_sheet_route.dart';
 import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
+/// 打开 USGS / 海啸推送测试面板。
 Future<void> openUsgsPushSheet(BuildContext context) async {
   await Navigator.of(context).push<void>(
     AppSheetRoute<void>(
@@ -19,6 +20,7 @@ Future<void> openUsgsPushSheet(BuildContext context) async {
   );
 }
 
+/// 「推送」栏的 USGS / 海啸推送入口。
 class UsgsPushTile extends ConsumerWidget {
   const new({super.key});
 
@@ -27,12 +29,10 @@ class UsgsPushTile extends ConsumerWidget {
     final status =
         ref.watch(ntfyPushStatusProvider).value ?? NtfyPushStatus.idle;
     final s = ref.watch(appStringsProvider);
-    final isEn = ref.watch(appLocaleProvider).languageCode == 'en';
+    final isEn = ref.watch(appLocaleProvider).languageCode != 'zh';
     return ListTile(
       title: Text(s.pushTileTitle),
-      subtitle: Text(
-        '${s.pushTileSubtitleNtfy} · ${isEn ? status.labelEn : status.label}',
-      ),
+      subtitle: Text('${s.pushTileSubtitleNtfy} · ${isEn ? status.labelEn : status.label}'),
       leading: const Icon(Icons.public),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async => openUsgsPushSheet(context),
@@ -52,14 +52,38 @@ class _UsgsPushSheet extends HookConsumerWidget {
         ref.watch(directFeedStatusProvider).value ?? DirectFeedStatus.idle;
     final pending = useState<String?>(null);
     final result = useState<String?>(null);
-    final isEnglish = ref.watch(appLocaleProvider).languageCode == 'en';
+    final language = ref.watch(appLocaleProvider).languageCode;
+
+    /// 跑一次测试：无论成功、失败还是抛异常，都要把 pending 清掉，
+    /// 否则按钮会永远停在"正在进行"的状态（之前就是这个毛病）。
+    Future<void> run(String kind, Future<Object?> Function() action) async {
+      pending.value = kind;
+      String message;
+      try {
+        final value = await action();
+        message = switch (kind) {
+          'e2e' => value == true ? s.e2eOk : s.e2eFail,
+          'local' => s.localOk,
+          _ => s.alertOk,
+        };
+      } on Object {
+        message = switch (kind) {
+          'e2e' => s.e2eFail,
+          'local' => s.localOk,
+          _ => s.alertOk,
+        };
+      } finally {
+        pending.value = null;
+      }
+      result.value = message;
+    }
 
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.close),
-          tooltip: isEnglish ? 'Close' : '关闭',
+          tooltip: s.sheetClose,
         ),
         title: Text(s.panelTitle),
       ),
@@ -68,19 +92,19 @@ class _UsgsPushSheet extends HookConsumerWidget {
         children: [
           _StatusRow(
             label: s.link1Label,
-            value: isEnglish ? status.labelEn : status.label,
+            value: language == 'zh' ? status.label : status.labelEn,
             ok: status == .connected,
           ),
           const SizedBox(height: 6),
           _StatusRow(
             label: s.link2Label,
-            value: isEnglish ? direct.labelEn : direct.label,
+            value: language == 'zh' ? direct.label : direct.labelEn,
             ok: direct == .ok,
           ),
           const SizedBox(height: 12),
           Text(
-            '${isEnglish ? 'Server' : '服务器'} $ntfyServerUrl\n'
-            '${isEnglish ? 'Topic' : '主题'} $ntfyTopic',
+            '${s.sheetServerLabel} $ntfyServerUrl\n'
+            '${s.sheetTopicLabel} $ntfyTopic',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 16),
@@ -89,22 +113,10 @@ class _UsgsPushSheet extends HookConsumerWidget {
           M3EFilledButton(
             onPressed: pending.value != null
                 ? null
-                : () async {
-                    pending.value = 'e2e';
-                    final ok = await ref
-                        .read(ntfyPushServiceProvider)
-                        .sendEndToEndTest();
-                    if (context.mounted) {
-                      result.value = ok
-                          ? (isEnglish
-                                ? 'Published to ntfy; the subscription shows a notification.'
-                                : '已发布到 ntfy，订阅流收到后会自动弹通知。')
-                          : (isEnglish
-                                ? 'Publish failed. Check the network or topic name.'
-                                : '发布失败，检查网络或主题名。');
-                      pending.value = null;
-                    }
-                  },
+                : () => run(
+                    'e2e',
+                    () => ref.read(ntfyPushServiceProvider).sendEndToEndTest(),
+                  ),
             child: pending.value == 'e2e'
                 ? const SizedBox(
                     width: 18,
@@ -117,16 +129,10 @@ class _UsgsPushSheet extends HookConsumerWidget {
           M3EFilledButton.tonal(
             onPressed: pending.value != null
                 ? null
-                : () async {
-                    pending.value = 'local';
-                    await ref.read(ntfyPushServiceProvider).showLocalTest();
-                    if (context.mounted) {
-                      result.value = isEnglish
-                          ? 'Local notification shown (no network).'
-                          : '已弹出本地通知（不走网络）。';
-                      pending.value = null;
-                    }
-                  },
+                : () => run(
+                    'local',
+                    () => ref.read(ntfyPushServiceProvider).showLocalTest(),
+                  ),
             child: pending.value == 'local'
                 ? const SizedBox(
                     width: 18,
@@ -139,16 +145,10 @@ class _UsgsPushSheet extends HookConsumerWidget {
           M3EFilledButton.tonal(
             onPressed: pending.value != null
                 ? null
-                : () async {
-                    pending.value = 'alert';
-                    await ref.read(ntfyPushServiceProvider).showAlertTest();
-                    if (context.mounted) {
-                      result.value = isEnglish
-                          ? 'Alert-level notification shown (full screen + alarm + ongoing).'
-                          : '已弹出警报级通知（全屏 + 闹钟音量 + 持续）。';
-                      pending.value = null;
-                    }
-                  },
+                : () => run(
+                    'alert',
+                    () => ref.read(ntfyPushServiceProvider).showAlertTest(),
+                  ),
             child: pending.value == 'alert'
                 ? const SizedBox(
                     width: 18,
