@@ -51,7 +51,7 @@ class AppLocaleNotifier extends Notifier<Locale> {
   }
 }
 
-/// 目前提供的界面语言。
+/// 目前提供的两种界面语言。
 const appSupportedLocales = <Locale>[
   Locale('zh', 'CN'),
   Locale('en', 'US'),
@@ -73,6 +73,8 @@ class AppStrings {
     required this.linkDirect,
     required this.eventListTitle,
     required this.eventListSubtitle,
+    required this.mapTitle,
+    required this.mapSubtitle,
     required this.settingsTitle,
     required this.settingsNotificationSection,
     required this.settingsNotificationTile,
@@ -124,6 +126,8 @@ class AppStrings {
   final String linkDirect;
   final String eventListTitle;
   final String eventListSubtitle;
+  final String mapTitle;
+  final String mapSubtitle;
   final String settingsTitle;
   final String settingsNotificationSection;
   final String settingsNotificationTile;
@@ -170,7 +174,7 @@ class AppStrings {
       locale.languageCode == 'en' ? en : zh;
 
   static const zh = AppStrings(
-    appTitle: '地震海啸推送',
+    appTitle: 'QuakePush',
     pushCardTitle: '地震 / 海啸推送',
     bothLinksRunning: '双链路运行中',
     bothLinksDown: '两条链路都断了',
@@ -178,6 +182,8 @@ class AppStrings {
     linkDirect: 'App 直连官方源',
     eventListTitle: '地震 / 海啸列表',
     eventListSubtitle: '最近 24 小时 USGS 地震 + tsunami.gov 公报',
+    mapTitle: '全球地震地图',
+    mapSubtitle: '世界底图 + 震中圆点，按震级着色',
     settingsTitle: '设置',
     settingsNotificationSection: '通知',
     settingsNotificationTile: '通知设置',
@@ -230,7 +236,7 @@ class AppStrings {
   );
 
   static const en = AppStrings(
-    appTitle: 'Quake Push',
+    appTitle: 'QuakePush',
     pushCardTitle: 'Earthquake / Tsunami push',
     bothLinksRunning: 'Both links online',
     bothLinksDown: 'Both links are down',
@@ -238,6 +244,8 @@ class AppStrings {
     linkDirect: 'App direct feed',
     eventListTitle: 'Earthquakes / Tsunami',
     eventListSubtitle: 'USGS quakes (24h) + tsunami.gov bulletins',
+    mapTitle: 'Global quake map',
+    mapSubtitle: 'World basemap + epicentres coloured by magnitude',
     settingsTitle: 'Settings',
     settingsNotificationSection: 'Notifications',
     settingsNotificationTile: 'Notification settings',
