@@ -10,6 +10,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:xml/xml.dart';
 
 /// 第二链路：App 直接读 USGS / tsunami.gov 官方源。
+///
+/// 主链路是云主机 quake-pusher → ntfy；云主机挂了或 ntfy 不可用时，
+/// 这条直连链路仍然能自己拉数据、自己弹通知，同时供列表页 / 首页地图使用。
 const usgsFeedUrl =
     'https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson';
 
@@ -27,6 +30,8 @@ class UsgsEvent {
     required this.url,
     required this.pagerAlert,
     required this.tsunami,
+    this.latitude,
+    this.longitude,
   });
 
   final String id;
@@ -36,6 +41,10 @@ class UsgsEvent {
   final String url;
   final String? pagerAlert;
   final int tsunami;
+  final double? latitude;
+  final double? longitude;
+
+  bool get hasLocation => latitude != null && longitude != null;
 
   bool get isMajor => (magnitude ?? 0) >= 7 || pagerAlert == 'red';
 
@@ -87,6 +96,20 @@ Future<List<UsgsEvent>> fetchUsgsEvents() async {
     }
     final mag = props['mag'];
     final timeMs = props['time'];
+    double? lat;
+    double? lon;
+    final geometry = feature['geometry'];
+    if (geometry is Map<String, Object?>) {
+      final coords = geometry['coordinates'];
+      if (coords is List && coords.length >= 2) {
+        final lonRaw = coords[0];
+        final latRaw = coords[1];
+        if (latRaw is num && lonRaw is num) {
+          lat = latRaw.toDouble();
+          lon = lonRaw.toDouble();
+        }
+      }
+    }
     events.add(
       UsgsEvent(
         id: id,
@@ -101,6 +124,8 @@ Future<List<UsgsEvent>> fetchUsgsEvents() async {
         url: (props['url'] as String?) ?? '',
         pagerAlert: props['alert'] as String?,
         tsunami: (props['tsunami'] as num?)?.toInt() ?? 0,
+        latitude: lat,
+        longitude: lon,
       ),
     );
   }
@@ -128,9 +153,7 @@ Future<List<TsunamiBulletin>> fetchTsunamiBulletins() async {
           TsunamiBulletin(
             id: id.isEmpty ? '$url#$title' : id,
             title: title,
-            updated: updatedRaw == null
-                ? null
-                : DateTime.tryParse(updatedRaw)?.toLocal(),
+            updated: updatedRaw == null ? null : DateTime.tryParse(updatedRaw)?.toLocal(),
             link: link,
           ),
         );
@@ -169,10 +192,9 @@ final usgsEventsProvider = FutureProvider<List<UsgsEvent>>((ref) async {
   return fetchUsgsEvents();
 });
 
-final tsunamiBulletinsProvider =
-    FutureProvider<List<TsunamiBulletin>>((ref) async {
-      return fetchTsunamiBulletins();
-    });
+final tsunamiBulletinsProvider = FutureProvider<List<TsunamiBulletin>>((ref) async {
+  return fetchTsunamiBulletins();
+});
 
 enum DirectFeedStatus {
   idle,
@@ -192,6 +214,7 @@ enum DirectFeedStatus {
   };
 }
 
+/// 直连轮询看门狗：开机首轮只登记，之后出现新事件才弹通知。
 final directFeedWatcherProvider = Provider<DirectFeedWatcher>((ref) {
   final repository = ref.watch(localNotificationRepositoryProvider);
   final watcher = DirectFeedWatcher(repository: repository);
