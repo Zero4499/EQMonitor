@@ -1,104 +1,73 @@
-import 'package:dynamic_color/dynamic_color.dart';
+import 'package:cupertino_ui/cupertino_ui.dart'
+    show GlobalCupertinoLocalizations;
+import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
 import 'package:eqmonitor/core/router/router.dart';
 import 'package:eqmonitor/core/theme/build_theme.dart';
-import 'package:eqmonitor/core/theme/custom_colors.dart';
+import 'package:eqmonitor/core/theme/provider/app_theme_notifier.dart';
 import 'package:eqmonitor/core/theme/theme_provider.dart';
-import 'package:eqmonitor/feature/settings/features/feedback/feedback_screen.dart';
-import 'package:feedback/feedback.dart';
+import 'package:eqmonitor/feature/debug/launcher/debug_launcher.dart';
+import 'package:eqmonitor/feature/eew/ui/components/eew_warning_overlay_host.dart';
+import 'package:eqmonitor/feature/live_monitor/data/provider/live_monitor_wake_lock_controller.dart';
+import 'package:eqmonitor/feature/start/ui/component/forced_update_dialog.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'
+    as flutter_localizations;
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:upgrader/upgrader.dart';
+import 'package:material_ui/material_ui.dart';
 
 class App extends HookConsumerWidget {
-  const App({super.key});
+  const new({super.key});
 
   static final navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(liveMonitorWakeLockControllerProvider);
     final theme = ref.watch(themeModeProvider);
     final routerConfig = ref.watch(goRouterProvider);
-
-    final app = BetterFeedback(
-      feedbackBuilder: (p0, p1, p2) =>
-          CustomFeedbackForm(onSubmit: p1, scrollController: p2),
-      child: DynamicColorBuilder(
-        builder: (lightDynamic, darkDynamic) {
-          // Fictitious brand color.
-          const brandBlue = Color(0xFF1E88E5);
-
-          var lightCustomColors = const CustomColors(danger: Color(0xFFE53935));
-          var darkCustomColors = const CustomColors(danger: Color(0xFFEF9A9A));
-
-          ColorScheme lightColorScheme;
-          ColorScheme darkColorScheme;
-
-          if (lightDynamic != null && darkDynamic != null) {
-            // On Android S+ devices, use the provided dynamic color scheme.
-            // (Recommended) Harmonize the dynamic color scheme'
-            // built-in semantic colors.
-            lightColorScheme = lightDynamic.harmonized();
-            // (Optional) Customize the scheme as desired. For example,
-            // one might want to use a brand color to override the dynamic
-            // [ColorScheme.secondary].
-            lightColorScheme = lightColorScheme.copyWith(secondary: brandBlue);
-            // (Optional) If applicable, harmonize custom colors.
-            lightCustomColors = lightCustomColors.harmonized(lightColorScheme);
-
-            // Repeat for the dark color scheme.
-            darkColorScheme = darkDynamic.harmonized();
-            darkColorScheme = darkColorScheme.copyWith(secondary: brandBlue);
-            darkCustomColors = darkCustomColors.harmonized(darkColorScheme);
-          } else {
-            // Otherwise, use fallback schemes.
-            lightColorScheme = ColorScheme.fromSeed(seedColor: brandBlue);
-            darkColorScheme = ColorScheme.fromSeed(
-              seedColor: brandBlue,
-              brightness: Brightness.dark,
-            );
-          }
-          return MaterialApp.router(
-            title: 'EQMonitor',
-            themeMode: theme,
-            routerConfig: routerConfig,
-            theme: buildTheme(
-              colorScheme: lightColorScheme,
-              customColors: lightCustomColors,
-            ),
-            darkTheme: buildTheme(
-              colorScheme: darkColorScheme,
-              customColors: darkCustomColors,
-            ),
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
-            supportedLocales: const [Locale('ja', 'JP'), Locale('en', 'US')],
-            builder: (context, child) {
-              return UpgradeAlert(
-                navigatorKey: routerConfig.routerDelegate.navigatorKey,
-                child: child,
-              );
-            },
-          );
-        },
-      ),
+    final lightColorSet = ref.watch(
+      colorSetForBrightnessProvider(.light),
     );
-    if (kDebugMode) {
-      final packageInfo = ref.watch(packageInfoProvider);
-      return Directionality(
-        textDirection: TextDirection.ltr,
-        child: Banner(
-          message: 'v${packageInfo.version}-${packageInfo.buildNumber}',
-          location: BannerLocation.bottomStart,
-          child: app,
-        ),
-      );
-    }
-    return app;
+    final darkColorSet = ref.watch(
+      colorSetForBrightnessProvider(.dark),
+    );
+
+    final app = MaterialApp.router(
+      // debug 包也不再显示 DEBUG 丝带，交付包外观与正式版一致。
+      debugShowCheckedModeBanner: false,
+      title: 'QuakePush',
+      themeMode: theme.value,
+      routerConfig: routerConfig,
+      builder: (context, child) => EewWarningOverlayHost(
+        backButtonDispatcher: routerConfig.backButtonDispatcher,
+        child: DebugLauncher(child: child ?? const SizedBox.shrink()),
+      ),
+      theme: AppThemeDataBuilder.build(
+        colorSet: lightColorSet,
+        brightness: .light,
+      ),
+      darkTheme: AppThemeDataBuilder.build(
+        colorSet: darkColorSet,
+        brightness: .dark,
+      ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        // Flutter Material を使う依存との互換性のため両方の delegate が必要。
+        // ignore: deprecated_member_use
+        flutter_localizations.GlobalMaterialLocalizations.delegate,
+        flutter_localizations.GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      // 界面语言（简体中文 / English）可运行时切换，由 appLocaleProvider 驱动
+      supportedLocales: appSupportedLocales,
+      locale: ref.watch(appLocaleProvider),
+    );
+    Widget result = ForcedUpdateWrapper(child: app);
+
+    // 上游的版本角标（v3.0.1-1）已按需求移除。
+
+    return result;
   }
 }
