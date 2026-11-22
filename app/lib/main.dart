@@ -15,7 +15,9 @@ import 'package:eqmonitor/core/data/preferences/shared/shared_preferences.dart'
     as data_prefs;
 import 'package:eqmonitor/core/model/environment.dart';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
+import 'package:eqmonitor/core/filter/push_filter.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/core/notification/notification_permissions.dart';
 import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:eqmonitor/core/provider/app_group_settings_writer.dart';
 import 'package:eqmonitor/core/provider/app_links_interaction.dart';
@@ -84,6 +86,8 @@ Future<void> main() async {
         talker.error(error, stackTrace);
       }
     }());
+    // ErrorCard は context.designSystem を参照するため、アプリ本体と同じ
+    // 既定テーマ (DesignSystemThemeExtension を含む) を渡す。
     final defaultTheme = AppTheme.eqmonitorDefault();
     runApp(
       ProviderScope(
@@ -100,6 +104,8 @@ Future<void> main() async {
             body: Center(
               child: ErrorCard(
                 error: error,
+                // ブートストラップ失敗時のフォールバックでは Provider が未 override のため
+                // 詳細/問い合わせを押すと未実装 Provider で二次クラッシュする。抑制する。
                 showDetails: false,
                 showContact: false,
               ),
@@ -217,7 +223,11 @@ class AppBootstrap {
 
     // 界面语言（简体中文 / English）は前回の選択を復元する
     await AppLocaleSetting.load();
+    // 推送条件（震级下限 / 海啸门槛 / 只推警报级）も復元する
+    await PushFilterSetting.load();
 
+    // テレメトリは必須機能ではないため、DB パス (iOS は App Group コンテナ) を
+    // 解決できない場合は記録・送信を無効化して起動を継続する。
     final telemetryDbPath = isTelemetryEnabled
         ? await Future<String?>.sync(TelemetryDbPathResolver.resolve).onError((
             error,
@@ -235,7 +245,9 @@ class AppBootstrap {
 
     if (!kIsWeb) {
       unawaited(
-        FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(!kDebugMode),
+        FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(
+          !kDebugMode,
+        ),
       );
     }
 
@@ -295,6 +307,8 @@ class AppBootstrap {
     profiler.mark('before_run_app');
     runApp(UncontrolledProviderScope(container: container, child: const App()));
 
+    // 広告SDK・通知プラグインは override 値を生まないため runApp 後に遅延初期化する。
+    // 例外が発生しても起動フローを止めず talker に記録する。
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       GuardedUnawaitedUtil.run(
         () => FileDownloader().start(autoCleanDatabase: true),
@@ -306,18 +320,20 @@ class AppBootstrap {
       );
     }
     if (!kIsWeb) {
-      // USGS / tsunami.gov の自建 ntfy 推送を購読する
+      // USGS / tsunami.gov の自建 ntfy 推送を購読する（他プラグインの初期化に依存させない）
       GuardedUnawaitedUtil.run(
         () async => container.read(ntfyPushServiceProvider).start(),
         onError: (error, stack) => talker.error(error, stack),
       );
-      // 第二链路：App 直接轮询 USGS / tsunami.gov
+      // 第二链路：App 直接轮询 USGS / tsunami.gov，主链路挂了也能收
       GuardedUnawaitedUtil.run(
         () async => container.read(directFeedWatcherProvider).start(),
         onError: (error, stack) => talker.error(error, stack),
       );
       GuardedUnawaitedUtil.run(() async {
         await container.read(localNotificationRepositoryProvider).initialize();
+        // 首次进入：把通知相关权限一次性要齐（通知 / 全屏 intent / 精确闹钟 / 勿扰 / 电池白名单）
+        await NotificationPermissions.requestAllIfNeeded();
         try {
           await FirebaseMessaging.instance
               .setForegroundNotificationPresentationOptions(
@@ -334,6 +350,9 @@ class AppBootstrap {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       profiler.mark('home_first_frame');
       if (isTelemetryEnabled && !isTelemetryDisabled) {
+        // バックグラウンドで完了する travel_time_load / parameter_load が
+        // timingsMicros に記録されてからテレメトリを送信する。
+        // 各ロードの失敗は計測の欠落として許容し、record() の失敗は talker に委ねる。
         Future<void> awaitQuietly(Future<Object?> f) async {
           try {
             await f;
