@@ -4,10 +4,13 @@ const notificationChannelGroups = <AndroidNotificationChannelGroup>[
   AndroidNotificationChannelGroup('eew', '緊急地震速報'),
   AndroidNotificationChannelGroup('earthquake', '地震情報'),
   AndroidNotificationChannelGroup('tsunami', '津波情報'),
+  AndroidNotificationChannelGroup('alert', '警报级推送（全屏 + 闹钟）'),
   AndroidNotificationChannelGroup('safety_information', '防災・関連情報'),
   AndroidNotificationChannelGroup('service', 'サービス通知'),
 ];
 
+/// 上游 EQMonitor 的日本国内渠道保持原样（本 fork 不使用，但保留以兼容上游代码）。
+/// 本 fork 实际使用的渠道在数组末尾的三个 `global_*` 渠道。
 const notificationChannels = <AndroidNotificationChannel>[
   AndroidNotificationChannel(
     'eew_warning_current_location',
@@ -146,6 +149,35 @@ const notificationChannels = <AndroidNotificationChannel>[
     groupId: 'service',
     importance: Importance.low,
     playSound: false,
+  ),
+  // USGS 全球地震 / tsunami.gov 海啸公报（自建 ntfy 推送链路）
+  AndroidNotificationChannel(
+    'global_earthquake',
+    '全球地震（USGS）',
+    groupId: 'earthquake',
+    description: 'USGS 全球地震速报，含震级、地点与震源链接',
+    importance: Importance.high,
+    showBadge: true,
+  ),
+  AndroidNotificationChannel(
+    'global_tsunami',
+    '海啸公报（tsunami.gov）',
+    groupId: 'tsunami',
+    description: 'tsunami.gov 海啸公报与警报',
+    importance: Importance.high,
+    showBadge: true,
+  ),
+  // 警报级：M7+ 地震 / 海啸 Warning・Threat，直接全屏 + 闹钟音量
+  AndroidNotificationChannel(
+    'global_alert',
+    '警报级：强震 / 海啸警报',
+    groupId: 'alert',
+    description: 'M7+ 地震与海啸警报，全屏 + 闹钟音量',
+    importance: Importance.max,
+    showBadge: true,
+    playSound: true,
+    enableVibration: true,
+    audioAttributesUsage: AudioAttributesUsage.alarm,
   ),
 ];
 

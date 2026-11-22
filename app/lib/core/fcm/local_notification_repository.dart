@@ -8,12 +8,14 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
-class LocalNotificationRepository({
-  required final FlutterLocalNotificationsPlugin plugin,
-  required final AndroidNotificationChannelInitializer channelInitializer,
-  required final bool isAndroid,
-  required Stream<RemoteMessage> foregroundMessages,
-}) {
+class LocalNotificationRepository {
+  new({
+    required this.plugin,
+    required this.channelInitializer,
+    required this.isAndroid,
+    required Stream<RemoteMessage> foregroundMessages,
+  }) : _foregroundMessages = foregroundMessages;
+
   factory forCurrentPlatform({bool isShakeDetectionEnabled = true}) =>
       LocalNotificationRepository(
         plugin: FlutterLocalNotificationsPlugin(),
@@ -21,11 +23,14 @@ class LocalNotificationRepository({
             AndroidNotificationChannelInitializer.forCurrentPlatform(
               isShakeDetectionEnabled: isShakeDetectionEnabled,
             ),
-        isAndroid: !kIsWeb && defaultTargetPlatform == .android,
+        isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
         foregroundMessages: FirebaseMessaging.onMessage,
       );
 
-  final Stream<RemoteMessage> _foregroundMessages = foregroundMessages;
+  final FlutterLocalNotificationsPlugin plugin;
+  final AndroidNotificationChannelInitializer channelInitializer;
+  final bool isAndroid;
+  final Stream<RemoteMessage> _foregroundMessages;
   final _openedMessages = StreamController<RemoteMessage>.broadcast();
   Future<void>? _initialization;
   var _nextNotificationId = 0;
@@ -105,10 +110,10 @@ class LocalNotificationRepository({
           channelDescription: channel.description,
           importance: channel.importance,
           priority: switch (channel.importance) {
-            .max || .high => .high,
-            .low => .low,
-            .min || .none => .min,
-            _ => .defaultPriority,
+            Importance.max || Importance.high => Priority.high,
+            Importance.low => Priority.low,
+            Importance.min || Importance.none => Priority.min,
+            _ => Priority.defaultPriority,
           },
           playSound: channel.playSound,
           sound: channel.sound,
@@ -117,8 +122,67 @@ class LocalNotificationRepository({
           icon: 'ic_notification_icon',
           tag: tag,
           styleInformation: BigTextStyleInformation(notification.body ?? ''),
-          category: .message,
-          visibility: .public,
+        ),
+      ),
+    );
+  }
+
+  /// FCM を経由しない通知（USGS / tsunami.gov の ntfy プッシュなど）を表示する。
+  ///
+  /// [alert] 为 true 时按警报级处理：全屏弹出 + 闹钟音量 + 强震动，用于
+  /// M7+ 地震 / 海啸 Warning・Threat。
+  Future<void> showSimpleNotification({
+    required String title,
+    required String body,
+    String? channelId,
+    String? tag,
+    bool alert = false,
+  }) async {
+    if (!isAndroid) {
+      return;
+    }
+    await initialize();
+    final channel = await resolveChannel(alert ? 'global_alert' : channelId);
+    final identity = tag != null && tag.isNotEmpty ? tag : '$title-$body';
+    await plugin.show(
+      id: identity.hashCode & 0x7fffffff,
+      title: title,
+      body: body,
+      notificationDetails: NotificationDetails(
+        android: AndroidNotificationDetails(
+          channel.id,
+          channel.name,
+          channelDescription: channel.description,
+          importance: channel.importance,
+          priority: alert
+              ? Priority.max
+              : switch (channel.importance) {
+                  Importance.max || Importance.high => Priority.high,
+                  Importance.low => Priority.low,
+                  Importance.min || Importance.none => Priority.min,
+                  _ => Priority.defaultPriority,
+                },
+          playSound: channel.playSound,
+          sound: channel.sound,
+          enableVibration: channel.enableVibration,
+          vibrationPattern: channel.vibrationPattern,
+          icon: 'ic_notification_icon',
+          tag: tag,
+          fullScreenIntent: alert,
+          category: alert
+              ? AndroidNotificationCategory.alarm
+              : AndroidNotificationCategory.status,
+          audioAttributesUsage: alert
+              ? AudioAttributesUsage.alarm
+              : AudioAttributesUsage.notification,
+          // 澎湃 OS / HyperOS 适配：渠道角标 + 呼吸灯 + 非静默，避免被折叠成低优先级
+          channelShowBadge: true,
+          enableLights: true,
+          onlyAlertOnce: false,
+          ticker: title,
+          ongoing: alert,
+          autoCancel: !alert,
+          styleInformation: BigTextStyleInformation(body),
         ),
       ),
     );
@@ -143,7 +207,6 @@ class LocalNotificationRepository({
         >()
         ?.getNotificationChannels();
     final channel = existing?.firstWhereOrNull((c) => c.id == id);
-    // FCM と同じく、指定 channel が OS に存在しなければ Manifest の既定値を使う。
     return channel ??
         notificationChannels.firstWhere((c) => c.id == 'service_fallback');
   }
