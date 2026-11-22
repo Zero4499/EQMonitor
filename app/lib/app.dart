@@ -1,14 +1,15 @@
 import 'package:cupertino_ui/cupertino_ui.dart'
     show GlobalCupertinoLocalizations;
+import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
-import 'package:eqmonitor/core/screen_behavior/data/provider/screen_wake_lock_controller.dart';
 import 'package:eqmonitor/core/router/router.dart';
 import 'package:eqmonitor/core/theme/build_theme.dart';
 import 'package:eqmonitor/core/theme/provider/app_theme_notifier.dart';
 import 'package:eqmonitor/core/theme/theme_provider.dart';
 import 'package:eqmonitor/feature/debug/launcher/debug_launcher.dart';
 import 'package:eqmonitor/feature/eew/ui/components/eew_warning_overlay_host.dart';
+import 'package:eqmonitor/feature/live_monitor/data/provider/live_monitor_wake_lock_controller.dart';
 import 'package:eqmonitor/feature/start/ui/component/forced_update_dialog.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'
@@ -16,12 +17,14 @@ import 'package:flutter_localizations/flutter_localizations.dart'
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const App({super.key}) extends HookConsumerWidget {
+class App extends HookConsumerWidget {
+  const new({super.key});
+
   static final navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.watch(screenWakeLockControllerProvider);
+    ref.watch(liveMonitorWakeLockControllerProvider);
     final theme = ref.watch(themeModeProvider);
     final routerConfig = ref.watch(goRouterProvider);
     final lightColorSet = ref.watch(
@@ -32,7 +35,8 @@ class const App({super.key}) extends HookConsumerWidget {
     );
 
     final app = MaterialApp.router(
-      title: 'EQMonitor',
+      debugShowCheckedModeBanner: false,
+      title: 'QuakePush',
       themeMode: theme.value,
       routerConfig: routerConfig,
       builder: (context, child) => EewWarningOverlayHost(
@@ -49,28 +53,15 @@ class const App({super.key}) extends HookConsumerWidget {
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
-        // Flutter Material を使う依存との互換性のため両方の delegate が必要。
         // ignore: deprecated_member_use
         flutter_localizations.GlobalMaterialLocalizations.delegate,
         flutter_localizations.GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      supportedLocales: const [Locale('ja', 'JP')],
+      supportedLocales: appSupportedLocales,
+      locale: ref.watch(appLocaleProvider),
     );
-    final buildConfig = ref.watch(buildConfigProvider);
     Widget result = ForcedUpdateWrapper(child: app);
-
-    if (kDebugMode && !buildConfig.isProduction) {
-      final packageInfo = ref.watch(packageInfoProvider);
-      result = Directionality(
-        textDirection: .ltr,
-        child: Banner(
-          message: 'v${packageInfo.version}-${packageInfo.buildNumber}',
-          location: BannerLocation.bottomStart,
-          child: result,
-        ),
-      );
-    }
 
     return result;
   }
