@@ -36,8 +36,8 @@ widgets, the adaptive-icon pipeline — is upstream EQMonitor code and is kept a
 ## Features
 
 - **Two independent push paths**
-  1. **Cloud host → ntfy**: a small Python poller (`tool/quake-push/pusher.py`) polls USGS + tsunami.gov and
-     publishes to an ntfy topic; the app subscribes with a plain `dart:io` HTTP NDJSON stream (exponential backoff 2 s → 60 s).
+  1. **Cloud host → ntfy**: `tool/quake-push/pusher.py` polls USGS + tsunami.gov and publishes to an ntfy topic; the app
+     subscribes with a plain `dart:io` HTTP NDJSON stream (exponential backoff 2 s → 60 s).
   2. **Direct polling in-app**: the app itself polls USGS `all_day.geojson` (90 s) and tsunami.gov `PHEBAtom.xml` /
      `PAAQAtom.xml` (180 s), deduplicates by event id, and posts notifications locally.
      Both paths are deduplicated against each other, so the same event never alerts twice.
@@ -47,21 +47,19 @@ widgets, the adaptive-icon pipeline — is upstream EQMonitor code and is kept a
   on-screen legend), PAGER and tsunami flags, detail dialog; tsunami tab color-coded by bulletin severity
   (Warning/Threat red, Watch/Advisory orange, Information blue).
 - **UI language switch** (Chinese / English) inside Settings, applied instantly and persisted in `shared_preferences`.
+  Notification text of the direct feed follows the same setting.
 - **HyperOS / MIUI friendly**: explicit channel descriptions, `showBadge`, ticker text, and a settings shortcut to the
   system notification channel screen.
 
 ## Screenshots
 
-Real emulator captures of this fork running (points 1 080 x 2 400, Pixel 6 / Android 16) — **not mockups**. The layout
-and visual style are the upstream EQMonitor UI.
+Captured on a Pixel 6 emulator (Android 16, 1080×2400). The PNGs are kept **out of git** so the repository stays light;
+run the app and grab your own with `adb exec-out screencap -p > shot.png`, or look for them in the fork's release notes.
 
-| Home (push status) | Earthquake list (color graded + legend) | Tsunami bulletins |
-| --- | --- | --- |
-| ![home](docs/screenshots/home.png) | ![quake list](docs/screenshots/list-earthquake.png) | ![tsunami](docs/screenshots/list-tsunami.png) |
-
-| Settings (language switch) | English UI home | Launcher icon |
-| --- | --- | --- |
-| ![settings](docs/screenshots/settings.png) | ![english](docs/screenshots/home-en.png) | ![icon](docs/screenshots/icon.png) |
+What to look for: the push-status home with two green links, the earthquake list with the magnitude legend row and
+colored left bars, the tsunami tab, the Settings page with the 简体中文 / English selector, and the English UI.
+**Every layout in those captures is the upstream EQMonitor UI** — this fork only added the color grading, the legend row
+and the language selector.
 
 ## Notification channels
 
@@ -113,14 +111,15 @@ Notes taken from actually building this fork:
 
 ### Binary assets not in git
 
-The launcher / notification icons and the in-app icon are **locally generated PNGs** (`make-icon*.ps1` in the build
-workspace). They are not committed here; regenerate them or drop in your own artwork. Everything else needed to build is
+The launcher / notification icons and the in-app icon are **locally generated PNGs**. They are not committed here
+(binary assets, and they are my own artwork rather than upstream design-system assets); drop in your own `ic_launcher`,
+`ic_launcher_round` and `ic_notification_icon` under `app/android/app/src/main/res/`. Everything else needed to build is
 in the repository.
 
 ### Push server
 
-`tool/quake-push/pusher.py` is the reference poller used by this fork (runs on any small VPS with Python 3.12, stdlib only).
-It publishes markdown messages to an ntfy topic; the topic and server are configurable at the top of the file.
+`tool/quake-push/pusher.py` is the reference poller used by this fork (any small VPS with Python 3.12, standard library
+only). It publishes markdown messages to an ntfy topic; server, topic and thresholds are environment variables.
 
 ## License & credits
 

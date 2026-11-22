@@ -33,28 +33,24 @@
 ## 功能
 
 - **双链路推送**
-  1. **云主机 → ntfy**：云上一个小 Python 轮询脚本（`tool/quake-push/pusher.py`）把 USGS + tsunami.gov 的结果发布到
-     ntfy 主题，App 用 `dart:io` 的 HTTP NDJSON 流订阅（断线指数退避 2 s → 60 s）。
+  1. **云主机 → ntfy**：`tool/quake-push/pusher.py` 轮询 USGS + tsunami.gov 并发布到 ntfy 主题，
+     App 用 `dart:io` 的 HTTP NDJSON 流订阅（断线指数退避 2 s → 60 s）。
   2. **App 直连官方源**：App 自己轮询 USGS `all_day.geojson`（90 s）与 tsunami.gov `PHEBAtom.xml` / `PAAQAtom.xml`
      （180 s），按事件 id 去重后本地弹通知。云主机或 ntfy 挂了也能收。两条链路互相去重，同一事件不会重复提醒。
 - **警报级通知**：震级 ≥ 7、PAGER 为 red、或海啸 `Warning` / `Threat` 走 `global_alert` 渠道
   （importance 最高、`USAGE_ALARM`、`category=alarm`、常驻、带 `fullScreenIntent`）。
 - **事件列表**：地震 Tab 按震级分档配色（灰蓝 → 蓝 → 绿 → 金黄 → 橙 → 橙红 → 红），顶部带颜色图例，
   显示 PAGER 与海啸评估、点击弹详情；海啸 Tab 按公报级别配色（Warning/Threat 红、Watch/Advisory 橙、Information 蓝）。
-- **界面语言切换**（中文 / 英文），在设置页即时生效，写入 `shared_preferences`。
+- **界面语言切换**（中文 / 英文），在设置页即时生效，写入 `shared_preferences`；直连链路的通知文案也跟着切换。
 - **澎湃 OS / MIUI 适配**：渠道补非空描述、`showBadge`、ticker 文案，并提供直达系统通知渠道设置页的入口。
 
 ## 截图
 
-以下是本 fork 模拟器实截（1080 × 2400，Pixel 6 / Android 16），**不是效果图**；界面布局与视觉风格来自上游 EQMonitor：
+截图在 Pixel 6 模拟器（Android 16，1080 × 2400）实拍。**PNG 不放进 git**，避免仓库变重；
+可以自己跑起来用 `adb exec-out screencap -p > shot.png` 复现，或看本 fork 的 release 说明。
 
-| 首页（推送状态） | 地震列表（分级配色 + 图例） | 海啸公报 |
-| --- | --- | --- |
-| ![home](docs/screenshots/home.png) | ![quake list](docs/screenshots/list-earthquake.png) | ![tsunami](docs/screenshots/list-tsunami.png) |
-
-| 设置页（语言切换） | 英文界面首页 | 新图标 |
-| --- | --- | --- |
-| ![settings](docs/screenshots/settings.png) | ![english](docs/screenshots/home-en.png) | ![icon](docs/screenshots/icon.png) |
+重点看：双链路全绿的状态首页、带图例行与左侧色条的地震列表、海啸 Tab、带「简体中文 / English」选择器的设置页、
+以及英文界面。**这些截图里的布局全部是上游 EQMonitor 的 UI**，本 fork 只加了分级配色、图例行和语言选择器。
 
 ## 通知渠道
 
@@ -103,13 +99,14 @@ keyPassword=***
 
 ### 未入库的二进制素材
 
-启动器图标 / 通知小图标 / 应用内图标都是**本地用脚本生成的 PNG**（构建工作区里的 `make-icon*.ps1`），
-没有放进本仓库；请自行重新生成或换成你自己的图。其余构建所需文件都在仓库里。
+启动器图标 / 通知小图标 / 应用内图标都是**本地生成的 PNG**（二进制，且属于自制美术，不属于上游设计系统），
+没有放进本仓库；请自行放到 `app/android/app/src/main/res/` 下（`ic_launcher`、`ic_launcher_round`、
+`ic_notification_icon`）。其余构建所需文件都在仓库里。
 
 ### 推送服务端
 
 `tool/quake-push/pusher.py` 是本 fork 实际使用的轮询脚本（任意小 VPS + Python 3.12，只用标准库）。
-它把 markdown 消息发布到 ntfy 主题，服务器与主题在文件顶部可改。
+它把 markdown 消息发布到 ntfy 主题，服务器 / 主题 / 阈值都是环境变量。
 
 ## 许可证与致谢
 
