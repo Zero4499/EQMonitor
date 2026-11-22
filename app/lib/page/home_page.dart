@@ -4,12 +4,12 @@ import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
 import 'package:eqmonitor/core/router/router.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/usgs_push_tile.dart';
+import 'package:eqmonitor/page/event_detail_sheet.dart';
 import 'package:eqmonitor/page/event_list_page.dart';
 import 'package:eqmonitor/page/quake_map.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 /// 首页：与 EQMonitor 一致——地图铺满屏幕，内容以可拖动面板浮在下方。
 class HomePage extends HookConsumerWidget {
@@ -25,6 +25,7 @@ class HomePage extends HookConsumerWidget {
       body: Stack(
         children: [
           Positioned.fill(child: QuakeMap(minMagnitude: minMagnitude.value)),
+          // 顶部标题胶囊（浮在地图上）
           Positioned(
             top: 0,
             left: 0,
@@ -37,6 +38,7 @@ class HomePage extends HookConsumerWidget {
               ),
             ),
           ),
+          // 可拖动内容面板
           DraggableScrollableSheet(
             initialChildSize: 0.44,
             minChildSize: 0.20,
@@ -131,6 +133,7 @@ class _HomeSheet extends ConsumerWidget {
         ),
         child: Column(
           children: [
+            // 拖动条
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 4),
               child: Container(
@@ -164,8 +167,8 @@ class _HomeSheet extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     isEnglish
-                        ? 'Basemap © OpenStreetMap / OpenFreeMap · events from USGS'
-                        : '底图 © OpenStreetMap / OpenFreeMap · 事件来自 USGS',
+                        ? 'Basemap © OpenStreetMap contributors · OpenFreeMap (ODbL) · events from USGS'
+                        : '底图 © OpenStreetMap contributors · OpenFreeMap（ODbL）· 事件来自 USGS',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                       color: colorTheme.onSurfaceVariant,
@@ -224,15 +227,12 @@ class _FilterRow extends StatelessWidget {
             ),
           ),
         ),
-        Padding(
-          padding: const EdgeInsets.only(left: 6),
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 220),
-            child: Text(
-              isEnglish ? '$count' : '$count 条',
-              key: ValueKey(count),
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 220),
+          child: Text(
+            isEnglish ? '$count' : '$count 条',
+            key: ValueKey(count),
+            style: Theme.of(context).textTheme.labelMedium,
           ),
         ),
       ],
@@ -240,6 +240,7 @@ class _FilterRow extends StatelessWidget {
   }
 }
 
+/// 主推送状态卡：两条链路的实时状态，点击打开测试面板。
 class _PushStatusCard extends ConsumerWidget {
   const new();
 
@@ -383,7 +384,7 @@ class _TopEvents extends StatelessWidget {
               ),
             for (final event in top)
               InkWell(
-                onTap: () async => _showEventDetail(
+                onTap: () async => showUsgsEventDetail(
                   context,
                   event,
                   isEnglish: isEnglish,
@@ -446,7 +447,7 @@ class _AllEvents extends StatelessWidget {
             const SizedBox(height: 4),
             for (final event in shown)
               InkWell(
-                onTap: () async => _showEventDetail(
+                onTap: () async => showUsgsEventDetail(
                   context,
                   event,
                   isEnglish: isEnglish,
@@ -480,10 +481,7 @@ class _AllEvents extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '${event.time.toLocal()}'
-                            .split('.')
-                            .first
-                            .substring(11, 16),
+                        '${event.time.toLocal()}'.split('.').first.substring(11, 16),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: colorTheme.onSurfaceVariant,
                         ),
@@ -581,94 +579,4 @@ class _Card extends StatelessWidget {
       child: child,
     );
   }
-}
-
-Future<void> _showEventDetail(
-  BuildContext context,
-  UsgsEvent event, {
-  required bool isEnglish,
-}) async {
-  final colorTheme = context.designSystem.colorTheme;
-  await showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 14,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: magnitudeColor(event.magnitude),
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  event.magnitudeLabel,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const Spacer(),
-                if (event.tsunami == 1)
-                  Chip(
-                    label: Text(isEnglish ? 'Tsunami flag' : '海啸标记'),
-                    labelStyle: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 11,
-                    ),
-                    backgroundColor: const Color(0xFFD62828),
-                    visualDensity: VisualDensity.compact,
-                    side: BorderSide.none,
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(event.place, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 6),
-            Text(
-              '${event.time.toLocal()}'.split('.').first,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorTheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              '${isEnglish ? 'Coordinates' : '坐标'} '
-              '${event.latitude!.toStringAsFixed(3)}, '
-              '${event.longitude!.toStringAsFixed(3)} · '
-              'PAGER ${event.pagerAlert ?? (isEnglish ? 'none' : '无')}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorTheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: FilledButton.icon(
-                    onPressed: event.url.isEmpty
-                        ? null
-                        : () async => launchUrl(Uri.parse(event.url)),
-                    icon: const Icon(Icons.open_in_new, size: 18),
-                    label: Text(isEnglish ? 'Open in USGS' : '打开 USGS 详情'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () async => Navigator.of(context).pop(),
-                  child: Text(isEnglish ? 'Close' : '关闭'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    ),
-  );
 }
