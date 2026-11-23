@@ -5,6 +5,7 @@ import 'package:eqmonitor/core/fcm/android_notification_channel_initializer.dart
 import 'package:eqmonitor/core/fcm/channels.dart';
 import 'package:eqmonitor/core/fcm/foreground_notification_payload_codec.dart';
 import 'package:eqmonitor/core/notification/notification_permissions.dart';
+import 'package:eqmonitor/feature/notification/data/model/push_history_entry.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -15,9 +16,13 @@ class LocalNotificationRepository {
     required this.channelInitializer,
     required this.isAndroid,
     required Stream<RemoteMessage> foregroundMessages,
+    this.onRecord,
   }) : _foregroundMessages = foregroundMessages;
 
-  factory forCurrentPlatform({bool isShakeDetectionEnabled = true}) =>
+  factory forCurrentPlatform({
+    bool isShakeDetectionEnabled = true,
+    void Function(PushHistoryEntry)? onRecord,
+  }) =>
       LocalNotificationRepository(
         plugin: FlutterLocalNotificationsPlugin(),
         channelInitializer:
@@ -26,11 +31,13 @@ class LocalNotificationRepository {
             ),
         isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
         foregroundMessages: FirebaseMessaging.onMessage,
+        onRecord: onRecord,
       );
 
   final FlutterLocalNotificationsPlugin plugin;
   final AndroidNotificationChannelInitializer channelInitializer;
   final bool isAndroid;
+  final void Function(PushHistoryEntry)? onRecord;
   final Stream<RemoteMessage> _foregroundMessages;
   final _openedMessages = StreamController<RemoteMessage>.broadcast();
   Future<void>? _initialization;
@@ -133,6 +140,13 @@ class LocalNotificationRepository {
       ),
     );
     await _playChannelSound(channel.id);
+    _record(
+      title: notification.title ?? '',
+      body: notification.body ?? '',
+      channelId: channel.id,
+      tag: tag,
+      source: PushHistorySource.fcm,
+    );
   }
 
   /// 渠道本身不出声，提示音由 App 自己播（HyperOS 上渠道自定义铃声不生效）。
@@ -158,6 +172,8 @@ class LocalNotificationRepository {
     String? channelId,
     String? tag,
     bool alert = false,
+    PushHistorySource source = PushHistorySource.other,
+    String? url,
   }) async {
     if (!isAndroid) {
       return;
@@ -184,6 +200,15 @@ class LocalNotificationRepository {
       );
       if (islandSent) {
         await _playChannelSound(channel.id);
+        _record(
+          title: title,
+          body: body,
+          channelId: channel.id,
+          tag: tag,
+          alert: alert,
+          source: source,
+          url: url,
+        );
         return;
       }
     }
@@ -231,6 +256,57 @@ class LocalNotificationRepository {
       ),
     );
     await _playChannelSound(channel.id);
+    _record(
+      title: title,
+      body: body,
+      channelId: channel.id,
+      tag: tag,
+      alert: alert,
+      source: source,
+      url: url,
+    );
+  }
+
+  /// 推断历史条目类型：海啸渠道 → 海啸；测试 tag → 测试；地震/警报渠道 → 地震。
+  PushHistoryKind _kindFor(String? channelId, String? tag) {
+    final c = channelId ?? '';
+    final t = tag ?? '';
+    if (c.contains('tsunami')) {
+      return PushHistoryKind.tsunami;
+    }
+    if (t.contains('test')) {
+      return PushHistoryKind.test;
+    }
+    if (c.contains('earthquake') || c.contains('alert')) {
+      return PushHistoryKind.quake;
+    }
+    return PushHistoryKind.other;
+  }
+
+  void _record({
+    required String title,
+    required String body,
+    String? channelId,
+    String? tag,
+    bool alert = false,
+    required PushHistorySource source,
+    String? url,
+  }) {
+    final recordId =
+        (tag != null && tag.isNotEmpty) ? tag : '$title|$body';
+    onRecord?.call(
+      PushHistoryEntry(
+        id: recordId,
+        timestamp: DateTime.now().millisecondsSinceEpoch,
+        title: title,
+        body: body,
+        channelId: channelId,
+        alert: alert,
+        kind: _kindFor(channelId, tag),
+        source: source,
+        url: url,
+      ),
+    );
   }
 
   Future<AndroidNotificationChannel> resolveChannel(String? requestedId) async {

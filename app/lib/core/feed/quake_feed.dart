@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:eqmonitor/core/fcm/local_notification_repository.dart';
+import 'package:eqmonitor/feature/notification/data/model/push_history_entry.dart';
 import 'package:flutter/material.dart';
 import 'package:eqmonitor/core/filter/push_filter.dart';
 import 'package:eqmonitor/core/i18n/notification_strings.dart';
@@ -606,6 +607,8 @@ class DirectFeedWatcher {
           channelId: _quakeChannelId(event.magnitude, event.isMajor),
           tag: 'direct-${event.id}',
           alert: event.isMajor,
+          source: PushHistorySource.direct,
+          url: event.url,
         );
       }
     } on Object {
@@ -637,6 +640,8 @@ class DirectFeedWatcher {
           channelId: 'global_tsunami_v3',
           tag: 'direct-${bulletin.id}',
           alert: bulletin.isSevere,
+          source: PushHistorySource.direct,
+          url: bulletin.link,
         );
       }
     } on Object {

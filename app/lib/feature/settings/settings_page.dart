@@ -10,6 +10,7 @@ import 'package:eqmonitor/core/notification/notification_permissions.dart';
 import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
 import 'package:eqmonitor/core/updater/github_release.dart';
+import 'package:eqmonitor/feature/notification/ui/page/push_history_page.dart';
 import 'package:eqmonitor/feature/settings/component/settings_section_header.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/usgs_push_tile.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -92,6 +93,29 @@ class SettingsPage extends ConsumerWidget {
                 leading: const Icon(Icons.send_outlined),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => openUsgsPushSheet(context),
+              ),
+              ListTile(
+                title: Text(
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '推送历史',
+                    en: 'Push history',
+                    ja: 'プッシュ履歴',
+                  ),
+                ),
+                subtitle: Text(
+                  tri3(
+                    ref.watch(appLocaleProvider).languageCode,
+                    zh: '本机收到的地震 / 海啸通知记录',
+                    en: 'Locally saved earthquake / tsunami alerts',
+                    ja: '端末に保存された地震・津波通知の記録',
+                  ),
+                ),
+                leading: const Icon(Icons.history),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute(builder: (_) => const PushHistoryPage()),
+                ),
               ),
             ],
           ),

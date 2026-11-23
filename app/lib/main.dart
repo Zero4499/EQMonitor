@@ -16,6 +16,7 @@ import 'package:eqmonitor/core/data/preferences/shared/shared_preferences.dart'
 import 'package:eqmonitor/core/model/environment.dart';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/filter/push_filter.dart';
+import 'package:eqmonitor/core/filter/push_history_setting.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/notification/notification_permissions.dart';
 import 'package:eqmonitor/core/ntfy/ntfy_push_service.dart';
@@ -225,6 +226,8 @@ class AppBootstrap {
     await AppLocaleSetting.load();
     // 推送条件（震级下限 / 海啸门槛 / 只推警报级）も復元する
     await PushFilterSetting.load();
+    // 推送履歴（本地固化的已下发通知记录）を復元する
+    await PushHistorySetting.load();
 
     // テレメトリは必須機能ではないため、DB パス (iOS は App Group コンテナ) を
     // 解決できない場合は記録・送信を無効化して起動を継続する。

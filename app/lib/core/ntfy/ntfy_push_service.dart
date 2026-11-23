@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:eqmonitor/core/fcm/local_notification_repository.dart';
 import 'package:eqmonitor/core/i18n/notification_strings.dart';
+import 'package:eqmonitor/feature/notification/data/model/push_history_entry.dart';
 import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -190,6 +191,7 @@ class NtfyPushService {
         channelId: isTsunami ? 'global_tsunami_v3' : 'global_earthquake_v3',
         tag: json['id'] as String?,
         alert: priority >= 5,
+        source: PushHistorySource.ntfy,
       ),
     );
   }
