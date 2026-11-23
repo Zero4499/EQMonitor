@@ -3,9 +3,9 @@
 import 'dart:async';
 
 import 'package:cache/cache.dart';
+import 'package:dio/dio.dart';
 import 'package:eqmonitor/core/api/cache_only_api_client_provider.dart';
 import 'package:eqmonitor/core/api/http_cached_api_client_provider.dart';
-import 'package:eqmonitor/core/data/network/native_dio_factory.dart';
 import 'package:eqmonitor/core/provider/app_lifecycle.dart';
 import 'package:eqmonitor/core/provider/http_cached_dio_provider.dart';
 import 'package:eqmonitor_api/eqmonitor_api.dart';
@@ -13,7 +13,11 @@ import 'package:flutter/widgets.dart';
 import 'package:riverpod/src/internals.dart' show DataKind;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final class const CachedOperationToken._(final int _authority);
+final class CachedOperationToken {
+  const new _(this._authority);
+
+  final int _authority;
+}
 
 enum CachedResultSource { cache, fresh }
 
@@ -131,17 +135,13 @@ mixin CachedNotifier<T> on $AsyncNotifier<T> {
 
   Future<T> _fetchForceFresh(CachedOperationToken operation) async {
     final cachedDio = await ref.read(httpCachedDioProvider.future);
-    final dio = const NativeDioFactory().build(options: cachedDio.options);
+    final dio = Dio(cachedDio.options);
     dio.interceptors.add(ForceFreshInterceptor());
     dio.interceptors.addAll(cachedDio.interceptors);
-    try {
-      return reconcile(
-        await fetch(ApiClient(dio)),
-        operation: operation,
-        source: CachedResultSource.fresh,
-      );
-    } finally {
-      dio.close(force: true);
-    }
+    return reconcile(
+      await fetch(ApiClient(dio)),
+      operation: operation,
+      source: CachedResultSource.fresh,
+    );
   }
 }

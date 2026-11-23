@@ -1,6 +1,8 @@
 part of '../page/onboarding_page.dart';
 
-class const _OnboardingAppIconHero() extends StatelessWidget {
+class _OnboardingAppIconHero extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -10,10 +12,15 @@ class const _OnboardingAppIconHero() extends StatelessWidget {
   }
 }
 
-class const _OnboardingCompleteHero({
-  required final Color color,
-  required final Color backgroundColor,
-}) extends StatelessWidget {
+class _OnboardingCompleteHero extends StatelessWidget {
+  const new({
+    required this.color,
+    required this.backgroundColor,
+  });
+
+  final Color color;
+  final Color backgroundColor;
+
   @override
   Widget build(BuildContext context) {
     return Container(

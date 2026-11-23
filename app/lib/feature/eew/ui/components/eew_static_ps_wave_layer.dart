@@ -13,10 +13,11 @@ import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:maplibre/maplibre.dart';
 
 /// 電文発表時刻基準での静的PS波到達円レイヤー
-class const EewStaticPsWaveLayer({
-  required final EewTelegramItem? eew,
-  super.key,
-}) extends HookConsumerWidget {
+class EewStaticPsWaveLayer extends HookConsumerWidget {
+  const new({required this.eew, super.key});
+
+  final EewTelegramItem? eew;
+
   static const _pWaveSourceId = 'eew-static-p-wave';
   static const _sWaveSourceId = 'eew-static-s-wave';
   static const _pWaveLayerId = 'eew-static-p-wave-line';
@@ -99,7 +100,6 @@ class const EewStaticPsWaveLayer({
           sourceId: _pWaveSourceId,
           paint: {'line-color': '#0000FF', 'line-width': 1},
         ),
-        belowLayerId: BaseLayer.waveLineAnchor.name,
       ),
       styleController.addLayer(
         const LineStyleLayer(
@@ -110,7 +110,6 @@ class const EewStaticPsWaveLayer({
             'line-width': 2,
           },
         ),
-        belowLayerId: BaseLayer.waveLineAnchor.name,
       ),
       styleController.addLayer(
         const FillStyleLayer(
@@ -150,7 +149,7 @@ class const EewStaticPsWaveLayer({
     EewTelegramItem? eew,
     TravelTimeDepthMap travelTimeMap,
   ) async {
-    if (eew == null || eew.isCanceled) {
+    if (eew == null) {
       await _clearLayers(styleController);
       return;
     }

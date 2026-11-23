@@ -16,7 +16,7 @@ part 'earthquake_partial.freezed.dart';
 part 'earthquake_partial.g.dart';
 
 @freezed
-sealed class const EarthquakePartial._() with _$EarthquakePartial {
+sealed class EarthquakePartial with _$EarthquakePartial {
   const factory normal({
     required String eventId,
     required TelegramStatus status,
@@ -53,6 +53,8 @@ sealed class const EarthquakePartial._() with _$EarthquakePartial {
 
   factory fromJson(Map<String, dynamic> json) =>
       _$EarthquakePartialFromJson(json);
+
+  const new _();
 
   EarthquakePartialNormal get earthquake => switch (this) {
     final EarthquakePartialNormal value => value,

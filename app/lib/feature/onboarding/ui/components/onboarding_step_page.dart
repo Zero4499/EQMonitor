@@ -1,9 +1,11 @@
 part of '../page/onboarding_page.dart';
 
-class const _OnboardingStepPage({
-  required final _OnboardingStep step,
-  required final _OnboardingStepNavigation navigation,
-}) extends StatelessWidget {
+class _OnboardingStepPage extends StatelessWidget {
+  const new({required this.step, required this.navigation});
+
+  final _OnboardingStep step;
+  final _OnboardingStepNavigation navigation;
+
   @override
   Widget build(BuildContext context) {
     return switch (step) {

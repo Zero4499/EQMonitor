@@ -14,32 +14,35 @@ import 'package:eqmonitor/feature/settings/features/display_settings/ui/theme/th
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const ThemeSettingsPage({super.key}) extends StatelessWidget {
+class ThemeSettingsPage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('テーマ設定')),
       body: SingleChildScrollView(
-        child: SafeArea(
-          child: Column(
-            crossAxisAlignment: .start,
-            children: [
-              SettingsSectionHeader(text: 'ライト用テーマ'),
-              _ModeSection(mode: ThemeBrightnessMode.light),
-              SettingsSectionHeader(text: 'ダーク用テーマ'),
-              _ModeSection(mode: ThemeBrightnessMode.dark),
-              SettingsSectionHeader(text: 'JSON入出力'),
-              ThemeImportExportSection(),
-            ],
-          ),
+        child: Column(
+          crossAxisAlignment: .start,
+          children: [
+            SettingsSectionHeader(text: 'ライト用テーマ'),
+            _ModeSection(mode: ThemeBrightnessMode.light),
+            SettingsSectionHeader(text: 'ダーク用テーマ'),
+            _ModeSection(mode: ThemeBrightnessMode.dark),
+            SettingsSectionHeader(text: 'JSON入出力'),
+            ThemeImportExportSection(),
+          ],
         ),
       ),
     );
   }
 }
 
-class const _ModeSection({required final ThemeBrightnessMode mode})
-    extends ConsumerWidget {
+class _ModeSection extends ConsumerWidget {
+  const new({required this.mode});
+
+  final ThemeBrightnessMode mode;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final themes = ref.watch(appThemeProvider).requireValue;
@@ -101,8 +104,11 @@ class const _ModeSection({required final ThemeBrightnessMode mode})
   }
 }
 
-class const _ThemePreview({required final ThemeColorSet colorSet})
-    extends StatelessWidget {
+class _ThemePreview extends StatelessWidget {
+  const new({required this.colorSet});
+
+  final ThemeColorSet colorSet;
+
   @override
   Widget build(BuildContext context) {
     return Theme(
@@ -146,8 +152,12 @@ class const _ThemePreview({required final ThemeColorSet colorSet})
   }
 }
 
-class const _Swatch({required final Color color, required final String label})
-    extends StatelessWidget {
+class _Swatch extends StatelessWidget {
+  const new({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
   @override
   Widget build(BuildContext context) {
     return Column(

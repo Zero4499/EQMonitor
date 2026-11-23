@@ -15,7 +15,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:paging_view/paging_view.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class const FeedPage({super.key}) extends HookConsumerWidget {
+class FeedPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // 一覧を開いたら、読み込み済みの最新お知らせまで既読にする
@@ -54,8 +56,11 @@ class const FeedPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _PagingBody({required final FeedDataSource dataSource})
-    extends StatelessWidget {
+class _PagingBody extends StatelessWidget {
+  const new({required this.dataSource});
+
+  final FeedDataSource dataSource;
+
   @override
   Widget build(BuildContext context) {
     return M3EPullToRefreshIndicator(
@@ -107,7 +112,9 @@ class const _PagingBody({required final FeedDataSource dataSource})
   }
 }
 
-class const FeedLoadingDummyItem._() {
+class FeedLoadingDummyItem {
+  const new _();
+
   static FeedItem create(String id) => FeedItem(
     id: id,
     feedType: FeedType.appUpdate,

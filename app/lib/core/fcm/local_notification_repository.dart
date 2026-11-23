@@ -4,6 +4,7 @@ import 'package:collection/collection.dart';
 import 'package:eqmonitor/core/fcm/android_notification_channel_initializer.dart';
 import 'package:eqmonitor/core/fcm/channels.dart';
 import 'package:eqmonitor/core/fcm/foreground_notification_payload_codec.dart';
+import 'package:eqmonitor/core/notification/notification_permissions.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -62,6 +63,13 @@ class LocalNotificationRepository {
     );
   }
 
+  /// 切换界面语言后，按新语言重建渠道名 / 分组名。
+  /// （importance、bypassDnd 等不可变字段不受影响；这里只是重新注册同名渠道刷新文案。）
+  Future<void> refreshLocalizedChannels() async {
+    if (!isAndroid) return;
+    await channelInitializer.initialize();
+  }
+
   Future<RemoteMessage?> getInitialMessage() async {
     if (!isAndroid) {
       return null;
@@ -115,8 +123,7 @@ class LocalNotificationRepository {
             Importance.min || Importance.none => Priority.min,
             _ => Priority.defaultPriority,
           },
-          playSound: channel.playSound,
-          sound: channel.sound,
+          playSound: false,
           enableVibration: channel.enableVibration,
           vibrationPattern: channel.vibrationPattern,
           icon: 'ic_notification_icon',
@@ -125,6 +132,20 @@ class LocalNotificationRepository {
         ),
       ),
     );
+    await _playChannelSound(channel.id);
+  }
+
+  /// 渠道本身不出声，提示音由 App 自己播（HyperOS 上渠道自定义铃声不生效）。
+  Future<void> _playChannelSound(String channelId) async {
+    final isAlarmGrade =
+        channelId == 'global_earthquake_m8_v3' || channelId == 'global_alert_v3';
+    final sound = alertSoundForChannel(channelId);
+    final played = await NotificationPermissions.playAlertSound(
+      sound: sound,
+      channelId: channelId,
+      alert: isAlarmGrade,
+    );
+    debugPrint('QuakePushSound dart: channel=$channelId sound=$sound played=$played');
   }
 
   /// FCM を経由しない通知（USGS / tsunami.gov の ntfy プッシュなど）を表示する。
@@ -142,7 +163,30 @@ class LocalNotificationRepository {
       return;
     }
     await initialize();
-    final channel = await resolveChannel(alert ? 'global_alert' : channelId);
+    // 显式指定渠道（按震级 / 类型分音）优先；只有未指定渠道的警报级通知才落到 global_alert。
+    final channel = await resolveChannel(channelId ?? (alert ? 'global_alert_v3' : null));
+    // 警报级通知优先尝试超级岛投递；原生侧判断非 OS3 / 无焦点权限 / 异常时返回 false，
+    // 随即回退到下面的普通渠道通知，保证告警送达不被岛能力阻塞。
+    if (alert) {
+      final accent = switch (channel.id) {
+        'global_earthquake_m8_v3' || 'global_alert_v3' => '#D62828',
+        'global_earthquake_m7_v3' => '#F5A623',
+        'global_tsunami_v3' => '#2FA8E1',
+        _ => '#2FA8E1',
+      };
+      final islandSent = await NotificationPermissions.showIslandNotification(
+        channelId: channel.id,
+        title: title,
+        body: body,
+        tag: tag,
+        alert: true,
+        accentColor: accent,
+      );
+      if (islandSent) {
+        await _playChannelSound(channel.id);
+        return;
+      }
+    }
     final identity = tag != null && tag.isNotEmpty ? tag : '$title-$body';
     await plugin.show(
       id: identity.hashCode & 0x7fffffff,
@@ -162,8 +206,7 @@ class LocalNotificationRepository {
                   Importance.min || Importance.none => Priority.min,
                   _ => Priority.defaultPriority,
                 },
-          playSound: channel.playSound,
-          sound: channel.sound,
+          playSound: false,
           enableVibration: channel.enableVibration,
           vibrationPattern: channel.vibrationPattern,
           icon: 'ic_notification_icon',
@@ -180,12 +223,14 @@ class LocalNotificationRepository {
           enableLights: true,
           onlyAlertOnce: false,
           ticker: title,
+          // 警报级设为持续通知，锁屏上也保持可见，直到用户点开
           ongoing: alert,
           autoCancel: !alert,
           styleInformation: BigTextStyleInformation(body),
         ),
       ),
     );
+    await _playChannelSound(channel.id);
   }
 
   Future<AndroidNotificationChannel> resolveChannel(String? requestedId) async {
@@ -195,9 +240,9 @@ class LocalNotificationRepository {
       _ => requestedId,
     };
     final id = migratedId == null || migratedId.isEmpty
-        ? 'service_fallback'
+        ? 'service_fallback_v3'
         : migratedId;
-    final registered = notificationChannels.firstWhereOrNull((c) => c.id == id);
+    final registered = buildNotificationChannels().firstWhereOrNull((c) => c.id == id);
     if (registered != null) {
       return registered;
     }
@@ -207,8 +252,9 @@ class LocalNotificationRepository {
         >()
         ?.getNotificationChannels();
     final channel = existing?.firstWhereOrNull((c) => c.id == id);
+    // FCM と同じく、指定 channel が OS に存在しなければ Manifest の既定値を使う。
     return channel ??
-        notificationChannels.firstWhere((c) => c.id == 'service_fallback');
+        buildNotificationChannels().firstWhere((c) => c.id == 'service_fallback_v3');
   }
 
   Future<void> dispose() => _openedMessages.close();

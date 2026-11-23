@@ -11,10 +11,11 @@ Future<CityMaxIntensityRepository> cityMaxIntensityRepository(Ref ref) async {
   return CityMaxIntensityRepository(earthquake: apiClient.earthquake);
 }
 
-class const CityMaxIntensityRepository({
-  required EarthquakeApiClient earthquake,
-}) {
-  final EarthquakeApiClient _earthquake = earthquake;
+class CityMaxIntensityRepository {
+  const new({required EarthquakeApiClient earthquake})
+    : _earthquake = earthquake;
+
+  final EarthquakeApiClient _earthquake;
 
   /// 全国の市区町村ごとの観測史上最大震度を取得する。
   ///

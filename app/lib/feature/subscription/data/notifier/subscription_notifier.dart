@@ -4,9 +4,7 @@ import 'dart:math';
 import 'package:clock/clock.dart';
 import 'package:eqmonitor/core/foundation/result.dart';
 import 'package:eqmonitor/core/provider/app_lifecycle.dart';
-import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/feature/devices/data/retry/retry_controller.dart';
-import 'package:eqmonitor/feature/subscription/data/notifier/subscription_pending_retry.dart';
 import 'package:eqmonitor/feature/subscription/data/model/purchase_failure_reason.dart';
 import 'package:eqmonitor/feature/subscription/data/model/purchase_outcome.dart';
 import 'package:eqmonitor/feature/subscription/data/model/purchase_result.dart';
@@ -31,22 +29,11 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
 
   @override
   Future<SubscriptionStatus> build() async {
-    if (!ref.watch(buildConfigProvider).isSubscriptionAvailable) {
-      return const SubscriptionStatus.inactive();
-    }
     final generation = ++_generation;
-    final interruptedRetry = _pendingRetry;
     cancelPendingRetry();
     ref.onDispose(() {
       _generation++;
       _expiryTimer?.cancel();
-    });
-    scheduleMicrotask(() {
-      if (ref.mounted) {
-        ref
-            .read(subscriptionPendingRetryProvider.notifier)
-            .finish(token: interruptedRetry);
-      }
     });
     final repository = await ref.watch(subscriptionRepositoryProvider.future);
     if (!ref.mounted) return const SubscriptionStatus.inactive();
@@ -114,11 +101,10 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
   );
 
   Future<void> _refresh() async {
-    if (!ref.read(buildConfigProvider).isSubscriptionAvailable) return;
     final current = state;
     final previous = current.value;
     if (_busy) return;
-    stopPendingRetry();
+    cancelPendingRetry();
     if (current.isLoading || current.hasError || previous == null) {
       ref.invalidateSelf();
       return;
@@ -165,17 +151,12 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
     required Future<PurchaseOutcome> Function(SubscriptionRepository) purchase,
     required bool skipWhenActive,
   }) async {
-    if (!ref.read(buildConfigProvider).isSubscriptionAvailable) {
-      return const PurchaseResult.failed(
-        PurchaseFailureReason.betaDistribution,
-      );
-    }
     if (_busy)
       return const PurchaseResult.failed(
         PurchaseFailureReason.operationInProgress,
       );
     _busy = true;
-    stopPendingRetry();
+    cancelPendingRetry();
     final generation = _generation;
     try {
       final repository = await ref.read(subscriptionRepositoryProvider.future);
@@ -242,10 +223,9 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
 
   static final synchronizeMutation = Mutation<void>();
   Future<void> synchronize() async {
-    if (!ref.read(buildConfigProvider).isSubscriptionAvailable) return;
     if (_busy) return;
     _busy = true;
-    stopPendingRetry();
+    cancelPendingRetry();
     final generation = _generation;
     final previous = state.value ?? const SubscriptionStatus.inactive();
     state = AsyncData(
@@ -285,7 +265,6 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
   /// 間隔・回数は端末登録の [RetryController] と同じ (2s 基準・上限 60s・初回込み最大
   /// [RetryBackoffPolicy.maxAttempts] 回)。409 以外の結果で終了し、foreground 復帰・手動同期・
   /// 購入/復元・再構築で打ち切る。
-  /// 再試行している間は [subscriptionPendingRetryProvider] に知らせる。
   void retryPendingSync({
     required SubscriptionRepository repository,
     required SubscriptionServerRepository server,
@@ -298,49 +277,36 @@ class SubscriptionNotifier extends _$SubscriptionNotifier {
         generation != _generation ||
         _busy;
 
-    final retry = ref.read(subscriptionPendingRetryProvider.notifier)
-      ..start(token: token);
     unawaited(() async {
-      try {
-        for (
-          var attempt = 0;
-          attempt < RetryBackoffPolicy.maxAttempts - 1;
-          attempt++
-        ) {
-          await Future<void>.delayed(
-            const RetryBackoffPolicy().delay(attempt: attempt, random: _random),
-          );
+      for (
+        var attempt = 0;
+        attempt < RetryBackoffPolicy.maxAttempts - 1;
+        attempt++
+      ) {
+        await Future<void>.delayed(
+          const RetryBackoffPolicy().delay(attempt: attempt, random: _random),
+        );
+        if (cancelled()) return;
+        try {
+          await repository.session.validateCredentials();
+          final synced = await server.fetch(synchronize: true);
+          await repository.session.validateCredentials();
           if (cancelled()) return;
-          try {
-            await repository.session.validateCredentials();
-            final synced = await server.fetch(synchronize: true);
-            await repository.session.validateCredentials();
-            if (cancelled()) return;
-            if (synced.isPendingFailure) continue;
-            final previous = state.value ?? const SubscriptionStatus.inactive();
-            final status = synced.toSyncedStatus(previous: previous);
-            state = AsyncData(status);
-            scheduleExpiry(status: status);
-            return;
-          } catch (_) {
-            // 端末 identity の変更は provider の再構築側で扱う。
-            return;
-          }
+          if (synced.isPendingFailure) continue;
+          final previous = state.value ?? const SubscriptionStatus.inactive();
+          final status = synced.toSyncedStatus(previous: previous);
+          state = AsyncData(status);
+          scheduleExpiry(status: status);
+          return;
+        } catch (_) {
+          // 端末 identity の変更は provider の再構築側で扱う。
+          return;
         }
-      } finally {
-        if (ref.mounted) retry.finish(token: token);
       }
     }());
   }
 
-  /// 進行中の再試行を打ち切る。provider の構築中にも呼べるよう、状態は変えない。
   void cancelPendingRetry() => _pendingRetry++;
-
-  /// 進行中の再試行を打ち切り、再試行していないことを知らせる。
-  void stopPendingRetry() {
-    cancelPendingRetry();
-    ref.read(subscriptionPendingRetryProvider.notifier).stop();
-  }
 
   void scheduleExpiry({required SubscriptionStatus status}) {
     _expiryTimer?.cancel();

@@ -5,8 +5,8 @@ import 'dart:async';
 import 'package:eqmonitor/core/component/selector/controlled_dropdown.dart';
 import 'package:eqmonitor/core/component/widget/app_switch.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
+import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/router/router.dart';
-import 'package:eqmonitor/feature/debug/data/provider/debug_menu_availability_provider.dart';
 import 'package:eqmonitor/feature/home/data/model/home_configuration_model.dart';
 import 'package:eqmonitor/feature/home/data/notifier/home_configuration_notifier.dart';
 import 'package:eqmonitor/feature/home/ui/page/home_map_bounds_selector_page.dart';
@@ -14,9 +14,6 @@ import 'package:eqmonitor/feature/kyoshin_monitor/data/model/kyoshin_monitor_set
 import 'package:eqmonitor/feature/kyoshin_monitor/data/notifier/kyoshin_monitor_settings.dart';
 import 'package:eqmonitor/feature/kyoshin_monitor/data/provider/kyoshin_monitor_image_request_provider.dart';
 import 'package:eqmonitor/feature/location/data/location_tracking_mode.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/model/shake_detection_settings.dart';
-import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_level.dart';
-import 'package:eqmonitor/feature/shake_detection/data/provider/shake_detection_tuning_provider.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -24,13 +21,14 @@ import 'package:kyoshin_monitor_api/kyoshin_monitor_api.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const HomeMapLayerPage({super.key}) extends ConsumerWidget {
+class HomeMapLayerPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isShakeDetectionEnabled = ref.watch(
-      isDeviceShakeDetectionEnabledProvider,
-    );
-    final isDebugMenuAvailable = ref.watch(isDebugMenuAvailableProvider);
+    final isShakeDetectionEnabled = ref
+        .watch(buildConfigProvider)
+        .isShakeDetectionAvailable;
     final designSystem = context.designSystem;
     final colorTheme = designSystem.colorTheme;
     final spacing = designSystem.spacing;
@@ -78,12 +76,10 @@ class const HomeMapLayerPage({super.key}) extends ConsumerWidget {
                   if (isShakeDetectionEnabled) ...[
                     _SettingsSection(
                       title: '揺れ検知',
-                      description: '揺れ検知イベントの表示、アニメーション、自動追従を調整します。',
+                      description: '揺れ検知イベントの表示とアニメーションを調整します。',
                       children: const [
                         _ShakeDetectionShowTile(),
                         _ShakeDetectionAnimationModeTile(),
-                        _ShakeDetectionMinLevelTile(),
-                        _ShakeDetectionAutoFocusTile(),
                       ],
                     ),
                     SizedBox(height: spacing.lg),
@@ -123,18 +119,6 @@ class const HomeMapLayerPage({super.key}) extends ConsumerWidget {
                       _MapCustomBoundsButton(),
                     ],
                   ),
-                  if (isDebugMenuAvailable) ...[
-                    SizedBox(height: spacing.lg),
-                    const _SettingsSection(
-                      title: 'デバッグ',
-                      description: '地図に重ねて表示する、機能ごとのデバッグ情報を切り替えます。',
-                      children: [
-                        _DebugOverlayShakeDetectionTile(),
-                        _DebugOverlayKyoshinMonitorTile(),
-                        _DebugOverlayEewTile(),
-                      ],
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -145,11 +129,17 @@ class const HomeMapLayerPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _SettingsSection({
-  required final String title,
-  required final String description,
-  required final List<Widget> children,
-}) extends HookWidget {
+class _SettingsSection extends HookWidget {
+  const new({
+    required this.title,
+    required this.description,
+    required this.children,
+  });
+
+  final String title;
+  final String description;
+  final List<Widget> children;
+
   @override
   Widget build(BuildContext context) {
     final isExpanded = useState(false);
@@ -245,13 +235,20 @@ class const _SettingsSection({
   }
 }
 
-class const _SettingSwitchTile({
-  required final String title,
-  required final String subtitle,
-  required final bool value,
+class _SettingSwitchTile extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
   // ignore: avoid_positional_boolean_parameters
-  required final Future<void> Function(bool) onChanged,
-}) extends StatelessWidget {
+  final Future<void> Function(bool) onChanged;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -283,16 +280,24 @@ class const _SettingSwitchTile({
   }
 }
 
-class const _SettingDropdownField<T>({
-  required final String title,
-  required final String subtitle,
-  required final T value,
+class _SettingDropdownField<T> extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.entries,
+    this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final T value;
   // ignore: unsafe_variance
-  required final Future<void> Function(T) onChanged,
-  required final List<DropdownMenuEntry<T>> entries,
-  final Widget? trailing,
-  final M3EDropdownStyle dropdownStyle = const M3EDropdownStyle(),
-}) extends StatelessWidget {
+  final Future<void> Function(T) onChanged;
+  final List<DropdownMenuEntry<T>> entries;
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -338,7 +343,6 @@ class const _SettingDropdownField<T>({
             width: double.infinity,
             child: ControlledDropdown<T>(
               singleSelect: true,
-              dropdownStyle: dropdownStyle,
               items:
                   (entries
                           .map(
@@ -368,14 +372,22 @@ class const _SettingDropdownField<T>({
   }
 }
 
-class const _SettingSegmentedField<T>({
-  required final String title,
-  required final String subtitle,
-  required final List<ButtonSegment<T>> segments,
-  required final Set<T> selected,
+class _SettingSegmentedField<T> extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.subtitle,
+    required this.segments,
+    required this.selected,
+    required this.onSelectionChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final List<ButtonSegment<T>> segments;
+  final Set<T> selected;
   // ignore: unsafe_variance
-  required final Future<void> Function(Set<T>) onSelectionChanged,
-}) extends StatelessWidget {
+  final Future<void> Function(Set<T>) onSelectionChanged;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -427,12 +439,19 @@ class const _SettingSegmentedField<T>({
   }
 }
 
-class const _SettingActionTile({
-  required final String title,
-  required final String subtitle,
-  required final String actionLabel,
-  required final Future<void> Function() onPressed,
-}) extends StatelessWidget {
+class _SettingActionTile extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.subtitle,
+    required this.actionLabel,
+    required this.onPressed,
+  });
+
+  final String title;
+  final String subtitle;
+  final String actionLabel;
+  final Future<void> Function() onPressed;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -479,7 +498,9 @@ class const _SettingActionTile({
   }
 }
 
-class const _EewFillModeTile() extends ConsumerWidget {
+class _EewFillModeTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -509,7 +530,9 @@ class const _EewFillModeTile() extends ConsumerWidget {
   }
 }
 
-class const _EewPsWaveTile() extends ConsumerWidget {
+class _EewPsWaveTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -532,7 +555,9 @@ class const _EewPsWaveTile() extends ConsumerWidget {
   }
 }
 
-class const _EewPsWaveTimeBaseTile() extends ConsumerWidget {
+class _EewPsWaveTimeBaseTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -559,7 +584,9 @@ class const _EewPsWaveTimeBaseTile() extends ConsumerWidget {
   }
 }
 
-class const _EewAnimationTile() extends ConsumerWidget {
+class _EewAnimationTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -591,7 +618,9 @@ class const _EewAnimationTile() extends ConsumerWidget {
   }
 }
 
-class const _EewAutoZoomTile() extends ConsumerWidget {
+class _EewAutoZoomTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -614,7 +643,9 @@ class const _EewAutoZoomTile() extends ConsumerWidget {
   }
 }
 
-class const _LocationPermissionTile() extends HookConsumerWidget {
+class _LocationPermissionTile extends HookConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final refresh = useState(0);
@@ -645,7 +676,9 @@ class const _LocationPermissionTile() extends HookConsumerWidget {
   }
 }
 
-class const _ShowLocationTile() extends ConsumerWidget {
+class _ShowLocationTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -681,7 +714,9 @@ class const _ShowLocationTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMonitorEnabledTile() extends ConsumerWidget {
+class _KyoshinMonitorEnabledTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -702,7 +737,9 @@ class const _KyoshinMonitorEnabledTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMonitorSourceTile() extends ConsumerWidget {
+class _KyoshinMonitorSourceTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -739,7 +776,9 @@ class const _KyoshinMonitorSourceTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMonitorAboutTile() extends StatelessWidget {
+class _KyoshinMonitorAboutTile extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return _SettingActionTile(
@@ -753,7 +792,9 @@ class const _KyoshinMonitorAboutTile() extends StatelessWidget {
   }
 }
 
-class const _KyoshinRealtimeDataTypeTile() extends ConsumerWidget {
+class _KyoshinRealtimeDataTypeTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -792,7 +833,9 @@ class const _KyoshinRealtimeDataTypeTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinRealtimeLayerTile() extends ConsumerWidget {
+class _KyoshinRealtimeLayerTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -817,7 +860,9 @@ class const _KyoshinRealtimeLayerTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMarkerTypeTile() extends ConsumerWidget {
+class _KyoshinMarkerTypeTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -849,7 +894,9 @@ class const _KyoshinMarkerTypeTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinShowScaleTile() extends ConsumerWidget {
+class _KyoshinShowScaleTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final setting = ref.watch(kyoshinMonitorSettingsProvider).requireValue;
@@ -869,7 +916,9 @@ class const _KyoshinShowScaleTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMinShindoTile() extends ConsumerWidget {
+class _KyoshinMinShindoTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeConfig = ref.watch(homeConfigurationProvider).value;
@@ -962,7 +1011,9 @@ class const _KyoshinMinShindoTile() extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMarkerSizeTile() extends ConsumerWidget {
+class _KyoshinMarkerSizeTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeConfig = ref.watch(homeConfigurationProvider).value;
@@ -995,7 +1046,9 @@ class const _KyoshinMarkerSizeTile() extends ConsumerWidget {
   }
 }
 
-class const _MapLockBearingTile() extends ConsumerWidget {
+class _MapLockBearingTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1018,7 +1071,9 @@ class const _MapLockBearingTile() extends ConsumerWidget {
   }
 }
 
-class const _MapMaxZoomTile() extends ConsumerWidget {
+class _MapMaxZoomTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1104,7 +1159,9 @@ class const _MapMaxZoomTile() extends ConsumerWidget {
   }
 }
 
-class const _MapDefaultBoundsTile() extends ConsumerWidget {
+class _MapDefaultBoundsTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1137,7 +1194,9 @@ class const _MapDefaultBoundsTile() extends ConsumerWidget {
   }
 }
 
-class const _MapCustomBoundsButton() extends ConsumerWidget {
+class _MapCustomBoundsButton extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1156,7 +1215,9 @@ class const _MapCustomBoundsButton() extends ConsumerWidget {
   }
 }
 
-class const _ShakeDetectionShowTile() extends ConsumerWidget {
+class _ShakeDetectionShowTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1181,7 +1242,9 @@ class const _ShakeDetectionShowTile() extends ConsumerWidget {
   }
 }
 
-class const _ShakeDetectionAnimationModeTile() extends ConsumerWidget {
+class _ShakeDetectionAnimationModeTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cfg = ref.watch(homeConfigurationProvider).value;
@@ -1216,138 +1279,6 @@ class const _ShakeDetectionAnimationModeTile() extends ConsumerWidget {
               .updateShakeDetection(
                 cfg.shakeDetection.copyWith(animationMode: next.first),
               ),
-        );
-      },
-    );
-  }
-}
-
-class const _ShakeDetectionMinLevelTile() extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cfg = ref.watch(homeConfigurationProvider).value;
-    if (cfg == null) {
-      return const SizedBox.shrink();
-    }
-
-    return _SettingDropdownField<ShakeDetectionLevel>(
-      title: '表示する揺れの強さ',
-      subtitle: 'この強さに満たない揺れ検知は、地図とカードに表示しません。',
-      value: cfg.shakeDetection.minLevel,
-      // 二行の項目が 5 件あり、既定の高さでは最後の項目が隠れる。
-      dropdownStyle: const M3EDropdownStyle(maxHeight: 420),
-      entries: [
-        for (final level in ShakeDetectionLevel.values)
-          DropdownMenuEntry(value: level, label: level.minLevelDropdownLabel),
-      ],
-      onChanged: (next) async {
-        await HomeConfigurationNotifier.saveMutation.run(
-          ref,
-          (tsx) async => tsx
-              .get(homeConfigurationProvider.notifier)
-              .updateShakeDetection(
-                cfg.shakeDetection.copyWith(minLevel: next),
-              ),
-        );
-      },
-    );
-  }
-}
-
-class const _ShakeDetectionAutoFocusTile() extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cfg = ref.watch(homeConfigurationProvider).value;
-    if (cfg == null) {
-      return const SizedBox.shrink();
-    }
-    return _SettingSwitchTile(
-      title: '揺れ検知時に自動ズーム',
-      subtitle: cfg.shakeDetection.autoFocus
-          ? '検知した範囲を自動で注視します。'
-          : '現在のズームを維持します。',
-      value: cfg.shakeDetection.autoFocus,
-      onChanged: (next) async {
-        await HomeConfigurationNotifier.saveMutation.run(
-          ref,
-          (tsx) async => tsx
-              .get(homeConfigurationProvider.notifier)
-              .updateShakeDetection(
-                cfg.shakeDetection.copyWith(autoFocus: next),
-              ),
-        );
-      },
-    );
-  }
-}
-
-class const _DebugOverlayShakeDetectionTile() extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cfg = ref.watch(homeConfigurationProvider).value;
-    if (cfg == null) {
-      return const SizedBox.shrink();
-    }
-    return _SettingSwitchTile(
-      title: '揺れ検知',
-      subtitle: '検知の状態、イベントの時刻、EEW との結合判定を表示します。',
-      value: cfg.debugOverlay.shakeDetection,
-      onChanged: (next) async {
-        await HomeConfigurationNotifier.saveMutation.run(
-          ref,
-          (tsx) async => tsx
-              .get(homeConfigurationProvider.notifier)
-              .updateDebugOverlay(
-                cfg.debugOverlay.copyWith(shakeDetection: next),
-              ),
-        );
-      },
-    );
-  }
-}
-
-class const _DebugOverlayKyoshinMonitorTile() extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cfg = ref.watch(homeConfigurationProvider).value;
-    if (cfg == null) {
-      return const SizedBox.shrink();
-    }
-    return _SettingSwitchTile(
-      title: '強震モニタ',
-      subtitle: '画像の時刻と遅れ、種別、観測点数、取得時間を表示します。',
-      value: cfg.debugOverlay.kyoshinMonitor,
-      onChanged: (next) async {
-        await HomeConfigurationNotifier.saveMutation.run(
-          ref,
-          (tsx) async => tsx
-              .get(homeConfigurationProvider.notifier)
-              .updateDebugOverlay(
-                cfg.debugOverlay.copyWith(kyoshinMonitor: next),
-              ),
-        );
-      },
-    );
-  }
-}
-
-class const _DebugOverlayEewTile() extends ConsumerWidget {
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final cfg = ref.watch(homeConfigurationProvider).value;
-    if (cfg == null) {
-      return const SizedBox.shrink();
-    }
-    return _SettingSwitchTile(
-      title: '緊急地震速報',
-      subtitle: '表示中の EEW の報番号、規模、発表・発生時刻を表示します。',
-      value: cfg.debugOverlay.eew,
-      onChanged: (next) async {
-        await HomeConfigurationNotifier.saveMutation.run(
-          ref,
-          (tsx) async => tsx
-              .get(homeConfigurationProvider.notifier)
-              .updateDebugOverlay(cfg.debugOverlay.copyWith(eew: next)),
         );
       },
     );

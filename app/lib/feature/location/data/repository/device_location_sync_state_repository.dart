@@ -24,14 +24,6 @@ abstract interface class DeviceLocationSyncStateRepository {
 
   Future<void> writeAvailability(DeviceLocationSyncAvailability availability);
 
-  /// 揺れ検知の「現在地」条件が有効だったか。一度も保存していなければ null。
-  ///
-  /// 揺れ検知の設定はサーバーから毎起動では取得しないため、起動時の
-  /// 位置情報監視の判定に最後の値を使う。
-  Future<bool?> readShakeCurrentLocationEnabled();
-
-  Future<void> writeShakeCurrentLocationEnabled({required bool isEnabled});
-
   Future<DeviceLocationPayload?> readLastSent({
     required DeviceLocationSyncScope scope,
   });
@@ -44,14 +36,17 @@ abstract interface class DeviceLocationSyncStateRepository {
   Future<void> clearLastSent();
 }
 
-class InMemoryDeviceLocationSyncStateRepository({
-  var DeviceLocationSyncAvailability availability =
-      DeviceLocationSyncAvailability.enabled,
-  var bool? isShakeCurrentLocationEnabled,
-  var DeviceLocationSyncScope? lastSentScope,
-  DeviceLocationPayload? lastSent,
-}) implements DeviceLocationSyncStateRepository {
-  DeviceLocationPayload? _lastSent = lastSent;
+class InMemoryDeviceLocationSyncStateRepository
+    implements DeviceLocationSyncStateRepository {
+  new({
+    this.availability = DeviceLocationSyncAvailability.enabled,
+    this.lastSentScope,
+    DeviceLocationPayload? lastSent,
+  }) : _lastSent = lastSent;
+
+  DeviceLocationSyncAvailability availability;
+  DeviceLocationSyncScope? lastSentScope;
+  DeviceLocationPayload? _lastSent;
 
   @override
   Future<DeviceLocationSyncAvailability> readAvailability() async =>
@@ -62,17 +57,6 @@ class InMemoryDeviceLocationSyncStateRepository({
     DeviceLocationSyncAvailability availability,
   ) async {
     this.availability = availability;
-  }
-
-  @override
-  Future<bool?> readShakeCurrentLocationEnabled() async =>
-      isShakeCurrentLocationEnabled;
-
-  @override
-  Future<void> writeShakeCurrentLocationEnabled({
-    required bool isEnabled,
-  }) async {
-    isShakeCurrentLocationEnabled = isEnabled;
   }
 
   @override
@@ -96,9 +80,12 @@ class InMemoryDeviceLocationSyncStateRepository({
   }
 }
 
-class SharedPreferencesDeviceLocationSyncStateRepository(
-  final SharedPreferencesAsync _preferences,
-) implements DeviceLocationSyncStateRepository {
+class SharedPreferencesDeviceLocationSyncStateRepository
+    implements DeviceLocationSyncStateRepository {
+  new(this._preferences);
+
+  final SharedPreferencesAsync _preferences;
+
   @override
   Future<DeviceLocationSyncAvailability> readAvailability() async {
     final enabled = await _preferences.getBool(
@@ -127,18 +114,6 @@ class SharedPreferencesDeviceLocationSyncStateRepository(
       SharedPreferencesKey.backgroundLocationCurrentSlotEnabled.key,
     ),
   };
-
-  @override
-  Future<bool?> readShakeCurrentLocationEnabled() => _preferences.getBool(
-    SharedPreferencesKey.backgroundLocationShakeCurrentLocationEnabled.key,
-  );
-
-  @override
-  Future<void> writeShakeCurrentLocationEnabled({required bool isEnabled}) =>
-      _preferences.setBool(
-        SharedPreferencesKey.backgroundLocationShakeCurrentLocationEnabled.key,
-        isEnabled,
-      );
 
   @override
   Future<DeviceLocationPayload?> readLastSent({

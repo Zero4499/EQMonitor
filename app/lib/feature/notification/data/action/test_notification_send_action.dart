@@ -2,7 +2,7 @@ import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/foundation/result.dart';
 import 'package:eqmonitor/core/provider/device_id.dart';
 import 'package:eqmonitor/feature/notification/data/model/test_notification_delivery.dart';
-import 'package:eqmonitor/feature/notification/data/model/test_notification_error.dart';
+import 'package:eqmonitor/feature/notification/data/model/test_notification_delivery_result.dart';
 import 'package:eqmonitor/feature/notification/data/repository/push_notification_repository.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
@@ -23,17 +23,14 @@ class const TestNotificationSendAction() {
     VoidCallback? onConfirmed,
   }) async {
     final messenger = ScaffoldMessenger.of(context);
-    if (kind.isCritical) {
+    if (kind == TestNotificationKind.critical) {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text('${kind.displayLabel}を送信しますか？'),
-          content: Text(
-            Theme.of(context).platform == .iOS
-                ? '重大な通知は、端末のマナーモードの設定に関わらず音が鳴ります。'
-                      '周囲の状況を確認してから送信してください。'
-                : '通知音は端末の通知チャンネルやマナーモードなどの設定に従います。'
-                      '周囲の状況を確認してから送信してください。',
+          title: const Text('重大な通知を送信しますか？'),
+          content: const Text(
+            '重大な通知は、端末のマナーモードの設定に関わらず音が鳴ります。'
+            '周囲の状況を確認してから送信してください。',
           ),
           actions: [
             M3ETextButton(
@@ -42,7 +39,7 @@ class const TestNotificationSendAction() {
             ),
             M3EFilledButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('送信'),
+              child: const Text('送信する'),
             ),
           ],
         ),
@@ -66,16 +63,18 @@ class const TestNotificationSendAction() {
         return true;
       }
       switch (result) {
-        case Success():
+        case Success(:final value):
           messenger.showSnackBar(
-            const SnackBar(
-              content: Text('テスト通知を送信しました'),
+            SnackBar(
+              content: Text(
+                '送信しました（${value.framework.displayLabel}）: ${value.message}',
+              ),
             ),
           );
         case Failure(:final exception):
           messenger.showSnackBar(
             SnackBar(
-              content: Text(exception.testNotificationMessage),
+              content: Text('送信に失敗しました: $exception'),
               backgroundColor: context.designSystem.colorTheme.error,
             ),
           );

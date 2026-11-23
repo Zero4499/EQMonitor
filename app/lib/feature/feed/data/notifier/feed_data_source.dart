@@ -13,9 +13,10 @@ Future<FeedDataSource> feedDataSource(Ref ref) async {
   return dataSource;
 }
 
-class FeedDataSource({required FeedRepository repository})
-    extends DataSource<String?, FeedItem> {
-  final FeedRepository _repository = repository;
+class FeedDataSource extends DataSource<String?, FeedItem> {
+  new({required FeedRepository repository}) : _repository = repository;
+
+  final FeedRepository _repository;
 
   @override
   Future<LoadResult<String?, FeedItem>> load(

@@ -1,13 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:eqmonitor/feature/earthquake_history/data/logic/earthquake_history_map_bounds_calculator.dart';
+import 'package:eqmonitor/feature/earthquake_history/data/model/coordinate.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_history_hypocenter_point.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_intensity_map_focus.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/intensity_tree.dart';
-import 'package:eqmonitor/feature/map/data/logic/map_camera_bounds_fitter.dart';
-import 'package:eqmonitor/feature/map/data/model/map_camera_bounds_fit_result.dart';
-import 'package:eqmonitor/feature/map/data/model/map_camera_bounds.dart';
+import 'package:eqmonitor_map/eqmonitor_map.dart';
 import 'package:flutter/widgets.dart';
 import 'package:jma_map/jma_map.dart';
 import 'package:maplibre/maplibre.dart';
@@ -49,18 +47,22 @@ class const EarthquakeHistoryMapCamera() {
     );
   }
 
-  /// 地図に描く先頭の震源の位置、なければ日本付近の既定位置
-  Geographic initialCenter(List<EarthquakeHistoryHypocenterPoint> points) =>
-      switch (points.firstOrNull) {
-        (:final latitude, :final longitude, index: _) => Geographic(
-          lon: longitude,
-          lat: latitude,
-        ),
-        null => kEarthquakeHistoryMapDefaultCenter,
-      };
+  /// 震源があればその位置、なければ日本付近の既定位置
+  Geographic initialCenter(Earthquake earthquake) {
+    final hyp = earthquake.hypocenter;
+    if (hyp == null) {
+      return kEarthquakeHistoryMapDefaultCenter;
+    }
+    return switch (hyp.coordinates) {
+      CoordinateLatLng(latitude: final lat, longitude: final lng) => Geographic(
+        lon: lng,
+        lat: lat,
+      ),
+      _ => kEarthquakeHistoryMapDefaultCenter,
+    };
+  }
 
-  double initialZoom(List<EarthquakeHistoryHypocenterPoint> points) =>
-      points.isEmpty
+  double initialZoom(Earthquake earthquake) => earthquake.hypocenter == null
       ? kEarthquakeHistoryMapDefaultZoom
       : kEarthquakeHistoryMapHypocenterZoom;
 

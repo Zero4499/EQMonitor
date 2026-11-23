@@ -4,7 +4,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const KyoshinMonitorAboutPage({super.key}) extends HookConsumerWidget {
+class KyoshinMonitorAboutPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -74,10 +76,12 @@ class const KyoshinMonitorAboutPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _SectionTitle({
-  required final String title,
-  required final TextStyle? style,
-}) extends StatelessWidget {
+class _SectionTitle extends StatelessWidget {
+  const new({required this.title, required this.style});
+
+  final String title;
+  final TextStyle? style;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -87,12 +91,19 @@ class const _SectionTitle({
   }
 }
 
-class const _InfoCard({
-  required final List<_InfoItem> items,
-  final VoidCallback? onTapMore,
-  final bool isWarning = false,
-  final String tapMoreText = '詳しく見る',
-}) extends StatelessWidget {
+class _InfoCard extends StatelessWidget {
+  const new({
+    required this.items,
+    this.onTapMore,
+    this.isWarning = false,
+    this.tapMoreText = '詳しく見る',
+  });
+
+  final List<_InfoItem> items;
+  final VoidCallback? onTapMore;
+  final String tapMoreText;
+  final bool isWarning;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -153,10 +164,12 @@ class const _InfoItem({
   required final String description,
 });
 
-class const _InfoItemWidget({
-  required final _InfoItem item,
-  final Color? textColor,
-}) extends StatelessWidget {
+class _InfoItemWidget extends StatelessWidget {
+  const new({required this.item, this.textColor});
+
+  final _InfoItem item;
+  final Color? textColor;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

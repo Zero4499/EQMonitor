@@ -7,7 +7,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugSecureStoragePage({super.key}) extends HookConsumerWidget {
+class DebugSecureStoragePage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(debugSecureStorageEntriesProvider);
@@ -37,9 +39,11 @@ class const DebugSecureStoragePage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _EntriesList({
-  required final AsyncValue<List<({String key, String value})>> entries,
-}) extends HookConsumerWidget {
+class _EntriesList extends HookConsumerWidget {
+  const new({required this.entries});
+
+  final AsyncValue<List<({String key, String value})>> entries;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final revealedKeys = useState<Set<String>>({});
@@ -135,8 +139,11 @@ class const _EntriesList({
   }
 }
 
-class const _EditDialog({required final ({String key, String value}) entry})
-    extends HookConsumerWidget {
+class _EditDialog extends HookConsumerWidget {
+  const new({required this.entry});
+
+  final ({String key, String value}) entry;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controller = useTextEditingController(text: entry.value);
@@ -169,7 +176,9 @@ class const _EditDialog({required final ({String key, String value}) entry})
   }
 }
 
-class const _AddDialog() extends HookConsumerWidget {
+class _AddDialog extends HookConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final keyController = useTextEditingController();

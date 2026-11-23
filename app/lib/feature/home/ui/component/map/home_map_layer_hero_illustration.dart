@@ -6,7 +6,9 @@ import 'package:eqmonitor/core/util/nullable_value_requirement.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-class const HomeMapLayerHeroIllustration({super.key}) extends HookWidget {
+class HomeMapLayerHeroIllustration extends HookWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -74,10 +76,12 @@ class const HomeMapLayerHeroIllustration({super.key}) extends HookWidget {
   }
 }
 
-class const _LayerLabelChip({
-  required final String label,
-  required final Color backgroundColor,
-}) extends StatelessWidget {
+class _LayerLabelChip extends StatelessWidget {
+  const new({required this.label, required this.backgroundColor});
+
+  final String label;
+  final Color backgroundColor;
+
   @override
   Widget build(BuildContext context) {
     final typography = context.designSystem.typography;

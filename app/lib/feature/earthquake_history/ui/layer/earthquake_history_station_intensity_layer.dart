@@ -12,7 +12,6 @@ import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_histo
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_history_map_layer_parameter.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_intensity.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/layer/model/station_icon_image_expression.dart';
-import 'package:eqmonitor/feature/map/features/icon/data/model/intensity_icon_data.dart';
 import 'package:eqmonitor/feature/map/features/icon/data/provider/intensity_icon_provider.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -24,15 +23,25 @@ import 'package:maplibre/maplibre.dart';
 /// stationDisplayMode に応じて観測点サイズを変更する。
 /// showingLpgmIntensity が true の場合は長周期地震動階級で色分けする。
 /// showStationLabel が true の場合は観測点名ラベルを表示する。
-class const EarthquakeHistoryStationIntensityLayer({
-  required final Earthquake earthquake,
-  required final EarthquakeHistoryMapLayerParameter parameter,
-  final StationDisplayMode stationDisplayMode = StationDisplayMode.auto,
-  final bool showStationLabel = false,
-  final bool showingLpgmIntensity = false,
-  final String? belowLayerId,
-  super.key,
-}) extends HookConsumerWidget {
+class EarthquakeHistoryStationIntensityLayer extends HookConsumerWidget {
+  const new({
+    required this.earthquake,
+    required this.parameter,
+    this.stationDisplayMode = StationDisplayMode.auto,
+    this.showStationLabel = false,
+    this.showingLpgmIntensity = false,
+    this.belowLayerId,
+    super.key,
+  });
+
+  final Earthquake earthquake;
+  final EarthquakeHistoryMapLayerParameter parameter;
+  final StationDisplayMode stationDisplayMode;
+  final bool showStationLabel;
+  final bool showingLpgmIntensity;
+
+  final String? belowLayerId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final intensity = earthquake.intensity;
@@ -50,7 +59,7 @@ class const EarthquakeHistoryStationIntensityLayer({
 
     final lifecycleToken = useRef<Object?>(null);
     final initialization = useRef<Future<void>?>(null);
-    final registeredIconData = useRef<IntensityIconData?>(null);
+    final imagesAdded = useRef(false);
     final latestLayerConfiguration = useRef<Object?>(null);
     final geoJsonUpdater = useMemoized(MapGeoJsonSourceUpdater.new);
     final latestBelowLayerId = useRef(belowLayerId);
@@ -63,14 +72,10 @@ class const EarthquakeHistoryStationIntensityLayer({
     latestShowStationLabel.value = showStationLabel;
     final latestIconData = useRef(iconData);
     latestIconData.value = iconData;
-    // カメラ移動でも再buildされるため、観測データに変更がない間は再利用する。
-    final geoJson = useMemoized(
-      () => geoJsonBuilder.build(
-        intensity: intensity,
-        colorModel: colorModel,
-        showingLpgmIntensity: showingLpgmIntensity,
-      ),
-      [intensity, colorModel, showingLpgmIntensity],
+    final geoJson = geoJsonBuilder.build(
+      intensity: intensity,
+      colorModel: colorModel,
+      showingLpgmIntensity: showingLpgmIntensity,
     );
 
     useEffect(() {
@@ -79,7 +84,7 @@ class const EarthquakeHistoryStationIntensityLayer({
       }
       final token = Object();
       lifecycleToken.value = token;
-      registeredIconData.value = null;
+      imagesAdded.value = false;
       latestLayerConfiguration.value = null;
       geoJsonUpdater.reset();
       initialization.value = enqueue(() async {
@@ -92,10 +97,10 @@ class const EarthquakeHistoryStationIntensityLayer({
             data: '{"type":"FeatureCollection","features":[]}',
           ),
         );
-        final cachedIconData = latestIconData.value;
-        if (cachedIconData != null && lifecycleToken.value == token) {
-          await styleController.addImages(cachedIconData.toMapStyleImages);
-          registeredIconData.value = cachedIconData;
+        final cachedBytes = latestIconData.value?.toMapStyleImages;
+        if (cachedBytes != null && lifecycleToken.value == token) {
+          await styleController.addImages(cachedBytes);
+          imagesAdded.value = true;
         }
         if (lifecycleToken.value != token) {
           return;
@@ -154,12 +159,11 @@ class const EarthquakeHistoryStationIntensityLayer({
       unawaited(
         enqueue(() async {
           await initialized;
-          if (lifecycleToken.value != token ||
-              identical(registeredIconData.value, iconData)) {
+          if (lifecycleToken.value != token || imagesAdded.value) {
             return;
           }
           await styleController.addImages(iconData.toMapStyleImages);
-          registeredIconData.value = iconData;
+          imagesAdded.value = true;
         }),
       );
       return null;
@@ -202,7 +206,10 @@ class const EarthquakeHistoryStationIntensityLayer({
               showStationLabel: showStationLabel,
               hasIcon: iconData != null,
             )) {
-              await styleController.addLayer(layer, belowLayerId: belowLayerId);
+              await styleController.addLayer(
+                layer,
+                belowLayerId: belowLayerId,
+              );
             }
             latestLayerConfiguration.value = configuration;
           }),

@@ -176,6 +176,12 @@ _KyoshinMonitorSettingsApiModel _$KyoshinMonitorSettingsApiModelFromJson(
             ) ??
             const <KyoshinMonitorDelayProfile, Duration>{},
       ),
+      minOffset: $checkedConvert(
+        'min_offset',
+        (v) => v == null
+            ? const Duration(milliseconds: 600)
+            : Duration(microseconds: (v as num).toInt()),
+      ),
       maxOffset: $checkedConvert(
         'max_offset',
         (v) => v == null
@@ -191,6 +197,7 @@ _KyoshinMonitorSettingsApiModel _$KyoshinMonitorSettingsApiModelFromJson(
     'delayAdjustType': 'delay_adjust_type',
     'autoOffsetIncrement': 'auto_offset_increment',
     'offsetAdjustments': 'offset_adjustments',
+    'minOffset': 'min_offset',
     'maxOffset': 'max_offset',
   },
 );
@@ -208,6 +215,7 @@ Map<String, dynamic> _$KyoshinMonitorSettingsApiModelToJson(
     (k, e) =>
         MapEntry(_$KyoshinMonitorDelayProfileEnumMap[k]!, e.inMicroseconds),
   ),
+  'min_offset': instance.minOffset.inMicroseconds,
   'max_offset': instance.maxOffset.inMicroseconds,
 };
 

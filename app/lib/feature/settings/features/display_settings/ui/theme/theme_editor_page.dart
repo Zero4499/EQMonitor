@@ -7,19 +7,17 @@ import 'package:eqmonitor/core/theme/model/intensity_text_color.dart';
 import 'package:eqmonitor/core/theme/model/theme_color_field_def.dart';
 import 'package:eqmonitor/core/theme/model/theme_color_set.dart';
 import 'package:eqmonitor/feature/settings/features/display_settings/data/notifier/theme_editor_controller.dart';
-// flutter_colorpicker が Flutter Material の祖先を要求するため。
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart' as flutter_material;
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const ThemeEditorPage({
-  required final ThemeBrightnessMode mode,
-  super.key,
-}) extends ConsumerWidget {
+class ThemeEditorPage extends ConsumerWidget {
+  const new({required this.mode, super.key});
+
+  final ThemeBrightnessMode mode;
+
   static const _flatCategories = [
     ThemeColorFieldCategory.primary,
     ThemeColorFieldCategory.secondary,
@@ -124,11 +122,17 @@ class const ThemeEditorPage({
   }
 }
 
-class const _ColorFieldTile({
-  required final ThemeColorFieldDef def,
-  required final ThemeColorSet colorSet,
-  required final void Function(Color color) onChanged,
-}) extends StatelessWidget {
+class _ColorFieldTile extends StatelessWidget {
+  const new({
+    required this.def,
+    required this.colorSet,
+    required this.onChanged,
+  });
+
+  final ThemeColorFieldDef def;
+  final ThemeColorSet colorSet;
+  final void Function(Color color) onChanged;
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -160,11 +164,17 @@ class const _ColorFieldTile({
   }
 }
 
-class const _IntensityFieldTile({
-  required final IntensityFieldDef def,
-  required final ThemeColorSet colorSet,
-  required final void Function(IntensityColorEntry entry) onChanged,
-}) extends StatelessWidget {
+class _IntensityFieldTile extends StatelessWidget {
+  const new({
+    required this.def,
+    required this.colorSet,
+    required this.onChanged,
+  });
+
+  final IntensityFieldDef def;
+  final ThemeColorSet colorSet;
+  final void Function(IntensityColorEntry entry) onChanged;
+
   @override
   Widget build(BuildContext context) {
     final entry = def.entryGetter(colorSet);
@@ -261,8 +271,11 @@ class const _IntensityFieldTile({
   }
 }
 
-class const _ColorPickerDialog({required final Color initial})
-    extends HookWidget {
+class _ColorPickerDialog extends HookWidget {
+  const new({required this.initial});
+
+  final Color initial;
+
   @override
   Widget build(BuildContext context) {
     final current = useState(initial);
@@ -270,12 +283,9 @@ class const _ColorPickerDialog({required final Color initial})
     return AlertDialog.adaptive(
       title: const Text('色を選択'),
       content: SingleChildScrollView(
-        child: flutter_material.Material(
-          type: .transparency,
-          child: ColorPicker(
-            pickerColor: current.value,
-            onColorChanged: (color) => current.value = color,
-          ),
+        child: ColorPicker(
+          pickerColor: current.value,
+          onColorChanged: (color) => current.value = color,
         ),
       ),
       actions: [

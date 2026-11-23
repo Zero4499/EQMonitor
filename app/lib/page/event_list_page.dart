@@ -1,6 +1,7 @@
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
+import 'package:eqmonitor/page/event_detail_sheet.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -40,31 +41,20 @@ const _magnitudeBands = <(String, double)>[
   ('6.5+', 6.5),
 ];
 
-/// 海啸公报配色：Warning/Threat 红，Watch/Advisory 橙，其余蓝。
-Color tsunamiColor(String title) {
-  final t = title.toLowerCase();
-  if (t.contains('warning') ||
-      t.contains('threat') ||
-      title.contains('警报') ||
-      title.contains('警報')) {
-    return const Color(0xFFD62828);
-  }
-  if (t.contains('watch') || t.contains('advisory')) {
-    return const Color(0xFFF5A623);
-  }
-  return const Color(0xFF2FA8E1);
-}
-
 /// 地震 / 海啸列表。数据来自 App 直连 USGS 与 tsunami.gov（第二链路），
 /// 不依赖云主机和 ntfy，云主机挂了也能看。
 class EventListPage extends HookConsumerWidget {
-  const new({super.key});
+  const new({super.key, this.initialTab = 0});
+
+  /// 打开时落到第几个标签：0 地震，1 海啸公报。
+  final int initialTab;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(appStringsProvider);
     return DefaultTabController(
       length: 2,
+      initialIndex: initialTab,
       child: Scaffold(
         appBar: AppBar(
           title: Text(s.eventListTitle),
@@ -93,8 +83,17 @@ class _QuakeTab extends ConsumerWidget {
     final s = ref.watch(appStringsProvider);
     final async = ref.watch(usgsEventsProvider);
 
+    // 手动刷新：清掉轮询写回的实时快照后重新拉，否则会直接用旧快照。
+    Future<void> refreshNow() async {
+      ref.read(liveUsgsEventsProvider.notifier).write(null);
+      ref.read(liveTsunamiBulletinsProvider.notifier).write(null);
+      ref.invalidate(usgsEventsProvider);
+      ref.invalidate(tsunamiBulletinsProvider);
+      await ref.read(usgsEventsProvider.future);
+    }
+
     return RefreshIndicator(
-      onRefresh: () async => ref.invalidate(usgsEventsProvider),
+      onRefresh: refreshNow,
       child: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => ListView(
@@ -108,7 +107,7 @@ class _QuakeTab extends ConsumerWidget {
                   Text('${s.loadFailedUsgs}：$error'),
                   const SizedBox(height: 12),
                   FilledButton.tonal(
-                    onPressed: () => ref.invalidate(usgsEventsProvider),
+                    onPressed: refreshNow,
                     child: Text(s.retry),
                   ),
                 ],
@@ -254,6 +253,7 @@ class _TsunamiTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final s = ref.watch(appStringsProvider);
+    final language = ref.watch(appLocaleProvider).languageCode;
     final async = ref.watch(tsunamiBulletinsProvider);
 
     return RefreshIndicator(
@@ -288,7 +288,7 @@ class _TsunamiTab extends ConsumerWidget {
             separatorBuilder: (_, _) => const Divider(height: 1),
             itemBuilder: (context, index) {
               final bulletin = bulletins[index];
-              final color = tsunamiColor(bulletin.title);
+              final color = tsunamiCategoryColor(bulletin.category);
               return Container(
                 decoration: BoxDecoration(
                   border: Border(left: BorderSide(color: color, width: 4)),
@@ -299,14 +299,19 @@ class _TsunamiTab extends ConsumerWidget {
                     child: Icon(Icons.waves, color: color),
                   ),
                   title: Text(
-                    bulletin.title,
+                    bulletin.regionLabel,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   subtitle: Text(
-                    bulletin.updated == null
-                        ? s.timeUnknown
-                        : _formatTime(bulletin.updated!),
+                    '${tsunamiCategoryLabel(bulletin.category, language)}'
+                    '${bulletin.updated == null ? '' : ' · ${_formatTime(bulletin.updated!)}'}',
+                  ),
+                  trailing: Icon(Icons.chevron_right, size: 18, color: color),
+                  onTap: () => showTsunamiBulletinDetail(
+                    context,
+                    bulletin,
+                    language: language,
                   ),
                 ),
               );

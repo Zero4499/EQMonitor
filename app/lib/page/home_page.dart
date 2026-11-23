@@ -11,7 +11,24 @@ import 'package:eqmonitor/page/quake_map.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
-import 'package:url_launcher/url_launcher.dart';
+
+/// 公报排序：警报 > 关注 > 信息 > 未知，同级按时间新到旧。
+List<TsunamiBulletin> _sortedBulletins(List<TsunamiBulletin> input) {
+  const weight = <TsunamiCategory, int>{
+    TsunamiCategory.warning: 0,
+    TsunamiCategory.advisory: 1,
+    TsunamiCategory.info: 2,
+    TsunamiCategory.unknown: 3,
+  };
+  final list = [...input]
+    ..sort((a, b) {
+      final w = weight[a.category]!.compareTo(weight[b.category]!);
+      if (w != 0) return w;
+      return (b.updated ?? DateTime(1970))
+          .compareTo(a.updated ?? DateTime(1970));
+    });
+  return list;
+}
 
 /// 首页：与 EQMonitor 一致——地图铺满屏幕，内容以可拖动面板浮在下方。
 class HomePage extends HookConsumerWidget {
@@ -112,6 +129,10 @@ class _HomeSheet extends ConsumerWidget {
         .where((e) => e.hasLocation)
         .where((e) => (e.magnitude ?? 0) >= minMagnitude)
         .toList(growable: false);
+    final bulletins = _sortedBulletins(
+      ref.watch(tsunamiBulletinsProvider).value ?? const <TsunamiBulletin>[],
+    );
+    final lastSyncedAt = ref.watch(feedLastSyncedAtProvider);
 
     // 面板进入动画：淡入 + 轻微上移
     return TweenAnimationBuilder<double>(
@@ -158,14 +179,24 @@ class _HomeSheet extends ConsumerWidget {
                     language: language,
                     onChanged: onMinMagnitudeChanged,
                   ),
+                  if (bulletins.isNotEmpty)
+                    _TsunamiBannerA(
+                      bulletins: bulletins,
+                      language: language,
+                      s: s,
+                    ),
                   const SizedBox(height: 10),
-                  const _PushStatusCard(),
+                  _PushStatusCard(),
                   const SizedBox(height: 10),
                   _TopEvents(eventList: events, language: language),
                   const SizedBox(height: 10),
                   _ActionsCard(language: language, s: s),
                   const SizedBox(height: 10),
-                  _AllEvents(eventList: events, language: language),
+                  _AllEvents(
+                    eventList: events,
+                    language: language,
+                    lastSyncedAt: lastSyncedAt,
+                  ),
                   const SizedBox(height: 8),
                   Text(
                     tri3(
@@ -299,16 +330,12 @@ class _PushStatusCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     _LinkRow(
                       label: s.linkNtfy,
-                      value: language == 'zh'
-                          ? ntfyStatus.label
-                          : ntfyStatus.labelEn,
+                      value: ntfyStatus.displayLabel(language),
                       ok: ntfyConnected,
                     ),
                     _LinkRow(
                       label: s.linkDirect,
-                      value: language == 'zh'
-                          ? directStatus.label
-                          : directStatus.labelEn,
+                      value: directStatus.displayLabel(language),
                       ok: directOk,
                     ),
                   ],
@@ -354,6 +381,85 @@ class _LinkRow extends StatelessWidget {
       ],
     );
   }
+}
+
+/// 方案 A：筛选行下方的全宽警示条，显示最严重的一条公报。
+class _TsunamiBannerA extends StatelessWidget {
+  const _TsunamiBannerA({
+    required this.bulletins,
+    required this.language,
+    required this.s,
+  });
+
+  final List<TsunamiBulletin> bulletins;
+  final String language;
+  final AppStrings s;
+
+  @override
+  Widget build(BuildContext context) {
+    final first = bulletins.first;
+    final color = tsunamiCategoryColor(first.category);
+    final more = bulletins.length > 1
+        ? ' · ${s.bannerMoreCount.replaceAll('{n}', '${bulletins.length - 1}')}'
+        : '';
+    return _Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => showTsunamiBulletinDetail(context, first, language: language),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Row(
+            spacing: 12,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.waves, color: color),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      tsunamiCategoryLabel(first.category, language),
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: color,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      first.regionLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      '${_bulletinTime(first, language)}$more',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+String _bulletinTime(TsunamiBulletin bulletin, String language) {
+  final t = bulletin.updated;
+  if (t == null) return tri3(language, zh: '时间未知', en: 'Time unknown', ja: '時刻不明');
+  final two = (int v) => v.toString().padLeft(2, '0');
+  return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
 }
 
 class _TopEvents extends StatelessWidget {
@@ -444,15 +550,31 @@ class _TopEvents extends StatelessWidget {
 
 /// 最近事件列表（面板拉到最高时可滚动查看）。
 class _AllEvents extends StatelessWidget {
-  const new({required this.eventList, required this.language});
+  const new({
+    required this.eventList,
+    required this.language,
+    this.lastSyncedAt,
+  });
 
   final List<UsgsEvent> eventList;
   final String language;
+
+  /// 最近一次成功从 USGS 拉取数据的时间；为空时说明还没拉过。
+  final DateTime? lastSyncedAt;
+
+  /// 12:05:30 —— 只显示时分秒，避免在主面板里占太多宽度。
+  static String _clock(DateTime time) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    final second = time.second.toString().padLeft(2, '0');
+    return '$hour:$minute:$second';
+  }
 
   @override
   Widget build(BuildContext context) {
     final colorTheme = context.designSystem.colorTheme;
     final shown = eventList.take(20).toList(growable: false);
+    final syncedAt = lastSyncedAt;
 
     return _Card(
       child: Padding(
@@ -460,14 +582,33 @@ class _AllEvents extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              tri3(
-                language,
-                zh: '最近事件',
-                en: 'Recent events',
-                ja: '最近の地震',
-              ),
-              style: Theme.of(context).textTheme.titleSmall,
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  tri3(
+                    language,
+                    zh: '最近事件',
+                    en: 'Recent events',
+                    ja: '最近の地震',
+                  ),
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const Spacer(),
+                if (syncedAt != null)
+                  Text(
+                    tri3(
+                      language,
+                      zh: '更新于 ${_clock(syncedAt)}',
+                      en: 'Updated ${_clock(syncedAt)}',
+                      ja: '更新 ${_clock(syncedAt)}',
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colorTheme.onSurfaceVariant,
+                    ),
+                  ),
+              ],
             ),
             const SizedBox(height: 4),
             for (final event in shown)

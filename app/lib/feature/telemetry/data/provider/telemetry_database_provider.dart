@@ -35,7 +35,9 @@ String telemetryDbPath(Ref ref) {
   );
 }
 
-class const TelemetryDbPathResolver._() {
+class TelemetryDbPathResolver {
+  const new _();
+
   static Future<String> resolve() async {
     if (Platform.isIOS) {
       final containerPath = await _getAppGroupContainerPath();

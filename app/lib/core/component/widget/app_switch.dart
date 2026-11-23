@@ -4,11 +4,16 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-class const AppSwitch({
-  required final bool value,
-  required final ValueChanged<bool>? onChanged,
-  super.key,
-}) extends HookWidget {
+class AppSwitch extends HookWidget {
+  const new({
+    required this.value,
+    required this.onChanged,
+    super.key,
+  });
+
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+
   @override
   Widget build(BuildContext context) {
     final pressed = useState(false);
@@ -169,21 +174,32 @@ class const AppSwitch({
   }
 }
 
-class const AppSwitchListTile({
-  required final String title,
-  required final bool value,
-  required final ValueChanged<bool>? onChanged,
-  super.key,
-  final String? subtitle,
-  final EdgeInsetsGeometry contentPadding = const EdgeInsets.symmetric(
-    horizontal: 16,
-  ),
-  final ShapeBorder? shape,
-  final Color? tileColor,
-  final Color? textColor,
-  final VisualDensity? visualDensity,
-  final Widget? trailing,
-}) extends StatelessWidget {
+class AppSwitchListTile extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    super.key,
+    this.subtitle,
+    this.contentPadding = const EdgeInsets.symmetric(horizontal: 16),
+    this.shape,
+    this.tileColor,
+    this.textColor,
+    this.visualDensity,
+    this.trailing,
+  });
+
+  final String title;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool>? onChanged;
+  final EdgeInsetsGeometry contentPadding;
+  final ShapeBorder? shape;
+  final Color? tileColor;
+  final Color? textColor;
+  final VisualDensity? visualDensity;
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) {
     final trailingWidgets = <Widget>[

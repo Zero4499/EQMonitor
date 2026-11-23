@@ -9,7 +9,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class const AboutThisAppPage({super.key}) extends HookConsumerWidget {
+class AboutThisAppPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;
@@ -117,7 +119,9 @@ class const AboutThisAppPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _DeviceIdTile() extends ConsumerWidget {
+class _DeviceIdTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;

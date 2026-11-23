@@ -38,7 +38,9 @@ import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 地震活動画面(震央分布 + 矩形選択によるM-T図・積算・深さ断面)。
-class const SeismicityPage({super.key}) extends HookConsumerWidget {
+class SeismicityPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final span = useState(SeismicitySpan.p1m);
@@ -303,18 +305,31 @@ class const SeismicityPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _MapBody({
-  required final String styleString,
-  required final SeismicityDataMode mode,
-  required final AsyncValue<SeismicityDataset> datasetAsync,
-  required final AsyncValue<HypocenterManifest> manifestAsync,
-  required final List<HypocenterArchive> availableArchives,
-  required final List<HypocenterArchiveProbeFailure> archiveFailures,
-  required final bool isProbingArchives,
-  required final SeismicityColorMode colorMode,
-  required final bool isSelecting,
-  required final void Function(SeismicityBounds bounds) onSelectionEnd,
-}) extends HookConsumerWidget {
+class _MapBody extends HookConsumerWidget {
+  const new({
+    required this.styleString,
+    required this.mode,
+    required this.datasetAsync,
+    required this.manifestAsync,
+    required this.availableArchives,
+    required this.archiveFailures,
+    required this.isProbingArchives,
+    required this.colorMode,
+    required this.isSelecting,
+    required this.onSelectionEnd,
+  });
+
+  final String styleString;
+  final SeismicityDataMode mode;
+  final AsyncValue<SeismicityDataset> datasetAsync;
+  final AsyncValue<HypocenterManifest> manifestAsync;
+  final List<HypocenterArchive> availableArchives;
+  final List<HypocenterArchiveProbeFailure> archiveFailures;
+  final bool isProbingArchives;
+  final SeismicityColorMode colorMode;
+  final bool isSelecting;
+  final void Function(SeismicityBounds bounds) onSelectionEnd;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final events = switch ((mode, datasetAsync)) {

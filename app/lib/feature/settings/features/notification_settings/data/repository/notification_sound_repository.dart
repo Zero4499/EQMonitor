@@ -12,9 +12,10 @@ part 'notification_sound_repository.g.dart';
 NotificationSoundRepository notificationSoundRepository(Ref ref) =>
     NotificationSoundRepository(ref.watch(notificationSoundDataSourceProvider));
 
-class NotificationSoundRepository(
-  final NotificationSoundDataSource _dataSource,
-) {
+class NotificationSoundRepository {
+  new(this._dataSource);
+
+  final NotificationSoundDataSource _dataSource;
   String? _sourcePath;
   bool _importActive = false;
 

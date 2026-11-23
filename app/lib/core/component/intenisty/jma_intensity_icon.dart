@@ -1,32 +1,37 @@
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/gen/fonts.gen.dart';
 import 'package:eqmonitor/core/model/intensity/jma_intensity.dart';
-import 'package:eqmonitor/core/theme/model/intensity_color_entry.dart';
 import 'package:eqmonitor/core/theme/model/intensity_colors.dart';
 import 'package:eqmonitor/feature/map/features/icon/data/model/intensity_icon.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const JmaIntensityIcon({
-  required final JmaIntensity intensity,
-  required final IntensityIconType type,
-  final String? customText,
-  super.key,
-  final double size = 50,
-  final bool showSuffix = true,
-  final IntensityColorEntry? colorEntry,
-}) extends StatelessWidget {
+class JmaIntensityIcon extends StatelessWidget {
+  const new({
+    required this.intensity,
+    required this.type,
+    this.customText,
+    super.key,
+    this.size = 50,
+    this.showSuffix = true,
+  });
+
+  final JmaIntensity intensity;
+  final IntensityIconType type;
+  final double size;
+  final String? customText;
+  final bool showSuffix;
+
   @override
   Widget build(BuildContext context) {
-    final colorEntry =
-        this.colorEntry ??
-        context.designSystem.colorTheme.intensity.fromJmaIntensity(intensity);
+    final colorEntry = context.designSystem.colorTheme.intensity
+        .fromJmaIntensity(intensity);
     final (fg, bg) = (colorEntry.resolvedForeground, colorEntry.background);
     final intensityMainText = intensity.mainText;
-    final suffix = switch (intensity) {
-      .fiveLower || .sixLower => '-',
-      .fiveUpper || .sixUpper => '+',
-      _ => '',
-    };
+    final suffix = intensity.label.contains('-')
+        ? '-'
+        : intensity.label.contains('+')
+        ? '+'
+        : '';
     final intensitySubText = intensity.suffix;
     final borderColor = Color.lerp(bg, fg, 0.3) ?? bg;
     return switch (type) {

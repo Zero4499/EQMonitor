@@ -18,10 +18,11 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:paging_view/paging_view.dart';
 
-class const EarthquakeHistoryPage({
-  super.key,
-  final EarthquakeHistoryParameter? initialParameter,
-}) extends HookConsumerWidget {
+class EarthquakeHistoryPage extends HookConsumerWidget {
+  const new({super.key, this.initialParameter});
+
+  final EarthquakeHistoryParameter? initialParameter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedEventId = useState<String?>(null);
@@ -46,11 +47,17 @@ class const EarthquakeHistoryPage({
   }
 }
 
-class const _SliverListBody({
-  final EarthquakeHistoryParameter? initialParameter,
-  required final String? selectedEventId,
-  required final ValueChanged<String> onSelect,
-}) extends HookConsumerWidget {
+class _SliverListBody extends HookConsumerWidget {
+  const new({
+    this.initialParameter,
+    required this.selectedEventId,
+    required this.onSelect,
+  });
+
+  final EarthquakeHistoryParameter? initialParameter;
+  final String? selectedEventId;
+  final ValueChanged<String> onSelect;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final parameter = useState(
@@ -113,15 +120,25 @@ class const _SliverListBody({
   }
 }
 
-class const _PagingBody({
-  required final EarthquakeHistoryDataSource dataSource,
-  required final String? selectedEventId,
-  required final ValueChanged<String> onSelect,
-  required final ValueNotifier<EarthquakeHistoryParameter> parameter,
-  required final EarthquakeHistoryListConfig config,
-  required final ValueChanged<EarthquakeHistoryParameter> onParameterChanged,
-  required final Future<void> Function() onRefresh,
-}) extends ConsumerWidget {
+class _PagingBody extends ConsumerWidget {
+  const new({
+    required this.dataSource,
+    required this.selectedEventId,
+    required this.onSelect,
+    required this.parameter,
+    required this.config,
+    required this.onParameterChanged,
+    required this.onRefresh,
+  });
+
+  final EarthquakeHistoryDataSource dataSource;
+  final String? selectedEventId;
+  final ValueChanged<String> onSelect;
+  final ValueNotifier<EarthquakeHistoryParameter> parameter;
+  final EarthquakeHistoryListConfig config;
+  final ValueChanged<EarthquakeHistoryParameter> onParameterChanged;
+  final Future<void> Function() onRefresh;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(

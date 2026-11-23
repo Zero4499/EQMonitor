@@ -1,11 +1,17 @@
 import 'package:material_ui/material_ui.dart';
 
-class const WarningStripeDecoration({
-  required final List<Color> colors,
-  super.key,
-  final double height = 8.0,
-  final double stripeWidth = 8.0,
-}) extends StatelessWidget {
+class WarningStripeDecoration extends StatelessWidget {
+  const new({
+    required this.colors,
+    super.key,
+    this.height = 8.0,
+    this.stripeWidth = 8.0,
+  });
+
+  final List<Color> colors;
+  final double height;
+  final double stripeWidth;
+
   @override
   Widget build(BuildContext context) {
     if (colors.isEmpty) {
@@ -18,10 +24,12 @@ class const WarningStripeDecoration({
   }
 }
 
-class _StripePainter({
-  required final List<Color> colors,
-  required final double stripeWidth,
-}) extends CustomPainter {
+class _StripePainter extends CustomPainter {
+  new({required this.colors, required this.stripeWidth});
+
+  final List<Color> colors;
+  final double stripeWidth;
+
   @override
   void paint(Canvas canvas, Size size) {
     final h = size.height;

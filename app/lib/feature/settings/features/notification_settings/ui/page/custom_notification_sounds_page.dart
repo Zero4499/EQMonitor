@@ -7,8 +7,9 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const CustomNotificationSoundsPage({super.key})
-    extends HookConsumerWidget {
+class CustomNotificationSoundsPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = ref.watch(customNotificationSoundsProvider);

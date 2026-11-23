@@ -13,7 +13,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const AssetPackUpdateCard({super.key}) extends HookConsumerWidget {
+class AssetPackUpdateCard extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(assetPackUpdateProvider);
@@ -68,10 +70,15 @@ class const AssetPackUpdateCard({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _AssetPackAvailableCard({
-  required final AssetPackDistributionEntry entry,
-  required final List<AssetPackDistributionEntry> changelogEntries,
-}) extends ConsumerWidget {
+class _AssetPackAvailableCard extends ConsumerWidget {
+  const new({
+    required this.entry,
+    required this.changelogEntries,
+  });
+
+  final AssetPackDistributionEntry entry;
+  final List<AssetPackDistributionEntry> changelogEntries;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;
@@ -111,10 +118,15 @@ class const _AssetPackAvailableCard({
   }
 }
 
-class const _AssetPackConsentDialog({
-  required final AssetPackDistributionEntry entry,
-  required final List<AssetPackDistributionEntry> changelogEntries,
-}) extends StatelessWidget {
+class _AssetPackConsentDialog extends StatelessWidget {
+  const new({
+    required this.entry,
+    required this.changelogEntries,
+  });
+
+  final AssetPackDistributionEntry entry;
+  final List<AssetPackDistributionEntry> changelogEntries;
+
   @override
   Widget build(BuildContext context) {
     final languageCode = Localizations.localeOf(context).languageCode;
@@ -181,10 +193,12 @@ class const _AssetPackConsentDialog({
   }
 }
 
-class const _AssetPackInstallingCard({
-  required final AssetPackDistributionEntry entry,
-  required final AssetPackInstallProgress progress,
-}) extends StatelessWidget {
+class _AssetPackInstallingCard extends StatelessWidget {
+  const new({required this.entry, required this.progress});
+
+  final AssetPackDistributionEntry entry;
+  final AssetPackInstallProgress progress;
+
   @override
   Widget build(BuildContext context) {
     final label = switch (progress.phase) {
@@ -219,11 +233,17 @@ class const _AssetPackInstallingCard({
   }
 }
 
-class const _AssetPackMessageCard({
-  required final IconData icon,
-  required final String title,
-  required final String message,
-}) extends StatelessWidget {
+class _AssetPackMessageCard extends StatelessWidget {
+  const new({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -240,8 +260,11 @@ class const _AssetPackMessageCard({
   }
 }
 
-class const _AssetPackErrorCard({required final String message})
-    extends ConsumerWidget {
+class _AssetPackErrorCard extends ConsumerWidget {
+  const new({required this.message});
+
+  final String message;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) => Card.outlined(
     margin: EdgeInsets.zero,

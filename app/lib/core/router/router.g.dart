@@ -21,6 +21,7 @@ List<RouteBase> get $appRoutes => [
   $intensityHistoryRoute,
   $earthquakeHistoryDetailsRoute,
   $earthquakeActivityRoute,
+  $liveMonitorRoute,
   $telegramListByEventIdRoute,
   $homeRoute,
   $talkerRoute,
@@ -28,6 +29,7 @@ List<RouteBase> get $appRoutes => [
   $feedRoute,
   $feedDetailsRoute,
   $feedItemDetailsRoute,
+  $tsunamiDetailsRoute,
   $paywallRoute,
   $subscriptionSettingsRoute,
 ];
@@ -401,6 +403,33 @@ mixin $EarthquakeActivityRoute on GoRouteData {
       context.replace(location, extra: _self.$extra);
 }
 
+RouteBase get $liveMonitorRoute => GoRouteData.$route(
+  path: '/live-monitor',
+  hasOverriddenOnExit: false,
+  factory: $LiveMonitorRoute._fromState,
+);
+
+mixin $LiveMonitorRoute on GoRouteData {
+  static LiveMonitorRoute _fromState(GoRouterState state) =>
+      const LiveMonitorRoute();
+
+  @override
+  String get location => GoRouteData.$location('/live-monitor');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 RouteBase get $telegramListByEventIdRoute => GoRouteData.$route(
   path: '/telegram-list/:eventId',
   hasOverriddenOnExit: false,
@@ -613,11 +642,6 @@ RouteBase get $settingsRoute => GoRouteData.$route(
           hasOverriddenOnExit: false,
           factory: $NotificationHistoryRoute._fromState,
         ),
-        GoRouteData.$route(
-          path: 'test',
-          hasOverriddenOnExit: false,
-          factory: $TestNotificationRoute._fromState,
-        ),
       ],
     ),
     GoRouteData.$route(
@@ -691,14 +715,14 @@ RouteBase get $settingsRoute => GoRouteData.$route(
           factory: $DebugShakeDetectionInsertRoute._fromState,
         ),
         GoRouteData.$route(
-          path: 'shake-detection-engine',
-          hasOverriddenOnExit: false,
-          factory: $DebugShakeDetectionEngineRoute._fromState,
-        ),
-        GoRouteData.$route(
           path: 'jma-map',
           hasOverriddenOnExit: false,
           factory: $DebugJmaMapRoute._fromState,
+        ),
+        GoRouteData.$route(
+          path: 'eqmonitor-map',
+          hasOverriddenOnExit: false,
+          factory: $EqmonitorMapDebugRoute._fromState,
         ),
         GoRouteData.$route(
           path: 'playground',
@@ -769,6 +793,81 @@ RouteBase get $settingsRoute => GoRouteData.$route(
           path: 'telemetry',
           hasOverriddenOnExit: false,
           factory: $DebugTelemetryRoute._fromState,
+        ),
+        GoRouteData.$route(
+          path: 'tsunami-details',
+          hasOverriddenOnExit: false,
+          factory: $DebugTsunamiDetailsRoute._fromState,
+          routes: [
+            GoRouteData.$route(
+              path: 'timeline/:tsunamiId',
+              hasOverriddenOnExit: false,
+              factory: $DebugTsunamiTimelineRoute._fromState,
+            ),
+          ],
+        ),
+        GoRouteData.$route(
+          path: 'nied',
+          hasOverriddenOnExit: false,
+          factory: $NiedRoute._fromState,
+          routes: [
+            GoRouteData.$route(
+              path: 'aqua',
+              hasOverriddenOnExit: false,
+              factory: $AquaRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'catalog',
+                  hasOverriddenOnExit: false,
+                  factory: $AquaCatalogRoute._fromState,
+                ),
+              ],
+            ),
+            GoRouteData.$route(
+              path: 'fnet',
+              hasOverriddenOnExit: false,
+              factory: $FnetRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'catalog',
+                  hasOverriddenOnExit: false,
+                  factory: $FnetCatalogRoute._fromState,
+                ),
+              ],
+            ),
+            GoRouteData.$route(
+              path: 'knet',
+              hasOverriddenOnExit: false,
+              factory: $KnetWaveformRoute._fromState,
+              routes: [
+                GoRouteData.$route(
+                  path: 'settings',
+                  hasOverriddenOnExit: false,
+                  factory: $KnetCredentialsSettingsRoute._fromState,
+                ),
+                GoRouteData.$route(
+                  path: 'media',
+                  hasOverriddenOnExit: false,
+                  factory: $KnetMediaRoute._fromState,
+                ),
+                GoRouteData.$route(
+                  path: 'records',
+                  hasOverriddenOnExit: false,
+                  factory: $KnetRecordListRoute._fromState,
+                ),
+                GoRouteData.$route(
+                  path: 'waveform',
+                  hasOverriddenOnExit: false,
+                  factory: $KnetStationWaveformRoute._fromState,
+                ),
+              ],
+            ),
+            GoRouteData.$route(
+              path: 'hinet-seismicity',
+              hasOverriddenOnExit: false,
+              factory: $HinetSeismicityRoute._fromState,
+            ),
+          ],
         ),
       ],
     ),
@@ -1040,27 +1139,6 @@ mixin $NotificationHistoryRoute on GoRouteData {
   @override
   String get location =>
       GoRouteData.$location('/settings/notification/history');
-
-  @override
-  void go(BuildContext context) => context.go(location);
-
-  @override
-  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
-
-  @override
-  void pushReplacement(BuildContext context) =>
-      context.pushReplacement(location);
-
-  @override
-  void replace(BuildContext context) => context.replace(location);
-}
-
-mixin $TestNotificationRoute on GoRouteData {
-  static TestNotificationRoute _fromState(GoRouterState state) =>
-      const TestNotificationRoute();
-
-  @override
-  String get location => GoRouteData.$location('/settings/notification/test');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -1376,13 +1454,12 @@ mixin $DebugShakeDetectionInsertRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $DebugShakeDetectionEngineRoute on GoRouteData {
-  static DebugShakeDetectionEngineRoute _fromState(GoRouterState state) =>
-      const DebugShakeDetectionEngineRoute();
+mixin $DebugJmaMapRoute on GoRouteData {
+  static DebugJmaMapRoute _fromState(GoRouterState state) =>
+      const DebugJmaMapRoute();
 
   @override
-  String get location =>
-      GoRouteData.$location('/settings/debug/shake-detection-engine');
+  String get location => GoRouteData.$location('/settings/debug/jma-map');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -1398,12 +1475,12 @@ mixin $DebugShakeDetectionEngineRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
-mixin $DebugJmaMapRoute on GoRouteData {
-  static DebugJmaMapRoute _fromState(GoRouterState state) =>
-      const DebugJmaMapRoute();
+mixin $EqmonitorMapDebugRoute on GoRouteData {
+  static EqmonitorMapDebugRoute _fromState(GoRouterState state) =>
+      const EqmonitorMapDebugRoute();
 
   @override
-  String get location => GoRouteData.$location('/settings/debug/jma-map');
+  String get location => GoRouteData.$location('/settings/debug/eqmonitor-map');
 
   @override
   void go(BuildContext context) => context.go(location);
@@ -1719,6 +1796,300 @@ mixin $DebugTelemetryRoute on GoRouteData {
   void replace(BuildContext context) => context.replace(location);
 }
 
+mixin $DebugTsunamiDetailsRoute on GoRouteData {
+  static DebugTsunamiDetailsRoute _fromState(GoRouterState state) =>
+      const DebugTsunamiDetailsRoute();
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/tsunami-details');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $DebugTsunamiTimelineRoute on GoRouteData {
+  static DebugTsunamiTimelineRoute _fromState(GoRouterState state) =>
+      DebugTsunamiTimelineRoute(tsunamiId: state.pathParameters['tsunamiId']!);
+
+  DebugTsunamiTimelineRoute get _self => this as DebugTsunamiTimelineRoute;
+
+  @override
+  String get location => GoRouteData.$location(
+    '/settings/debug/tsunami-details/timeline/${Uri.encodeComponent(_self.tsunamiId)}',
+  );
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $NiedRoute on GoRouteData {
+  static NiedRoute _fromState(GoRouterState state) => const NiedRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/debug/nied');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $AquaRoute on GoRouteData {
+  static AquaRoute _fromState(GoRouterState state) => const AquaRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/debug/nied/aqua');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $AquaCatalogRoute on GoRouteData {
+  static AquaCatalogRoute _fromState(GoRouterState state) =>
+      const AquaCatalogRoute();
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/aqua/catalog');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $FnetRoute on GoRouteData {
+  static FnetRoute _fromState(GoRouterState state) => const FnetRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/debug/nied/fnet');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $FnetCatalogRoute on GoRouteData {
+  static FnetCatalogRoute _fromState(GoRouterState state) =>
+      const FnetCatalogRoute();
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/fnet/catalog');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $KnetWaveformRoute on GoRouteData {
+  static KnetWaveformRoute _fromState(GoRouterState state) =>
+      const KnetWaveformRoute();
+
+  @override
+  String get location => GoRouteData.$location('/settings/debug/nied/knet');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $KnetCredentialsSettingsRoute on GoRouteData {
+  static KnetCredentialsSettingsRoute _fromState(GoRouterState state) =>
+      const KnetCredentialsSettingsRoute();
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/knet/settings');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
+mixin $KnetMediaRoute on GoRouteData {
+  static KnetMediaRoute _fromState(GoRouterState state) =>
+      KnetMediaRoute($extra: state.extra as DateTime);
+
+  KnetMediaRoute get _self => this as KnetMediaRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/knet/media');
+
+  @override
+  void go(BuildContext context) => context.go(location, extra: _self.$extra);
+
+  @override
+  Future<T?> push<T>(BuildContext context) =>
+      context.push<T>(location, extra: _self.$extra);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location, extra: _self.$extra);
+
+  @override
+  void replace(BuildContext context) =>
+      context.replace(location, extra: _self.$extra);
+}
+
+mixin $KnetRecordListRoute on GoRouteData {
+  static KnetRecordListRoute _fromState(GoRouterState state) =>
+      KnetRecordListRoute($extra: state.extra as DateTime);
+
+  KnetRecordListRoute get _self => this as KnetRecordListRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/knet/records');
+
+  @override
+  void go(BuildContext context) => context.go(location, extra: _self.$extra);
+
+  @override
+  Future<T?> push<T>(BuildContext context) =>
+      context.push<T>(location, extra: _self.$extra);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location, extra: _self.$extra);
+
+  @override
+  void replace(BuildContext context) =>
+      context.replace(location, extra: _self.$extra);
+}
+
+mixin $KnetStationWaveformRoute on GoRouteData {
+  static KnetStationWaveformRoute _fromState(GoRouterState state) =>
+      KnetStationWaveformRoute($extra: state.extra as KnetStationResult);
+
+  KnetStationWaveformRoute get _self => this as KnetStationWaveformRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/knet/waveform');
+
+  @override
+  void go(BuildContext context) => context.go(location, extra: _self.$extra);
+
+  @override
+  Future<T?> push<T>(BuildContext context) =>
+      context.push<T>(location, extra: _self.$extra);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location, extra: _self.$extra);
+
+  @override
+  void replace(BuildContext context) =>
+      context.replace(location, extra: _self.$extra);
+}
+
+mixin $HinetSeismicityRoute on GoRouteData {
+  static HinetSeismicityRoute _fromState(GoRouterState state) =>
+      const HinetSeismicityRoute();
+
+  @override
+  String get location =>
+      GoRouteData.$location('/settings/debug/nied/hinet-seismicity');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
+}
+
 RouteBase get $feedRoute => GoRouteData.$route(
   path: '/feed',
   hasOverriddenOnExit: false,
@@ -1809,6 +2180,36 @@ mixin $FeedItemDetailsRoute on GoRouteData {
   @override
   void replace(BuildContext context) =>
       context.replace(location, extra: _self.$extra);
+}
+
+RouteBase get $tsunamiDetailsRoute => GoRouteData.$route(
+  path: '/tsunami/:tsunamiId',
+  hasOverriddenOnExit: false,
+  factory: $TsunamiDetailsRoute._fromState,
+);
+
+mixin $TsunamiDetailsRoute on GoRouteData {
+  static TsunamiDetailsRoute _fromState(GoRouterState state) =>
+      TsunamiDetailsRoute(tsunamiId: state.pathParameters['tsunamiId']!);
+
+  TsunamiDetailsRoute get _self => this as TsunamiDetailsRoute;
+
+  @override
+  String get location =>
+      GoRouteData.$location('/tsunami/${Uri.encodeComponent(_self.tsunamiId)}');
+
+  @override
+  void go(BuildContext context) => context.go(location);
+
+  @override
+  Future<T?> push<T>(BuildContext context) => context.push<T>(location);
+
+  @override
+  void pushReplacement(BuildContext context) =>
+      context.pushReplacement(location);
+
+  @override
+  void replace(BuildContext context) => context.replace(location);
 }
 
 RouteBase get $paywallRoute => GoRouteData.$route(
@@ -1910,4 +2311,4 @@ final class GoRouterProvider
   }
 }
 
-String _$goRouterHash() => r'c21c9ae83213529de959c8b606ead077980cce6b';
+String _$goRouterHash() => r'f98128e01fa8a33f80f81980802cca4d6bdab7ee';

@@ -11,7 +11,9 @@ import 'package:eqmonitor/core/util/converter/color_converter.dart';
 
 /// 旧震度カラー設定 (`intensity_color` / `estimated_intensity_color`) を
 /// 新しい [AppTheme] 形式にマイグレーションする。
-class const ThemeMigration._() {
+class ThemeMigration {
+  const new _();
+
   /// 旧キーが1つも存在しない場合は `null` を返す（マイグレーション不要）。
   /// 旧キーが存在する場合は、[AppTheme.eqmonitorDefault] をベースに
   /// 震度色のみを旧設定で上書きしたテーマを返す。

@@ -61,9 +61,10 @@ abstract interface class NativeAuthNonceGenerator {
   NativeAuthNonce generate();
 }
 
-final class CryptographicNonceGenerator({Random? random})
-    implements NativeAuthNonceGenerator {
-  final Random _random = random ?? Random.secure();
+final class CryptographicNonceGenerator implements NativeAuthNonceGenerator {
+  new({Random? random}) : _random = random ?? Random.secure();
+
+  final Random _random;
 
   @override
   NativeAuthNonce generate() {

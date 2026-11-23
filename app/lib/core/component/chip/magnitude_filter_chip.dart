@@ -4,16 +4,17 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const MagnitudeFilterChip({
-  final double? min,
-  final double? max,
+class MagnitudeFilterChip extends StatelessWidget {
+  const new({this.min, this.max, this.onChanged, super.key});
 
   /// マグニチュードの範囲が変更された時に呼ばれる
   /// `min` と `max` にはそれぞれ下限値と上限値が渡される
   /// どちらかが `null` の場合はその値は指定されていないことを示す
-  final void Function(double?, double?)? onChanged,
-  super.key,
-}) extends StatelessWidget {
+  final void Function(double?, double?)? onChanged;
+
+  final double? min;
+  final double? max;
+
   static const double initialMin = 0;
   static const double initialMax = 9;
 
@@ -51,10 +52,15 @@ class const MagnitudeFilterChip({
   }
 }
 
-class const _MagnitudeFilterModal({
-  final double? currentMin = MagnitudeFilterChip.initialMin,
-  final double? currentMax = MagnitudeFilterChip.initialMax,
-}) extends HookWidget {
+class _MagnitudeFilterModal extends HookWidget {
+  const new({
+    this.currentMin = MagnitudeFilterChip.initialMin,
+    this.currentMax = MagnitudeFilterChip.initialMax,
+  });
+
+  final double? currentMin;
+  final double? currentMax;
+
   @override
   Widget build(BuildContext context) {
     final min = useState<double>(currentMin ?? MagnitudeFilterChip.initialMin);

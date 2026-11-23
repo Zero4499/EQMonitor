@@ -6,17 +6,21 @@ import 'package:eqmonitor/core/hook/use_map_operation_queue.dart';
 import 'package:eqmonitor/core/util/map/remove_map_style_resources.dart';
 import 'package:eqmonitor/core/util/nullable_value_requirement.dart';
 import 'package:eqmonitor/feature/eew/data/model/eew_telegram_item.dart';
-import 'package:eqmonitor/feature/map/data/provider/map_style_util.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const EewHypocenterLayer({
-  required final List<EewTelegramItem> eews,
-  final bool enableBlink = false,
-  super.key,
-}) extends HookConsumerWidget {
+class EewHypocenterLayer extends HookConsumerWidget {
+  const new({
+    required this.eews,
+    this.enableBlink = false,
+    super.key,
+  });
+
+  final List<EewTelegramItem> eews;
+  final bool enableBlink;
+
   static const ({String lowPrecise, String normal}) sourceId = (
     normal: 'eew-hypocenter-normal',
     lowPrecise: 'eew-hypocenter-low-precise',
@@ -159,7 +163,6 @@ class const EewHypocenterLayer({
                   'icon-opacity': ['get', 'opacity'],
                 },
               ),
-              belowLayerId: BaseLayer.markerUpperAnchor.name,
             ),
             styleController.addLayer(
               SymbolStyleLayer(
@@ -183,7 +186,6 @@ class const EewHypocenterLayer({
                   'icon-opacity': ['get', 'opacity'],
                 },
               ),
-              belowLayerId: BaseLayer.markerUpperAnchor.name,
             ),
           ).wait;
           isInitialized.value = true;
@@ -223,9 +225,9 @@ class const EewHypocenterLayer({
           }),
         );
       };
-      // Assets は flutter_gen の静的クラス、BaseLayer は静的メンバ参照、
-      // latestIconOpacity は useRef。いずれもビルド間で変化しない。
-      // ignore_keys: Assets, BaseLayer, latestIconOpacity
+      // Assets は flutter_gen の静的クラス、latestIconOpacity は useRef。
+      // どちらもビルド間で変化しない。
+      // ignore_keys: Assets, latestIconOpacity
     }, [styleController]);
 
     useEffect(() {

@@ -14,7 +14,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class const SplashPage({super.key}) extends HookConsumerWidget {
+class SplashPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // ensure cold-start getInitialLink runs even if main.dart listen is delayed
@@ -55,8 +57,6 @@ class const SplashPage({super.key}) extends HookConsumerWidget {
                 .consumePending() ??
             ref.read(appLinksColdStartGateProvider).consumePending();
         switch (pending) {
-          case NotificationRouteLink(location: '/'):
-            break;
           case NotificationRouteLink(:final location):
             await GoRouter.of(context).push<void>(location);
           case NotificationUrlLink(:final uri):

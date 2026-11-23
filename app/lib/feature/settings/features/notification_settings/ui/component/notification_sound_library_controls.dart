@@ -6,8 +6,9 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const NotificationSoundLibraryControls({super.key})
-    extends ConsumerWidget {
+class NotificationSoundLibraryControls extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (!ref.watch(customNotificationSoundsSupportedProvider))

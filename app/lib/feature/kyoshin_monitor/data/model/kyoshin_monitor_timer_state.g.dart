@@ -32,10 +32,6 @@ _KyoshinMonitorTimerState _$KyoshinMonitorTimerStateFromJson(
         'last_synced_at',
         (v) => v == null ? null : DateTime.parse(v as String),
       ),
-      settledAt: $checkedConvert(
-        'settled_at',
-        (v) => v == null ? null : DateTime.parse(v as String),
-      ),
     );
     return val;
   },
@@ -43,7 +39,6 @@ _KyoshinMonitorTimerState _$KyoshinMonitorTimerStateFromJson(
     'roundTripTime': 'round_trip_time',
     'sampleCount': 'sample_count',
     'lastSyncedAt': 'last_synced_at',
-    'settledAt': 'settled_at',
   },
 );
 
@@ -55,7 +50,6 @@ Map<String, dynamic> _$KyoshinMonitorTimerStateToJson(
   'source': _$KyoshinMonitorSourceEnumMap[instance.source]!,
   'sample_count': instance.sampleCount,
   'last_synced_at': instance.lastSyncedAt?.toIso8601String(),
-  'settled_at': instance.settledAt?.toIso8601String(),
 };
 
 const _$KyoshinMonitorSourceEnumMap = {

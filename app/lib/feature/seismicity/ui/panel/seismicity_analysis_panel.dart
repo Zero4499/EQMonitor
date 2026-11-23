@@ -5,10 +5,11 @@ import 'package:eqmonitor/feature/seismicity/ui/panel/seismicity_mt_chart.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 矩形選択で得られたイベント一覧の分析パネル(3タブ)。
-class const SeismicityAnalysisPanel({
-  required final List<SeismicityEvent> events,
-  super.key,
-}) extends StatelessWidget {
+class SeismicityAnalysisPanel extends StatelessWidget {
+  const new({required this.events, super.key});
+
+  final List<SeismicityEvent> events;
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(

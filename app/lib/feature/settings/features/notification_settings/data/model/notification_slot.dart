@@ -4,7 +4,6 @@ import 'package:eqmonitor_api/eqmonitor_api.dart' as api;
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'notification_slot.freezed.dart';
-part 'notification_slot.g.dart';
 
 enum NotificationSlotType { currentLocation, nationwide, region }
 
@@ -33,9 +32,6 @@ abstract class NotificationSlot with _$NotificationSlot {
     required JmaIntensity? earthquakeMinIntensity,
     required List<NotificationOverride>? earthquakeOverrides,
   }) = _NotificationSlot;
-
-  factory fromJson(Map<String, dynamic> json) =>
-      _$NotificationSlotFromJson(json);
 }
 
 extension ApiSlotResponseConverter on api.SlotResponse {

@@ -7,10 +7,11 @@ import 'package:eqmonitor/feature/earthquake_history/ui/components/shindo_db_int
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class const ShindoDbStationDetailSheet({
-  required final ShindoDbStationNode station,
-  super.key,
-}) extends StatelessWidget {
+class ShindoDbStationDetailSheet extends StatelessWidget {
+  const new({required this.station, super.key});
+
+  final ShindoDbStationNode station;
+
   @override
   Widget build(BuildContext context) {
     final record = station.record;
@@ -64,8 +65,11 @@ class const ShindoDbStationDetailSheet({
   }
 }
 
-class const _Header({required final ShindoDbStationNode station})
-    extends StatelessWidget {
+class _Header extends StatelessWidget {
+  const new({required this.station});
+
+  final ShindoDbStationNode station;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -116,8 +120,11 @@ class const _Header({required final ShindoDbStationNode station})
   }
 }
 
-class const _InfoRows({required final EarthquakeCatalogStationRecord record})
-    extends StatelessWidget {
+class _InfoRows extends StatelessWidget {
+  const new({required this.record});
+
+  final EarthquakeCatalogStationRecord record;
+
   @override
   Widget build(BuildContext context) {
     final observedAt = record.observedAt;
@@ -143,8 +150,12 @@ class const _InfoRows({required final EarthquakeCatalogStationRecord record})
   }
 }
 
-class const _InfoRow({required final String label, required final String value})
-    extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
+  const new({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -177,11 +188,17 @@ class const _InfoRow({required final String label, required final String value})
   }
 }
 
-class const _MaxAccelTable({
-  required final EarthquakeCatalogMaxAcceleration maxAccel,
-  required final DateTime? maxAccelTime,
-  required final EarthquakeCatalogTimePrecision? maxAccelTimePrecision,
-}) extends StatelessWidget {
+class _MaxAccelTable extends StatelessWidget {
+  const new({
+    required this.maxAccel,
+    required this.maxAccelTime,
+    required this.maxAccelTimePrecision,
+  });
+
+  final EarthquakeCatalogMaxAcceleration maxAccel;
+  final DateTime? maxAccelTime;
+  final EarthquakeCatalogTimePrecision? maxAccelTimePrecision;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -244,8 +261,11 @@ class const _MaxAccelTable({
   }
 }
 
-class const _PeriodsTable({required final EarthquakeCatalogPeriods periods})
-    extends StatelessWidget {
+class _PeriodsTable extends StatelessWidget {
+  const new({required this.periods});
+
+  final EarthquakeCatalogPeriods periods;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -305,10 +325,12 @@ class const _PeriodsTable({required final EarthquakeCatalogPeriods periods})
   }
 }
 
-class const _TableCell({
-  required final String text,
-  final bool isHeader = false,
-}) extends StatelessWidget {
+class _TableCell extends StatelessWidget {
+  const new({required this.text, this.isHeader = false});
+
+  final String text;
+  final bool isHeader;
+
   @override
   Widget build(BuildContext context) {
     return TableCell(
@@ -331,7 +353,9 @@ class const _TableCell({
   }
 }
 
-class const _RelatedLinksCard() extends StatelessWidget {
+class _RelatedLinksCard extends StatelessWidget {
+  const new();
+
   static const List<({String title, String url})> _links = [
     (
       title: '気象庁 震度データベース検索',

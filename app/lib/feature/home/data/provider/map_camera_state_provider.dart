@@ -2,7 +2,7 @@ import 'package:eqmonitor/feature/eew/data/eew_alive_telegram.dart';
 import 'package:eqmonitor/feature/eew/data/model/eew_telegram_item.dart';
 import 'package:eqmonitor/feature/home/data/model/map_camera_state.dart';
 import 'package:eqmonitor/feature/home/data/notifier/home_configuration_notifier.dart';
-import 'package:eqmonitor/feature/home/data/logic/home_map_realtime_focus_transition.dart';
+import 'package:eqmonitor/feature/home/data/logic/home_map_eew_focus_transition.dart';
 import 'package:eqmonitor/feature/home/data/service/home_map_camera_coordinator.dart';
 import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_event.dart';
 import 'package:eqmonitor/feature/shake_detection/data/provider/shake_detection_merge_provider.dart';
@@ -14,21 +14,20 @@ part 'map_camera_state_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 class HomeMapCameraState extends _$HomeMapCameraState {
-  HomeMapRealtimeFocusSession _focusSession =
-      HomeMapRealtimeFocusSession.initial;
+  HomeMapEewFocusSession _eewFocusSession = HomeMapEewFocusSession.initial;
 
   @override
   MapCameraState build() {
     ref.listen(eewAliveTelegramProvider, (_, _) async {
       await handleRealtimeTransition(
         eews: ref.read(eewAliveTelegramProvider) ?? [],
-        shakes: ref.read(shakeDetectionFocusTargetsProvider),
+        shakes: ref.read(shakeDetectionVisibleProvider),
       );
     });
-    ref.listen(shakeDetectionFocusTargetsProvider, (_, _) async {
+    ref.listen(shakeDetectionVisibleProvider, (_, _) async {
       await handleRealtimeTransition(
         eews: ref.read(eewAliveTelegramProvider) ?? [],
-        shakes: ref.read(shakeDetectionFocusTargetsProvider),
+        shakes: ref.read(shakeDetectionVisibleProvider),
       );
     });
 
@@ -40,23 +39,21 @@ class HomeMapCameraState extends _$HomeMapCameraState {
     required List<ShakeDetectionEvent> shakes,
   }) async {
     final decision = ref
-        .read(homeMapRealtimeFocusTransitionProvider)
+        .read(homeMapEewFocusTransitionProvider)
         .sync(
-          previous: _focusSession,
-          eewEventIds: eews.map((eew) => eew.eventId).toSet(),
-          shakeEventIds: shakes.map((shake) => shake.eventId).toSet(),
+          previous: _eewFocusSession,
+          eventIds: eews.map((eew) => eew.eventId).toSet(),
         );
-    _focusSession = decision.session;
-    final focusSession = decision.session;
-    final hasTargets = focusSession.hasTargets;
-    if (hasTargets && !decision.shouldFocus) {
+    _eewFocusSession = decision.session;
+    if (eews.isNotEmpty && !decision.shouldFocus) {
       return;
     }
-    if (hasTargets) {
-      state = state.copyWith(isAtHome: false, isRealtimeFocusActive: true);
+    final focusSession = decision.session;
+    if (eews.isNotEmpty) {
+      state = state.copyWith(isAtHome: false, isEewFocusActive: true);
     }
-    if (!hasTargets && state.isRealtimeFocusActive) {
-      state = state.copyWith(isRealtimeFocusActive: false);
+    if (eews.isEmpty && state.isEewFocusActive) {
+      state = state.copyWith(isEewFocusActive: false);
     }
     final isAtHome = await ref
         .read(homeMapCameraCoordinatorProvider)
@@ -65,16 +62,17 @@ class HomeMapCameraState extends _$HomeMapCameraState {
           eews: eews,
           shakes: shakes,
         );
-    if (!identical(_focusSession, focusSession)) {
+    if (!identical(_eewFocusSession, focusSession)) {
       return;
     }
     if (isAtHome != null) {
       state = state.copyWith(
         isAtHome: isAtHome,
-        isRealtimeFocusActive: !isAtHome && focusSession.isFocused,
+        isEewFocusActive:
+            eews.isNotEmpty && !isAtHome && decision.session.isFocused,
       );
-    } else if (hasTargets) {
-      state = state.copyWith(isRealtimeFocusActive: false);
+    } else if (eews.isNotEmpty) {
+      state = state.copyWith(isEewFocusActive: false);
     }
   }
 
@@ -83,20 +81,18 @@ class HomeMapCameraState extends _$HomeMapCameraState {
     required Size viewportSize,
   }) async {
     final eews = ref.read(eewAliveTelegramProvider) ?? [];
-    final shakes = ref.read(shakeDetectionFocusTargetsProvider);
+    final shakes = ref.read(shakeDetectionVisibleProvider);
     final decision = ref
-        .read(homeMapRealtimeFocusTransitionProvider)
+        .read(homeMapEewFocusTransitionProvider)
         .sync(
-          previous: _focusSession,
-          eewEventIds: eews.map((eew) => eew.eventId).toSet(),
-          shakeEventIds: shakes.map((shake) => shake.eventId).toSet(),
+          previous: _eewFocusSession,
+          eventIds: eews.map((eew) => eew.eventId).toSet(),
         );
-    _focusSession = decision.session;
+    _eewFocusSession = decision.session;
+    final shouldApplyInitialFocus = eews.isEmpty || decision.shouldFocus;
     final focusSession = decision.session;
-    final hasTargets = focusSession.hasTargets;
-    final shouldApplyInitialFocus = !hasTargets || decision.shouldFocus;
-    if (hasTargets && decision.shouldFocus) {
-      state = state.copyWith(isAtHome: false, isRealtimeFocusActive: true);
+    if (eews.isNotEmpty && decision.shouldFocus) {
+      state = state.copyWith(isAtHome: false, isEewFocusActive: true);
     }
     final isAtHome = await ref
         .read(homeMapCameraCoordinatorProvider)
@@ -108,16 +104,17 @@ class HomeMapCameraState extends _$HomeMapCameraState {
           shakes: shakes,
           applyInitialFocus: shouldApplyInitialFocus,
         );
-    if (!identical(_focusSession, focusSession)) {
+    if (!identical(_eewFocusSession, focusSession)) {
       return;
     }
     if (isAtHome != null) {
       state = state.copyWith(
         isAtHome: isAtHome,
-        isRealtimeFocusActive: !isAtHome && focusSession.isFocused,
+        isEewFocusActive:
+            eews.isNotEmpty && !isAtHome && decision.session.isFocused,
       );
-    } else if (hasTargets) {
-      state = state.copyWith(isRealtimeFocusActive: false);
+    } else if (eews.isNotEmpty) {
+      state = state.copyWith(isEewFocusActive: false);
     }
   }
 
@@ -129,50 +126,51 @@ class HomeMapCameraState extends _$HomeMapCameraState {
   }
 
   void handleUserMapGesture() {
-    if (!state.isRealtimeFocusActive) {
+    if (!state.isEewFocusActive) {
       return;
     }
-    _focusSession = ref
-        .read(homeMapRealtimeFocusTransitionProvider)
-        .dismiss(previous: _focusSession);
+    _eewFocusSession = ref
+        .read(homeMapEewFocusTransitionProvider)
+        .dismiss(previous: _eewFocusSession);
     ref.read(homeMapCameraCoordinatorProvider).cancelAutomaticFocus();
-    state = state.copyWith(isAtHome: false, isRealtimeFocusActive: false);
+    state = state.copyWith(isAtHome: false, isEewFocusActive: false);
   }
 
   Future<void> returnToHome() async {
     final eews = ref.read(eewAliveTelegramProvider) ?? [];
-    final shakes = ref.read(shakeDetectionFocusTargetsProvider);
-    final transition = ref.read(homeMapRealtimeFocusTransitionProvider);
-    _focusSession = transition
-        .sync(
-          previous: _focusSession,
-          eewEventIds: eews.map((eew) => eew.eventId).toSet(),
-          shakeEventIds: shakes.map((shake) => shake.eventId).toSet(),
-        )
-        .session;
-    final decision = transition.refocus(previous: _focusSession);
-    _focusSession = decision.session;
-    if (decision.shouldFocus) {
+    if (eews.isNotEmpty) {
+      final transition = ref.read(homeMapEewFocusTransitionProvider);
+      _eewFocusSession = transition
+          .sync(
+            previous: _eewFocusSession,
+            eventIds: eews.map((eew) => eew.eventId).toSet(),
+          )
+          .session;
+      final decision = transition.refocus(previous: _eewFocusSession);
+      _eewFocusSession = decision.session;
+      if (!decision.shouldFocus) {
+        return;
+      }
       final focusSession = decision.session;
-      state = state.copyWith(isAtHome: false, isRealtimeFocusActive: true);
+      state = state.copyWith(isAtHome: false, isEewFocusActive: true);
       final isAtHome = await ref
           .read(homeMapCameraCoordinatorProvider)
           .handleRealtimeTransition(
             home: ref.read(homeConfigurationProvider.future),
             eews: eews,
-            shakes: eews.isEmpty ? shakes : const [],
+            shakes: const [],
             ignoreAutoZoom: true,
           );
-      if (!identical(_focusSession, focusSession)) {
+      if (!identical(_eewFocusSession, focusSession)) {
         return;
       }
       if (isAtHome != null) {
         state = state.copyWith(
           isAtHome: isAtHome,
-          isRealtimeFocusActive: !isAtHome,
+          isEewFocusActive: !isAtHome,
         );
       } else {
-        state = state.copyWith(isRealtimeFocusActive: false);
+        state = state.copyWith(isEewFocusActive: false);
       }
       return;
     }
@@ -182,7 +180,7 @@ class HomeMapCameraState extends _$HomeMapCameraState {
     if (isAtHome != null) {
       state = state.copyWith(
         isAtHome: isAtHome,
-        isRealtimeFocusActive: false,
+        isEewFocusActive: false,
       );
     }
   }

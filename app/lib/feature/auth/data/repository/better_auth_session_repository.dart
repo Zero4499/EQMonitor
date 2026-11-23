@@ -16,13 +16,15 @@ Future<BetterAuthSessionRepository> betterAuthSessionRepository(Ref ref) async {
   return BetterAuthSessionRepository(preferences: preferences);
 }
 
-final class BetterAuthSessionRepository({
-  required PreferencesDataSource<SecureStorageKey> preferences,
-  SessionMutationSerializer? mutationSerializer,
-}) {
-  final PreferencesDataSource<SecureStorageKey> _preferences = preferences;
-  final SessionMutationSerializer _mutationSerializer =
-      mutationSerializer ?? SessionMutationSerializer();
+final class BetterAuthSessionRepository {
+  new({
+    required PreferencesDataSource<SecureStorageKey> preferences,
+    SessionMutationSerializer? mutationSerializer,
+  }) : _preferences = preferences,
+       _mutationSerializer = mutationSerializer ?? SessionMutationSerializer();
+
+  final PreferencesDataSource<SecureStorageKey> _preferences;
+  final SessionMutationSerializer _mutationSerializer;
   var _generation = 0;
 
   int get generation => _generation;

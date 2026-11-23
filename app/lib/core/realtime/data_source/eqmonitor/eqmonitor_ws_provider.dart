@@ -17,20 +17,8 @@ part 'eqmonitor_ws_provider.g.dart';
 
 @Riverpod(keepAlive: true)
 Future<WebSocket> eqmonitorWebSocket(Ref ref) async {
-  final ticket = await ref.watch(eqmonitorWebSocketTicketProvider.future);
-  final ticketUri = Uri.parse(ticket.url);
-  final ws = await WebSocket.connect(
-    ticketUri.replace(
-      queryParameters: {
-        ...ticketUri.queryParametersAll,
-        'heartbeat': ['fixed-v1'],
-      },
-    ),
-  );
-  if (!ref.mounted) {
-    await ws.close();
-    throw StateError('WebSocket connection was replaced');
-  }
+  final ticket = await ref.read(eqmonitorWebSocketTicketProvider.future);
+  final ws = await WebSocket.connect(Uri.parse(ticket.url));
   ref.onDispose(() => ws.close().ignore());
   return ws;
 }
@@ -47,16 +35,14 @@ Future<WebSocket> eqmonitorWebSocket(Ref ref) async {
 class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
   /// 受信が途絶えたら接続が死んでいるとみなすまでの時間。
   ///
-  /// 15 秒間隔の固定 ping への pong、または既存サーバーの ping で更新する。
-  /// 送信しただけでは更新せず、30 秒間受信できなければ再接続する。
-  static const silenceTimeout = Duration(seconds: 30);
-  static const heartbeatInterval = Duration(seconds: 15);
+  /// サーバーは pong を受けてから 15 秒後に次の ping を送り、ping 送出後
+  /// 15 秒以内に pong が届かなければ接続を閉じる
+  /// (backend api/websocket/src/index.ts の PING_INTERVAL_MS / PONG_TIMEOUT_MS)。
+  /// 正常な接続ならこの合計時間内に必ず次のフレームが届くため、
+  /// それを超えて何も受信しない場合は半開状態として再接続する。
+  static const silenceTimeout = Duration(seconds: 15 + 15);
 
-  // Durable Objects の自動応答は文字列全体に一致するため、順序・空白も固定。
-  // RTT probe の連番 pingId と分離し、固定 pong を RTT に計上しない。
-  static const heartbeatMessage = '{"type":"ping","pingId":"heartbeat"}';
-
-  var _retryDelaySeconds = 1;
+  var _retryCount = 0;
   final _random = math.Random();
 
   /// これは状態ではなくイベント列なので、同じ値でも必ず通知する。
@@ -74,7 +60,7 @@ class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
   Stream<WebSocketEvent> build() async* {
     ref.listen(appLifecycleProvider, (_, next) {
       if (next == AppLifecycleState.resumed) {
-        _retryDelaySeconds = 1;
+        _retryCount = 0;
         _reconnect();
       }
     });
@@ -104,17 +90,13 @@ class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
       );
       connectivityReconnectTimer?.cancel();
       connectivityReconnectTimer = Timer(jitter, () {
-        _retryDelaySeconds = 1;
+        _retryCount = 0;
         _reconnect();
       });
     });
 
     Timer? silenceWatchdog;
-    Timer? heartbeatTimer;
-    ref.onDispose(() {
-      silenceWatchdog?.cancel();
-      heartbeatTimer?.cancel();
-    });
+    ref.onDispose(() => silenceWatchdog?.cancel());
     void armSilenceWatchdog() {
       silenceWatchdog?.cancel();
       silenceWatchdog = Timer(silenceTimeout, () {
@@ -129,17 +111,8 @@ class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
     try {
       final websocket = await ref.watch(eqmonitorWebSocketProvider.future);
       const heartbeatResponder = WsHeartbeatResponder();
-      _retryDelaySeconds = 1;
+      _retryCount = 0;
       armSilenceWatchdog();
-      websocket.sendText(heartbeatMessage);
-      heartbeatTimer = Timer.periodic(heartbeatInterval, (timer) {
-        try {
-          websocket.sendText(heartbeatMessage);
-        } on WebSocketConnectionClosed {
-          timer.cancel();
-          _reconnect();
-        }
-      });
 
       await for (final event in websocket.events) {
         armSilenceWatchdog();
@@ -161,14 +134,13 @@ class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
       talker.error('EQMonitor WebSocket: connection failed', e);
     } finally {
       silenceWatchdog?.cancel();
-      heartbeatTimer?.cancel();
     }
 
-    // 失敗回数のべき乗は整数オーバーフローで 0 になるため、待ち時間自体を制限する。
-    final delaySeconds = _retryDelaySeconds;
-    _retryDelaySeconds = math.min(_retryDelaySeconds * 2, 60);
+    final delaySeconds = math.min(math.pow(2, _retryCount).toInt(), 60);
+    _retryCount++;
     talker.info(
-      'EQMonitor WebSocket: reconnecting in ${delaySeconds}s',
+      'EQMonitor WebSocket: reconnecting in ${delaySeconds}s '
+      '(attempt $_retryCount)',
     );
 
     final timer = Timer(Duration(seconds: delaySeconds), _reconnect);
@@ -184,7 +156,7 @@ class EqmonitorWsEventStream extends _$EqmonitorWsEventStream {
 @riverpod
 Future<RealtimeTicketResponse> eqmonitorWebSocketTicket(Ref ref) async {
   try {
-    final api = await ref.watch(apiClientProvider.future);
+    final api = await ref.read(apiClientProvider.future);
     final response = await api.realtime.getV2RealtimeTicket();
     return response.data;
   } on Exception catch (e) {

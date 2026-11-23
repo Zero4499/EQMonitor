@@ -15,10 +15,12 @@ ParameterAssetDataSource parameterAssetDataSource(Ref ref) =>
 /// [AssetPackRepository]). A downloaded pack that fails verification or
 /// parsing falls back to the pack bundled with the app; there is no fake-data
 /// fallback.
-final class const ParameterAssetDataSource({
-  required AssetPackRepository assetPackRepository,
-}) {
-  final AssetPackRepository _assetPackRepository = assetPackRepository;
+final class ParameterAssetDataSource {
+  const new({
+    required AssetPackRepository assetPackRepository,
+  }) : _assetPackRepository = assetPackRepository;
+
+  final AssetPackRepository _assetPackRepository;
 
   /// manifest と全種別のパラメーター JSON を同じ Pack から読み、[parse] に渡す。
   ///

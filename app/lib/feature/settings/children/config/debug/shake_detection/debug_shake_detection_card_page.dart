@@ -9,8 +9,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugShakeDetectionCardPage({super.key})
-    extends HookConsumerWidget {
+class DebugShakeDetectionCardPage extends HookConsumerWidget {
+  const new({super.key});
+
   static const _paramLabelStyle = TextStyle(fontSize: 11);
 
   @override
@@ -26,6 +27,7 @@ class const DebugShakeDetectionCardPage({super.key})
 
     ShakeDetectionEvent buildEvent() => ShakeDetectionEvent(
       eventId: 'debug-shake-1',
+      serialNo: 1,
       createdAt: createdAt.value,
       updatedAt: createdAt.value,
       expiresAt: createdAt.value.add(const Duration(minutes: 1)),
@@ -35,6 +37,7 @@ class const DebugShakeDetectionCardPage({super.key})
       maxLat: maxLat.value,
       minLng: minLng.value,
       maxLng: maxLng.value,
+      changeReasons: const ['new_event'],
     );
 
     return Scaffold(
@@ -179,6 +182,7 @@ final List<ShakeDetectionEvent> _kSampleEvents = ShakeDetectionLevel.values.map(
     final createdAt = DateTime(2024, 1, 1, 12);
     return ShakeDetectionEvent(
       eventId: 'sample-${level.name}',
+      serialNo: 1,
       createdAt: createdAt,
       updatedAt: createdAt,
       expiresAt: createdAt.add(const Duration(minutes: 1)),
@@ -188,14 +192,17 @@ final List<ShakeDetectionEvent> _kSampleEvents = ShakeDetectionLevel.values.map(
       maxLat: 40.5,
       minLng: 140.5,
       maxLng: 141.8,
+      changeReasons: const ['new_event'],
     );
   },
 ).toList();
 
-class const _ParamSection({
-  required final String title,
-  required final Widget child,
-}) extends StatelessWidget {
+class _ParamSection extends StatelessWidget {
+  const new({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -219,13 +226,21 @@ class const _ParamSection({
   }
 }
 
-class const _SliderRow({
-  required final String label,
-  required final double value,
-  required final double min,
-  required final double max,
-  required final ValueChanged<double> onChanged,
-}) extends StatelessWidget {
+class _SliderRow extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final ValueChanged<double> onChanged;
+
   @override
   Widget build(BuildContext context) {
     return Row(

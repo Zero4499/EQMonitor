@@ -5,12 +5,13 @@ import 'package:eqmonitor/core/gen/assets.gen.dart';
 import 'package:eqmonitor/core/router/router.dart';
 import 'package:eqmonitor/core/theme/theme_provider.dart';
 import 'package:eqmonitor/feature/settings/component/settings_section_header.dart';
-import 'package:eqmonitor/feature/settings/features/display_settings/ui/screen_behavior_settings_section.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const DisplaySettingsPage({super.key}) extends StatelessWidget {
+class DisplaySettingsPage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,7 +21,9 @@ class const DisplaySettingsPage({super.key}) extends StatelessWidget {
   }
 }
 
-class const _Body() extends StatelessWidget {
+class _Body extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -28,7 +31,6 @@ class const _Body() extends StatelessWidget {
         child: Column(
           crossAxisAlignment: .start,
           children: [
-            const ScreenBehaviorSettingsSection(),
             const SettingsSectionHeader(text: '配色設定'),
             const _ThemeSelector(),
             ListTile(
@@ -44,7 +46,9 @@ class const _Body() extends StatelessWidget {
   }
 }
 
-class const _ThemeSelector() extends ConsumerWidget {
+class _ThemeSelector extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(themeModeProvider).requireValue;

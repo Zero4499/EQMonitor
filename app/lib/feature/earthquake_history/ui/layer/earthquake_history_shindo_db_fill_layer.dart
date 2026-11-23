@@ -16,11 +16,16 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const EarthquakeHistoryShindoDbFillLayer({
-  required final ShindoDbIntensityTree tree,
-  required final EarthquakeHistoryMapLayerParameter parameter,
-  super.key,
-}) extends HookConsumerWidget {
+class EarthquakeHistoryShindoDbFillLayer extends HookConsumerWidget {
+  const new({
+    required this.tree,
+    required this.parameter,
+    super.key,
+  });
+
+  final ShindoDbIntensityTree tree;
+  final EarthquakeHistoryMapLayerParameter parameter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final styleController = MapController.maybeOf(context)?.style;

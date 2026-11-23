@@ -6,18 +6,17 @@ import 'package:eqmonitor/core/component/scroll/bottom_bouncing_scroll_physics.d
 import 'package:eqmonitor/core/component/sheet/basic_modal_sheet.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/router/router.dart';
+import 'package:eqmonitor/feature/ads/ui/component/ad_banner.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_data_source.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_telegram_comment_selector.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/intensity_display_mode.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/notifier/earthquake_history_details_notifier.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/notifier/estimated_intensity_notice_notifier.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/provider/shindo_db_intensity_tree_provider.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/collapsible_segmented_control.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/current_location_intensity_card.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_history_details_map_view.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_hypocenter_information_card.dart';
-import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_history_map_legend.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_intensity_card.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/modal/estimated_intensity_notice_dialog.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/nearby_earthquake_card.dart';
@@ -29,11 +28,12 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeHistoryDetailsPage({
-  required final String eventId,
-  final VoidCallback? onClose,
-  super.key,
-}) extends HookConsumerWidget {
+class EarthquakeHistoryDetailsPage extends HookConsumerWidget {
+  const new({required this.eventId, this.onClose, super.key});
+
+  final String eventId;
+  final VoidCallback? onClose;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final detailsState = ref.watch(earthquakeHistoryDetailsProvider(eventId));
@@ -84,11 +84,12 @@ class const EarthquakeHistoryDetailsPage({
   }
 }
 
-class const _LoadedContent({
-  required final Earthquake earthquake,
-  final VoidCallback? onClose,
-  super.key,
-}) extends HookConsumerWidget {
+class _LoadedContent extends HookConsumerWidget {
+  const new({required this.earthquake, this.onClose, super.key});
+
+  final Earthquake earthquake;
+  final VoidCallback? onClose;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hasEstimated = earthquake.estimatedIntensityTileUrl != null;
@@ -163,19 +164,6 @@ class const _LoadedContent({
             child: BasicModalSheet(
               hasAppBar: false,
               expandToPane: onClose != null,
-              initialPositionOverlay: EarthquakeHistoryMapLegend(
-                intensity: showingDb ? null : earthquake.intensity,
-                displayMode: showingDb
-                    ? IntensityDisplayMode.jma
-                    : displayMode.value,
-                shindoDbTree: showingDb
-                    ? ref
-                          .watch(
-                            shindoDbIntensityTreeProvider(earthquake.eventId),
-                          )
-                          .value
-                    : null,
-              ),
               child: SingleChildScrollView(
                 physics: const BottomBouncingScrollPhysics(),
                 child: SafeArea(
@@ -232,6 +220,10 @@ class const _LoadedContent({
                         source: effectiveSource,
                         showDatabaseBadge: isDbOnly,
                       ),
+                      if (earthquake.originTime case final originTime?
+                          when DateTime.now().difference(originTime) >
+                              const Duration(hours: 24))
+                        const AdBanner(),
                       NearbyEarthquakeCard(earthquake: earthquake),
                       if (telegramCommentLines.isNotEmpty ||
                           earthquake.dataSources.isNotEmpty)
@@ -250,7 +242,7 @@ class const _LoadedContent({
                                   TextSpan(
                                     text:
                                         'データソース: ${earthquake.dataSources.map((e) => switch (e) {
-                                          EarthquakeDataSource.jmaDisasterInformationXml => '気象庁防災情報XML',
+                                          EarthquakeDataSource.jmaDisasterInformationXml => '気象庁災害情報XML',
                                           EarthquakeDataSource.jmaIntensityDatabase => '気象庁震度データベース',
                                         }).join(', ')}',
                                   ),
@@ -305,8 +297,11 @@ class const _LoadedContent({
   }
 }
 
-class const _TelegramListButton({required final String eventId})
-    extends StatelessWidget {
+class _TelegramListButton extends StatelessWidget {
+  const new({required this.eventId});
+
+  final String eventId;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

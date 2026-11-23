@@ -33,8 +33,11 @@ extension FeedItemDataDisplay on FeedItemData {
   };
 }
 
-class const FeedItemListTileContent({required final FeedItem item, super.key})
-    extends StatelessWidget {
+class FeedItemListTileContent extends StatelessWidget {
+  const new({required this.item, super.key});
+
+  final FeedItem item;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -78,8 +81,11 @@ class const FeedItemListTileContent({required final FeedItem item, super.key})
   }
 }
 
-class const FeedTypeBadge({required final FeedItemData data, super.key})
-    extends StatelessWidget {
+class FeedTypeBadge extends StatelessWidget {
+  const new({required this.data, super.key});
+
+  final FeedItemData data;
+
   @override
   Widget build(BuildContext context) {
     return Text(

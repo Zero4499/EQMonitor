@@ -12,21 +12,18 @@ Future<SharedPreferencesDataSource> sharedPreferencesDataSource(Ref ref) async {
   return SharedPreferencesDataSource(sharedPreferences: prefs);
 }
 
-class SharedPreferencesDataSource({
-  required SharedPreferences sharedPreferences,
-}) implements PreferencesDataSource<SharedPreferencesKey> {
-  final SharedPreferences _sharedPreferences = sharedPreferences;
+class SharedPreferencesDataSource
+    implements PreferencesDataSource<SharedPreferencesKey> {
+  new({required SharedPreferences sharedPreferences})
+    : _sharedPreferences = sharedPreferences;
+
+  final SharedPreferences _sharedPreferences;
 
   @override
   Future<void> setString({
     required SharedPreferencesKey key,
     required String value,
-  }) async {
-    final didPersist = await _sharedPreferences.setString(key.key, value);
-    if (!didPersist) {
-      throw StateError('Failed to persist SharedPreferences key: ${key.key}');
-    }
-  }
+  }) => _sharedPreferences.setString(key.key, value);
 
   @override
   Future<String?> getString({required SharedPreferencesKey key}) =>

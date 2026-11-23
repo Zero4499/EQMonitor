@@ -35,14 +35,18 @@ class const AssetPackInstallException({
   String toString() => 'AssetPackInstallException: $message';
 }
 
-class AssetPackUpdateInstaller({
-  required final AssetPackStorageRepository storageRepository,
-  required DownloadAssetPackArchive downloadArchive,
-  AssetPackArchiveExtractor archiveExtractor =
-      const AssetPackArchiveExtractor(),
-}) {
-  final DownloadAssetPackArchive _downloadArchive = downloadArchive;
-  final AssetPackArchiveExtractor _archiveExtractor = archiveExtractor;
+class AssetPackUpdateInstaller {
+  new({
+    required this.storageRepository,
+    required DownloadAssetPackArchive downloadArchive,
+    AssetPackArchiveExtractor archiveExtractor =
+        const AssetPackArchiveExtractor(),
+  }) : _downloadArchive = downloadArchive,
+       _archiveExtractor = archiveExtractor;
+
+  final AssetPackStorageRepository storageRepository;
+  final DownloadAssetPackArchive _downloadArchive;
+  final AssetPackArchiveExtractor _archiveExtractor;
 
   Future<void> install({
     required AssetPackDistributionEntry entry,

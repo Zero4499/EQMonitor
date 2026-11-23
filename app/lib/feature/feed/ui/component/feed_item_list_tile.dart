@@ -17,11 +17,12 @@ extension FeedItemUrgencyColor on FeedItem {
   }
 }
 
-class const FeedItemListTile({
-  required final FeedItem item,
-  final void Function()? onTap,
-  super.key,
-}) extends StatelessWidget {
+class FeedItemListTile extends StatelessWidget {
+  const new({required this.item, this.onTap, super.key});
+
+  final FeedItem item;
+  final void Function()? onTap;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

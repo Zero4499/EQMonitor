@@ -13,7 +13,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:maplibre/maplibre.dart';
 
-class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
+class EewSimulationPsWaveLayer extends HookConsumerWidget {
+  const new({super.key});
+
   static const _pWaveSourceId = 'eew-sim-p-wave';
   static const _sWaveSourceId = 'eew-sim-s-wave';
   static const _pWaveLayerId = 'eew-sim-p-wave-line';
@@ -26,7 +28,7 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final styleController = MapController.maybeOf(context)?.style;
     final simulation = ref.watch(eewSimulationProvider);
-    final travelTimeMap = ref.watch(travelTimeDepthMapProvider);
+    ref.watch(travelTimeDepthMapProvider);
     final enqueue = useMapOperationQueue();
     final initFuture = useRef<Future<void>?>(null);
     // 破棄開始後は毎フレームの更新(updateGeoJsonSource)を実行しないためのガード。
@@ -42,8 +44,6 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
       }
 
       disposed.value = false;
-      latestPWaveGeoJson.value = null;
-      latestSWaveGeoJson.value = null;
       initFuture.value = enqueue(() => _initializeLayers(styleController));
 
       return () {
@@ -99,8 +99,7 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
         final latitude = hypocenter?.latitude;
         final longitude = hypocenter?.longitude;
         final depth = hypocenter?.depth;
-        if (currentReport.isCanceled ||
-            originTime == null ||
+        if (originTime == null ||
             hypocenter == null ||
             latitude == null ||
             longitude == null ||
@@ -120,13 +119,14 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
           return;
         }
 
-        final elapsed =
-            sim
-                .playbackTimeAt(clock.now())
-                .difference(originTime)
-                .inMicroseconds /
-            Duration.microsecondsPerSecond;
+        final firstReportTime = sim.reports.first.reportTime;
+        final offset =
+            firstReportTime.difference(originTime).inMilliseconds / 1000;
+        final simulationElapsed =
+            sim.playbackElapsedAt(clock.now()).inMilliseconds / 1000;
+        final elapsed = offset + simulationElapsed;
 
+        final travelTimeMap = ref.read(travelTimeDepthMapProvider);
         // 走時表未ロード時は波を描かない
         if (travelTimeMap == null) {
           unawaited(
@@ -208,7 +208,7 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
       // 本体は ref.read 経由で読むため simulation の直接参照はないが、
       // 上のコメントの通りリスナーの張り直し契機として意図的に keys に含める。
       // ignore_keys: simulation
-    }, [styleController, simulation, animationController, travelTimeMap]);
+    }, [styleController, simulation, animationController]);
 
     return const SizedBox.shrink();
   }
@@ -231,7 +231,6 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
           sourceId: _pWaveSourceId,
           paint: {'line-color': '#0000FF', 'line-width': 1},
         ),
-        belowLayerId: BaseLayer.waveLineAnchor.name,
       ),
       styleController.addLayer(
         const LineStyleLayer(
@@ -242,7 +241,6 @@ class const EewSimulationPsWaveLayer({super.key}) extends HookConsumerWidget {
             'line-width': 2,
           },
         ),
-        belowLayerId: BaseLayer.waveLineAnchor.name,
       ),
       styleController.addLayer(
         const FillStyleLayer(

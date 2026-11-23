@@ -4,10 +4,11 @@ import 'package:eqmonitor/feature/region_selection/data/model/region_selection_r
 import 'package:eqmonitor/feature/region_selection/ui/page/region_selection_page.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeHistorySearchPage({
-  required final String initialQuery,
-  super.key,
-}) extends StatelessWidget {
+class EarthquakeHistorySearchPage extends StatelessWidget {
+  const new({required this.initialQuery, super.key});
+
+  final String initialQuery;
+
   @override
   Widget build(BuildContext context) => RegionSelectionPage(
     request: RegionSelectionRequest(

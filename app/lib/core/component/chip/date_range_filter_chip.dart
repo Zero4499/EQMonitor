@@ -2,16 +2,17 @@ import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
-class const DateRangeFilterChip({
-  final DateTime? min,
-  final DateTime? max,
+class DateRangeFilterChip extends StatelessWidget {
+  const new({this.min, this.max, this.onChanged, super.key});
 
   /// 震度の範囲が変更された時に呼ばれる
   /// `min` と `max` にはそれぞれ下限値と上限値が渡される
   /// どちらかが `null` の場合はその値は指定されていないことを示す
-  final void Function(DateTime?, DateTime?)? onChanged,
-  super.key,
-}) extends StatelessWidget {
+  final void Function(DateTime?, DateTime?)? onChanged;
+
+  final DateTime? min;
+  final DateTime? max;
+
   static final initialMin = DateTime(1919);
   static final initialMax = DateTime.now();
 

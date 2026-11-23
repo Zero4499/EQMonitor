@@ -16,7 +16,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const DebugDeviceAdminPage({super.key}) extends ConsumerWidget {
+class DebugDeviceAdminPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final deviceIdAsync = ref.watch(deviceIdProvider);
@@ -33,8 +35,11 @@ class const DebugDeviceAdminPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _DebugDeviceAdminBody({required final String deviceId})
-    extends HookConsumerWidget {
+class _DebugDeviceAdminBody extends HookConsumerWidget {
+  const new({required this.deviceId});
+
+  final String deviceId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final refreshTick = useState(0);
@@ -113,12 +118,19 @@ class const _DebugDeviceAdminBody({required final String deviceId})
   }
 }
 
-class const _Body({
-  required final String deviceId,
-  required final RegisteredDevice? device,
-  required final GeneralNotificationSettings? settings,
-  required final Future<void> Function() onReload,
-}) extends HookConsumerWidget {
+class _Body extends HookConsumerWidget {
+  const new({
+    required this.deviceId,
+    required this.device,
+    required this.settings,
+    required this.onReload,
+  });
+
+  final String deviceId;
+  final RegisteredDevice? device;
+  final GeneralNotificationSettings? settings;
+  final Future<void> Function() onReload;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isBusy = useState(false);
@@ -418,8 +430,12 @@ class const _Body({
   }
 }
 
-class const _InfoRow({required final String label, required final String value})
-    extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
+  const new({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -448,8 +464,11 @@ class const _InfoRow({required final String label, required final String value})
   }
 }
 
-class const _ErrorBody({required final String message})
-    extends StatelessWidget {
+class _ErrorBody extends StatelessWidget {
+  const new({required this.message});
+
+  final String message;
+
   @override
   Widget build(BuildContext context) {
     return Center(

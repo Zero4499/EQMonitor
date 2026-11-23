@@ -5,7 +5,6 @@ import 'package:eqmonitor/core/component/widget/app_switch.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/model/intensity/jma_intensity.dart';
 import 'package:eqmonitor/feature/settings/component/settings_section_header.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/action/shake_detection_settings_action.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/flow/eew_warning_settings_action.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/flow/slot_update_action.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/model/eew_warning_settings.dart';
@@ -15,25 +14,21 @@ import 'package:eqmonitor/feature/settings/features/notification_settings/data/m
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/eew_global_settings_notifier.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/eew_warning_config_notifier.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/notification_slots_notifier.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/shake_detection_settings_notifier.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/provider/shake_detection_notification_access_provider.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/current_location_permission_warning_card.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/notification_min_intensity_field.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/pro_feature_widgets.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/pro_upgrade_dialog.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/region_delete_confirm_dialog.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/shake_detection_slot_section.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/page/override_edit_page.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const SlotDetailPage({
-  required final String slotId,
-  required final bool isPro,
-  super.key,
-}) extends HookConsumerWidget {
+class SlotDetailPage extends HookConsumerWidget {
+  const new({required this.slotId, required this.isPro, super.key});
+
+  final String slotId;
+  final bool isPro;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final slot = ref.watch(
@@ -46,8 +41,6 @@ class const SlotDetailPage({
     );
     final warningConfig = ref.watch(eewWarningConfigProvider).value;
     final warningTarget = warningConfig?.target;
-    final isShakeDetectionEditable =
-        ref.watch(shakeDetectionNotificationAccessProvider) == .editable;
 
     void listenMutationError(Mutation<void> mutation) {
       ref.listen(mutation, (_, next) async {
@@ -65,15 +58,17 @@ class const SlotDetailPage({
     listenMutationError(NotificationSlotsNotifier.removeRegionMutation);
     listenMutationError(EewGlobalSettingsNotifier.updateSettingsMutation);
     listenMutationError(EewWarningConfigNotifier.updateConfigMutation);
-    listenMutationError(ShakeDetectionSettingsNotifier.saveMutation);
 
-    final slotName = switch (slot?.slotType) {
-      null => null,
-      NotificationSlotType.region =>
-        slot?.cityName ?? slot?.regionName ?? NotificationSlotType.region.label,
-      final type => type.label,
-    };
-    final title = slotName == null ? '通知設定' : '$slotNameの通知設定';
+    final String title;
+    if (slot == null) {
+      title = '通知設定';
+    } else {
+      final slotName = switch (slot.slotType) {
+        NotificationSlotType.region => slot.regionName ?? slot.slotType.label,
+        _ => slot.slotType.label,
+      };
+      title = '$slotNameの通知設定';
+    }
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -82,8 +77,6 @@ class const SlotDetailPage({
           : ListView(
               padding: const EdgeInsets.only(top: 16, bottom: 24),
               children: [
-                if (slot.slotType == NotificationSlotType.currentLocation)
-                  const CurrentLocationPermissionWarningCard(),
                 const SettingsSectionHeader(text: '緊急地震速報(予報)'),
                 _NotificationConditionCard(
                   slotType: slot.slotType,
@@ -182,29 +175,12 @@ class const SlotDetailPage({
                     ),
                   ),
                 ),
-                ShakeDetectionSlotSection(slot: slot),
                 if (slot.slotType == NotificationSlotType.region) ...[
                   const SettingsSectionHeader(text: '削除'),
                   _DeleteRegionTile(
                     onTap: () async {
                       final navigator = Navigator.of(context);
-                      final confirmed =
-                          await const RegionDeleteConfirmDialogAction().show(
-                            context,
-                            name: slotName ?? slot.slotType.label,
-                          );
-                      if (!confirmed) {
-                        return;
-                      }
                       try {
-                        // スロット削除後に通知だけ残る状態を避けるため、対応する
-                        // 揺れ検知条件を先に外す。
-                        if (isShakeDetectionEditable) {
-                          await const ShakeDetectionSettingsAction().detachSlot(
-                            ref,
-                            slot: slot,
-                          );
-                        }
                         await NotificationSlotsNotifier.removeRegionMutation
                             .run(ref, (tsx) async {
                               await tsx
@@ -224,17 +200,29 @@ class const SlotDetailPage({
   }
 }
 
-class const _NotificationConditionCard({
-  required final NotificationSlotType slotType,
-  required final NotificationKind kind,
-  required final bool enabled,
-  required final JmaIntensity? minIntensity,
-  required final bool isPro,
-  required final List<NotificationOverride> overrides,
-  required final ValueChanged<bool> onEnabledChanged,
-  required final ValueChanged<JmaIntensity> onMinIntensityChanged,
-  required final VoidCallback onOverrideTap,
-}) extends StatelessWidget {
+class _NotificationConditionCard extends StatelessWidget {
+  const new({
+    required this.slotType,
+    required this.kind,
+    required this.enabled,
+    required this.minIntensity,
+    required this.isPro,
+    required this.overrides,
+    required this.onEnabledChanged,
+    required this.onMinIntensityChanged,
+    required this.onOverrideTap,
+  });
+
+  final NotificationSlotType slotType;
+  final NotificationKind kind;
+  final bool enabled;
+  final JmaIntensity? minIntensity;
+  final bool isPro;
+  final List<NotificationOverride> overrides;
+  final ValueChanged<bool> onEnabledChanged;
+  final ValueChanged<JmaIntensity> onMinIntensityChanged;
+  final VoidCallback onOverrideTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -303,13 +291,21 @@ class const _NotificationConditionCard({
   }
 }
 
-class const _WarningSettingsCard({
-  required final NotificationSlotType slotType,
-  required final bool enabled,
-  required final InterruptionLevel interruptionLevel,
-  required final ValueChanged<bool> onChanged,
-  required final ValueChanged<InterruptionLevel> onInterruptionLevelChanged,
-}) extends StatelessWidget {
+class _WarningSettingsCard extends StatelessWidget {
+  const new({
+    required this.slotType,
+    required this.enabled,
+    required this.interruptionLevel,
+    required this.onChanged,
+    required this.onInterruptionLevelChanged,
+  });
+
+  final NotificationSlotType slotType;
+  final bool enabled;
+  final InterruptionLevel interruptionLevel;
+  final ValueChanged<bool> onChanged;
+  final ValueChanged<InterruptionLevel> onInterruptionLevelChanged;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -379,13 +375,9 @@ class const _WarningSettingsCard({
             padding: EdgeInsets.all(spacing.md),
             child: Text(
               switch (slotType) {
-                .currentLocation
-                    when Theme.of(context).platform == TargetPlatform.iOS =>
-                  '現在地が緊急地震速報の警報地域になった場合に通知を配信します。'
-                      '重大な通知に設定すると、おやすみモードやマナーモードを無視して通知します。',
                 .currentLocation =>
                   '現在地が緊急地震速報の警報地域になった場合に通知を配信します。'
-                      '通知音や重要度は端末の通知チャンネルの設定で変更できます。',
+                      '重大な通知に設定すると、おやすみモードやマナーモードを無視して通知します。',
                 _ => '緊急地震速報(警報)が発表された時に通知します。',
               },
               style: designSystem.typography.bodySmall.copyWith(
@@ -399,8 +391,11 @@ class const _WarningSettingsCard({
   }
 }
 
-class const _DeleteRegionTile({required final Future<void> Function() onTap})
-    extends StatelessWidget {
+class _DeleteRegionTile extends StatelessWidget {
+  const new({required this.onTap});
+
+  final Future<void> Function() onTap;
+
   @override
   Widget build(BuildContext context) {
     final colorTheme = context.designSystem.colorTheme;

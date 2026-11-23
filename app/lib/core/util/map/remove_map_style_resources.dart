@@ -2,7 +2,9 @@ import 'package:eqmonitor/core/provider/log/talker.dart';
 import 'package:maplibre/maplibre.dart';
 
 /// MapLibre のリソースを layer → source → image の順で独立して破棄する。
-class const MapStyleResourceRemover._() {
+class MapStyleResourceRemover {
+  const new _();
+
   static Future<void> remove({
     required StyleController styleController,
     List<String> layerIds = const [],

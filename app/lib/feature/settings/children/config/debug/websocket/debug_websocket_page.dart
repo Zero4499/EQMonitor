@@ -10,7 +10,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const DebugWebSocketPage({super.key}) extends HookConsumerWidget {
+class DebugWebSocketPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final messages = useState<List<({DateTime at, RealtimeEvent event})>>([]);
@@ -69,10 +71,12 @@ class const DebugWebSocketPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _WsStatusCard({
-  required final EqMonitorWsStatusState wsStatus,
-  required final WsRttSample? rtt,
-}) extends HookWidget {
+class _WsStatusCard extends HookWidget {
+  const new({required this.wsStatus, required this.rtt});
+
+  final EqMonitorWsStatusState wsStatus;
+  final WsRttSample? rtt;
+
   @override
   Widget build(BuildContext context) {
     // Rebuild every second to update elapsed-since-ping display
@@ -144,10 +148,12 @@ class const _WsStatusCard({
   }
 }
 
-class const _WsEventCard({
-  required final DateTime receivedAt,
-  required final RealtimeEvent event,
-}) extends StatelessWidget {
+class _WsEventCard extends StatelessWidget {
+  const new({required this.receivedAt, required this.event});
+
+  final DateTime receivedAt;
+  final RealtimeEvent event;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -159,6 +165,7 @@ class const _WsEventCard({
       RealtimeEarthquakeDeleteEvent() => 'earthquake/delete',
       RealtimeTsunamiUpsertEvent() => 'tsunami/upsert',
       RealtimeTsunamiDeleteEvent() => 'tsunami/delete',
+      RealtimeShakeSnapshotEvent() => 'shake_detection/snapshot',
       RealtimeEstimatedIntensityUpsertEvent() => 'estimated_intensity/upsert',
     };
 
@@ -172,6 +179,8 @@ class const _WsEventCard({
         'eventId=$eventId groupId=$groupId',
       RealtimeTsunamiDeleteEvent(:final eventId, :final groupId) =>
         'eventId=$eventId groupId=$groupId',
+      RealtimeShakeSnapshotEvent(:final record) =>
+        'revision=${record.revision} events=${record.events.length}',
       RealtimeEstimatedIntensityUpsertEvent(:final eventId) =>
         'eventId=$eventId',
     };

@@ -123,6 +123,16 @@ class AppStrings {
     required this.e2eFail,
     required this.localOk,
     required this.alertOk,
+    required this.bulletinCategoryWarning,
+    required this.bulletinCategoryAdvisory,
+    required this.bulletinCategoryInfo,
+    required this.bulletinCategoryUnknown,
+    required this.bulletinRegionLabel,
+    required this.bulletinMagnitudeLabel,
+    required this.bulletinNoteLabel,
+    required this.bulletinOpenLink,
+    required this.bulletinCardTitle,
+    required this.bannerMoreCount,
   });
 
   final String appTitle;
@@ -183,6 +193,16 @@ class AppStrings {
   final String e2eFail;
   final String localOk;
   final String alertOk;
+  final String bulletinCategoryWarning;
+  final String bulletinCategoryAdvisory;
+  final String bulletinCategoryInfo;
+  final String bulletinCategoryUnknown;
+  final String bulletinRegionLabel;
+  final String bulletinMagnitudeLabel;
+  final String bulletinNoteLabel;
+  final String bulletinOpenLink;
+  final String bulletinCardTitle;
+  final String bannerMoreCount;
 
   static AppStrings of(Locale locale) {
     switch (locale.languageCode) {
@@ -262,6 +282,16 @@ class AppStrings {
     e2eFail: '发布失败，检查网络或主题名。',
     localOk: '已弹出本地通知（不走网络）。',
     alertOk: '已弹出警报级通知（全屏 + 闹钟音量 + 持续）。',
+    bulletinCategoryWarning: '海啸警报',
+    bulletinCategoryAdvisory: '海啸关注',
+    bulletinCategoryInfo: '海啸信息',
+    bulletinCategoryUnknown: '公报',
+    bulletinRegionLabel: '受影响区域',
+    bulletinMagnitudeLabel: '震级',
+    bulletinNoteLabel: '备注',
+    bulletinOpenLink: '打开公报原文',
+    bulletinCardTitle: '海啸公报',
+    bannerMoreCount: '另有 {n} 条',
   );
 
   static const en = AppStrings(
@@ -336,6 +366,16 @@ class AppStrings {
     e2eFail: 'Publish failed. Check the network or topic name.',
     localOk: 'Local notification shown (no network).',
     alertOk: 'Alert-level notification shown (full screen + alarm + ongoing).',
+    bulletinCategoryWarning: 'Tsunami warning',
+    bulletinCategoryAdvisory: 'Tsunami advisory',
+    bulletinCategoryInfo: 'Information',
+    bulletinCategoryUnknown: 'Bulletin',
+    bulletinRegionLabel: 'Affected region',
+    bulletinMagnitudeLabel: 'Magnitude',
+    bulletinNoteLabel: 'Note',
+    bulletinOpenLink: 'Open bulletin',
+    bulletinCardTitle: 'Tsunami bulletins',
+    bannerMoreCount: '{n} more',
   );
 
   static const ja = AppStrings(
@@ -405,5 +445,15 @@ class AppStrings {
     e2eFail: 'publish に失敗しました。ネットワークとトピック名を確認してください。',
     localOk: 'ローカル通知を表示しました（ネットワークは使いません）。',
     alertOk: 'アラート級通知を表示しました（全画面 + アラーム + 常駐）。',
+    bulletinCategoryWarning: '津波警報',
+    bulletinCategoryAdvisory: '津波注意報',
+    bulletinCategoryInfo: '津波情報',
+    bulletinCategoryUnknown: '情報',
+    bulletinRegionLabel: '影響地域',
+    bulletinMagnitudeLabel: 'マグニチュード',
+    bulletinNoteLabel: '備考',
+    bulletinOpenLink: '公报を開く',
+    bulletinCardTitle: '津波情報',
+    bannerMoreCount: '他 {n} 件',
   );
 }

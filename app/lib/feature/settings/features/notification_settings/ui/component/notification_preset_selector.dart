@@ -1,8 +1,6 @@
-import 'package:eqmonitor/core/component/chip/beta_chip.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/provider/notification/os_notification_permission_provider.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/notification_preset_notifier.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/provider/shake_detection_notification_access_provider.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/ui/dialog/notification_permission_dialog.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -11,14 +9,20 @@ import 'package:material_ui/material_ui.dart';
 
 enum NotificationPresetSelectorStyle { onboarding, settings }
 
-class const NotificationPresetSelector({
-  required final NotificationPreset? selectedPreset,
-  required final ValueChanged<NotificationPreset> onChanged,
-  required final NotificationPresetSelectorStyle style,
-  final VoidCallback? onCustomSettingsTap,
-  final bool isProcessing = false,
-  super.key,
-}) extends HookConsumerWidget {
+class NotificationPresetSelector extends HookConsumerWidget {
+  const new({
+    required this.selectedPreset,
+    required this.onChanged,
+    required this.style,
+    this.onCustomSettingsTap,
+    super.key,
+  });
+
+  final NotificationPreset? selectedPreset;
+  final ValueChanged<NotificationPreset> onChanged;
+  final NotificationPresetSelectorStyle style;
+  final VoidCallback? onCustomSettingsTap;
+
   static const _onboardingPresetOrder = <NotificationPreset>[
     NotificationPreset.recommended,
     NotificationPreset.all,
@@ -40,13 +44,9 @@ class const NotificationPresetSelector({
       _ => null,
     };
     final isOsGranted = permission?.isOsNotificationGranted ?? false;
-    final showsShakeDetection =
-        style == .settings &&
-        ref.watch(shakeDetectionNotificationAccessProvider) != .hidden;
 
     useEffect(() {
-      if (style == .onboarding &&
-          permission != null &&
+      if (permission != null &&
           !permission.isOsNotificationGranted &&
           selectedPreset != NotificationPreset.none) {
         onChanged(NotificationPreset.none);
@@ -56,13 +56,10 @@ class const NotificationPresetSelector({
       // 親の再ビルドのたびにeffectが再実行される。ここで見たいのは
       // 権限と選択中プリセットの変化だけ。
       // ignore_keys: onChanged
-    }, [permission, selectedPreset, style]);
+    }, [permission, selectedPreset]);
 
     void handlePresetTap(NotificationPreset preset) {
-      if (isProcessing) {
-        return;
-      }
-      if (style == .onboarding && !isOsGranted && preset != .none) {
+      if (!isOsGranted && preset != .none) {
         ref
             .read(notificationPermissionDialogActionProvider)
             .showOsPermission(context, ref);
@@ -80,14 +77,11 @@ class const NotificationPresetSelector({
     }
 
     bool isPresetEnabled(NotificationPreset preset) {
-      return !isProcessing &&
-          (style == .settings ||
-              isOsGranted ||
-              preset == NotificationPreset.none);
+      return isOsGranted || preset == NotificationPreset.none;
     }
 
     bool shouldShowCriticalWarning(NotificationPreset preset) {
-      if (style == .settings || permission == null) {
+      if (permission == null) {
         return false;
       }
       return selectedPreset == preset &&
@@ -113,7 +107,6 @@ class const NotificationPresetSelector({
         selectedPreset: selectedPreset,
         isPresetEnabled: isPresetEnabled,
         shouldShowCriticalWarning: shouldShowCriticalWarning,
-        showsShakeDetection: showsShakeDetection,
         onPresetTap: handlePresetTap,
         onCustomSettingsTap: onCustomSettingsTap,
         onCriticalWarningTap: () => ref
@@ -124,15 +117,23 @@ class const NotificationPresetSelector({
   }
 }
 
-class const _OnboardingPresetList({
-  required final List<NotificationPreset> presets,
-  required final NotificationPreset? selectedPreset,
-  required final bool Function(NotificationPreset preset) isPresetEnabled,
-  required final bool Function(NotificationPreset preset)
-  shouldShowCriticalWarning,
-  required final ValueChanged<NotificationPreset> onPresetTap,
-  required final VoidCallback onCriticalWarningTap,
-}) extends StatelessWidget {
+class _OnboardingPresetList extends StatelessWidget {
+  const new({
+    required this.presets,
+    required this.selectedPreset,
+    required this.isPresetEnabled,
+    required this.shouldShowCriticalWarning,
+    required this.onPresetTap,
+    required this.onCriticalWarningTap,
+  });
+
+  final List<NotificationPreset> presets;
+  final NotificationPreset? selectedPreset;
+  final bool Function(NotificationPreset preset) isPresetEnabled;
+  final bool Function(NotificationPreset preset) shouldShowCriticalWarning;
+  final ValueChanged<NotificationPreset> onPresetTap;
+  final VoidCallback onCriticalWarningTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -156,14 +157,23 @@ class const _OnboardingPresetList({
   }
 }
 
-class const _OnboardingPresetCard({
-  required final NotificationPreset preset,
-  required final bool isSelected,
-  required final bool isEnabled,
-  required final bool showCriticalWarning,
-  required final VoidCallback onTap,
-  required final VoidCallback onCriticalWarningTap,
-}) extends StatelessWidget {
+class _OnboardingPresetCard extends StatelessWidget {
+  const new({
+    required this.preset,
+    required this.isSelected,
+    required this.isEnabled,
+    required this.showCriticalWarning,
+    required this.onTap,
+    required this.onCriticalWarningTap,
+  });
+
+  final NotificationPreset preset;
+  final bool isSelected;
+  final bool isEnabled;
+  final bool showCriticalWarning;
+  final VoidCallback onTap;
+  final VoidCallback onCriticalWarningTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -233,9 +243,11 @@ class const _OnboardingPresetCard({
   }
 }
 
-class const _OnboardingPresetDescription({
-  required final NotificationPreset preset,
-}) extends StatelessWidget {
+class _OnboardingPresetDescription extends StatelessWidget {
+  const new({required this.preset});
+
+  final NotificationPreset preset;
+
   @override
   Widget build(BuildContext context) {
     return switch (preset) {
@@ -277,8 +289,11 @@ class const _OnboardingPresetDescription({
   }
 }
 
-class const _PresetBulletItem({required final String text})
-    extends StatelessWidget {
+class _PresetBulletItem extends StatelessWidget {
+  const new({required this.text});
+
+  final String text;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -308,17 +323,25 @@ class const _PresetBulletItem({required final String text})
   }
 }
 
-class const _SettingsPresetGroup({
-  required final List<NotificationPreset> presets,
-  required final NotificationPreset? selectedPreset,
-  required final bool Function(NotificationPreset preset) isPresetEnabled,
-  required final bool Function(NotificationPreset preset)
-  shouldShowCriticalWarning,
-  required final bool showsShakeDetection,
-  required final ValueChanged<NotificationPreset> onPresetTap,
-  required final VoidCallback? onCustomSettingsTap,
-  required final VoidCallback onCriticalWarningTap,
-}) extends StatelessWidget {
+class _SettingsPresetGroup extends StatelessWidget {
+  const new({
+    required this.presets,
+    required this.selectedPreset,
+    required this.isPresetEnabled,
+    required this.shouldShowCriticalWarning,
+    required this.onPresetTap,
+    required this.onCustomSettingsTap,
+    required this.onCriticalWarningTap,
+  });
+
+  final List<NotificationPreset> presets;
+  final NotificationPreset? selectedPreset;
+  final bool Function(NotificationPreset preset) isPresetEnabled;
+  final bool Function(NotificationPreset preset) shouldShowCriticalWarning;
+  final ValueChanged<NotificationPreset> onPresetTap;
+  final VoidCallback? onCustomSettingsTap;
+  final VoidCallback onCriticalWarningTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -350,8 +373,6 @@ class const _SettingsPresetGroup({
               isSelected: selectedPreset == presets[index],
               isEnabled: isPresetEnabled(presets[index]),
               showCriticalWarning: shouldShowCriticalWarning(presets[index]),
-              showsShakeDetection:
-                  showsShakeDetection && presets[index] == .custom,
               onTap: () => onPresetTap(presets[index]),
               onCustomSettingsTap: onCustomSettingsTap,
               onCriticalWarningTap: onCriticalWarningTap,
@@ -363,16 +384,25 @@ class const _SettingsPresetGroup({
   }
 }
 
-class const _SettingsPresetTile({
-  required final NotificationPreset preset,
-  required final bool isSelected,
-  required final bool isEnabled,
-  required final bool showCriticalWarning,
-  required final bool showsShakeDetection,
-  required final VoidCallback onTap,
-  required final VoidCallback? onCustomSettingsTap,
-  required final VoidCallback onCriticalWarningTap,
-}) extends StatelessWidget {
+class _SettingsPresetTile extends StatelessWidget {
+  const new({
+    required this.preset,
+    required this.isSelected,
+    required this.isEnabled,
+    required this.showCriticalWarning,
+    required this.onTap,
+    required this.onCustomSettingsTap,
+    required this.onCriticalWarningTap,
+  });
+
+  final NotificationPreset preset;
+  final bool isSelected;
+  final bool isEnabled;
+  final bool showCriticalWarning;
+  final VoidCallback onTap;
+  final VoidCallback? onCustomSettingsTap;
+  final VoidCallback onCriticalWarningTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -416,10 +446,6 @@ class const _SettingsPresetTile({
                       color: subtitleColor,
                     ),
                   ),
-                  if (showsShakeDetection) ...[
-                    SizedBox(height: spacing.xs),
-                    _ShakeDetectionChip(isEnabled: isEnabled),
-                  ],
                   if (showCriticalWarning) ...[
                     SizedBox(height: spacing.xs),
                     _CriticalAlertWarningLink(onTap: onCriticalWarningTap),
@@ -442,65 +468,11 @@ class const _SettingsPresetTile({
   }
 }
 
-/// カスタム設定で揺れ検知の通知を設定できることを示すチップ。
-class const _ShakeDetectionChip({required final bool isEnabled})
-    extends StatelessWidget {
-  static const _betaChipHeight = 14.0;
+class _PresetSelectionMark extends StatelessWidget {
+  const new({required this.isSelected});
 
-  @override
-  Widget build(BuildContext context) {
-    final designSystem = context.designSystem;
-    final colorTheme = designSystem.colorTheme;
-    final spacing = designSystem.spacing;
+  final bool isSelected;
 
-    // 幅が足りないときは折り返さず、チップ全体を縮める。
-    return FittedBox(
-      fit: .scaleDown,
-      alignment: .centerLeft,
-      child: DecoratedBox(
-        decoration: ShapeDecoration(
-          color: colorTheme.secondaryContainer,
-          shape: RoundedSuperellipseBorder(
-            borderRadius: BorderRadius.circular(designSystem.shape.xs),
-          ),
-        ),
-        child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: spacing.sm,
-            vertical: spacing.xs,
-          ),
-          child: Row(
-            mainAxisSize: .min,
-            crossAxisAlignment: .baseline,
-            textBaseline: .alphabetic,
-            spacing: spacing.xs,
-            children: [
-              Text(
-                '揺れ検知',
-                // 行の高さを BETA チップより低くし、チップの上下の余白を
-                // BETA チップの高さだけで決める。
-                style: designSystem.typography.labelMedium.copyWith(
-                  color: isEnabled
-                      ? colorTheme.onSecondaryContainer
-                      : Theme.of(context).disabledColor,
-                  fontWeight: .w600,
-                  height: 0.8,
-                  leadingDistribution: .even,
-                ),
-              ),
-              BetaChip(
-                height: MediaQuery.textScalerOf(context).scale(_betaChipHeight),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class const _PresetSelectionMark({required final bool isSelected})
-    extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -520,10 +492,12 @@ class const _PresetSelectionMark({required final bool isSelected})
   }
 }
 
-class const _CustomPresetTrailing({
-  required final bool enabled,
-  required final VoidCallback onTap,
-}) extends StatelessWidget {
+class _CustomPresetTrailing extends StatelessWidget {
+  const new({required this.enabled, required this.onTap});
+
+  final bool enabled;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -552,8 +526,11 @@ class const _CustomPresetTrailing({
   }
 }
 
-class const _CriticalAlertWarningLink({required final VoidCallback onTap})
-    extends HookWidget {
+class _CriticalAlertWarningLink extends HookWidget {
+  const new({required this.onTap});
+
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -587,7 +564,7 @@ class const _NotificationPresetLabel() {
   };
 
   String settingsSubtitle(NotificationPreset preset) => switch (preset) {
-    NotificationPreset.recommended => '現在地の震度に応じて、緊急地震速報(予報・警報)と地震情報を自動で通知します',
+    NotificationPreset.recommended => '現在地の震度に応じて、EEWと地震情報を自動で通知します',
     NotificationPreset.all => '推奨設定に加え、全国のすべての地震・南海トラフ地震関連情報も通知します',
     NotificationPreset.custom => '通知の種類ごとに条件を細かく設定します',
     NotificationPreset.none => '通知を受け取りません。後から設定で変更できます',

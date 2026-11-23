@@ -4,17 +4,17 @@ import 'package:eqmonitor/core/hook/use_map_operation_queue.dart';
 import 'package:eqmonitor/feature/eew/data/logic/eew_warning_area_selector.dart';
 import 'package:eqmonitor/feature/eew/data/model/eew_telegram_item.dart';
 import 'package:eqmonitor/feature/home/ui/component/map/layer/eew_area_filter.dart';
-import 'package:eqmonitor/feature/map/data/provider/map_style_util.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
 /// 警報発表区域の塗りつぶし（府県予報区 `eqmonitor_map`）
-class const EewWarningRegionsLayer({
-  required final List<EewTelegramItem> eews,
-  super.key,
-}) extends HookConsumerWidget {
+class EewWarningRegionsLayer extends HookConsumerWidget {
+  const new({required this.eews, super.key});
+
+  final List<EewTelegramItem> eews;
+
   static const _layerId = 'eew-warning-regions-fill';
   static const _areaFilterBuilder = EewAreaFilterBuilder();
 
@@ -48,7 +48,6 @@ class const EewWarningRegionsLayer({
               filter: _areaFilterBuilder.build(codes),
               paint: const {'fill-color': '#FF0000', 'fill-opacity': 0.25},
             ),
-            belowLayerId: BaseLayer.regionOverlayAnchor.name,
           );
           isInitialized.value = true;
           await styleController.updateFilter(

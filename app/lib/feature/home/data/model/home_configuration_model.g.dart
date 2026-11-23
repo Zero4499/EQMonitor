@@ -10,38 +10,18 @@ part of 'home_configuration_model.dart';
 
 _HomeShakeDetectionSettings _$HomeShakeDetectionSettingsFromJson(
   Map<String, dynamic> json,
-) => $checkedCreate(
-  '_HomeShakeDetectionSettings',
-  json,
-  ($checkedConvert) {
-    final val = _HomeShakeDetectionSettings(
-      show: $checkedConvert('show', (v) => v as bool? ?? true),
-      animationMode: $checkedConvert(
-        'animation_mode',
-        (v) =>
-            $enumDecodeNullable(_$HomeShakeDetectionAnimationModeEnumMap, v) ??
-            HomeShakeDetectionAnimationMode.blink,
-      ),
-      autoFocus: $checkedConvert('auto_focus', (v) => v as bool? ?? true),
-      minLevel: $checkedConvert(
-        'min_level',
-        (v) =>
-            $enumDecodeNullable(
-              _$ShakeDetectionLevelEnumMap,
-              v,
-              unknownValue: ShakeDetectionLevel.weaker,
-            ) ??
-            ShakeDetectionLevel.weaker,
-      ),
-    );
-    return val;
-  },
-  fieldKeyMap: const {
-    'animationMode': 'animation_mode',
-    'autoFocus': 'auto_focus',
-    'minLevel': 'min_level',
-  },
-);
+) => $checkedCreate('_HomeShakeDetectionSettings', json, ($checkedConvert) {
+  final val = _HomeShakeDetectionSettings(
+    show: $checkedConvert('show', (v) => v as bool? ?? true),
+    animationMode: $checkedConvert(
+      'animation_mode',
+      (v) =>
+          $enumDecodeNullable(_$HomeShakeDetectionAnimationModeEnumMap, v) ??
+          HomeShakeDetectionAnimationMode.blink,
+    ),
+  );
+  return val;
+}, fieldKeyMap: const {'animationMode': 'animation_mode'});
 
 Map<String, dynamic> _$HomeShakeDetectionSettingsToJson(
   _HomeShakeDetectionSettings instance,
@@ -49,55 +29,12 @@ Map<String, dynamic> _$HomeShakeDetectionSettingsToJson(
   'show': instance.show,
   'animation_mode':
       _$HomeShakeDetectionAnimationModeEnumMap[instance.animationMode]!,
-  'auto_focus': instance.autoFocus,
-  'min_level': _$ShakeDetectionLevelEnumMap[instance.minLevel]!,
 };
 
 const _$HomeShakeDetectionAnimationModeEnumMap = {
   HomeShakeDetectionAnimationMode.blink: 'blink',
   HomeShakeDetectionAnimationMode.fade: 'fade',
   HomeShakeDetectionAnimationMode.solid: 'solid',
-};
-
-const _$ShakeDetectionLevelEnumMap = {
-  ShakeDetectionLevel.weaker: 'weaker',
-  ShakeDetectionLevel.weak: 'weak',
-  ShakeDetectionLevel.medium: 'medium',
-  ShakeDetectionLevel.strong: 'strong',
-  ShakeDetectionLevel.stronger: 'stronger',
-};
-
-_HomeDebugOverlaySettings _$HomeDebugOverlaySettingsFromJson(
-  Map<String, dynamic> json,
-) => $checkedCreate(
-  '_HomeDebugOverlaySettings',
-  json,
-  ($checkedConvert) {
-    final val = _HomeDebugOverlaySettings(
-      shakeDetection: $checkedConvert(
-        'shake_detection',
-        (v) => v as bool? ?? false,
-      ),
-      kyoshinMonitor: $checkedConvert(
-        'kyoshin_monitor',
-        (v) => v as bool? ?? false,
-      ),
-      eew: $checkedConvert('eew', (v) => v as bool? ?? false),
-    );
-    return val;
-  },
-  fieldKeyMap: const {
-    'shakeDetection': 'shake_detection',
-    'kyoshinMonitor': 'kyoshin_monitor',
-  },
-);
-
-Map<String, dynamic> _$HomeDebugOverlaySettingsToJson(
-  _HomeDebugOverlaySettings instance,
-) => <String, dynamic>{
-  'shake_detection': instance.shakeDetection,
-  'kyoshin_monitor': instance.kyoshinMonitor,
-  'eew': instance.eew,
 };
 
 _HomeEewSettings _$HomeEewSettingsFromJson(Map<String, dynamic> json) =>
@@ -369,12 +306,6 @@ _HomeConfigurationModel _$HomeConfigurationModelFromJson(
             ? const HomeMapGridSettings()
             : HomeMapGridSettings.fromJson(v as Map<String, dynamic>),
       ),
-      debugOverlay: $checkedConvert(
-        'debug_overlay',
-        (v) => v == null
-            ? const HomeDebugOverlaySettings()
-            : HomeDebugOverlaySettings.fromJson(v as Map<String, dynamic>),
-      ),
     );
     return val;
   },
@@ -382,7 +313,6 @@ _HomeConfigurationModel _$HomeConfigurationModelFromJson(
     'kyoshinMonitor': 'kyoshin_monitor',
     'shakeDetection': 'shake_detection',
     'mapGrid': 'map_grid',
-    'debugOverlay': 'debug_overlay',
   },
 );
 
@@ -395,5 +325,4 @@ Map<String, dynamic> _$HomeConfigurationModelToJson(
   'common': instance.common.toJson(),
   'shake_detection': instance.shakeDetection.toJson(),
   'map_grid': instance.mapGrid.toJson(),
-  'debug_overlay': instance.debugOverlay.toJson(),
 };

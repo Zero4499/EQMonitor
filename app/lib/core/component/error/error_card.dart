@@ -7,20 +7,32 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const ErrorCard({
-  required final Object error,
-  super.key,
-  final String? title,
-  final String? suffixMessage,
-  final Future<void> Function()? onReload,
-  final StackTrace? stackTrace,
-  final bool showDetails = true,
-  final bool showContact = true,
-  final bool showLoadingOverlayOnReload = true,
+class ErrorCard extends ConsumerWidget {
+  const new({
+    required this.error,
+    super.key,
+    this.title,
+    this.suffixMessage,
+    this.onReload,
+    this.stackTrace,
+    this.showDetails = true,
+    this.showContact = false,
+    this.showLoadingOverlayOnReload = true,
+    this.onDioExceptionStatusOverride,
+  });
+
+  final Object error;
+  final String? title;
+  final String? suffixMessage;
+  final Future<void> Function()? onReload;
+  final StackTrace? stackTrace;
+  final bool showDetails;
+  final bool showContact;
+  final bool showLoadingOverlayOnReload;
 
   /// DioExceptionで、StatusCodeがある時にエラーメッセージを上書きする
-  final String? Function(int statusCode)? onDioExceptionStatusOverride,
-}) extends ConsumerWidget {
+  final String? Function(int statusCode)? onDioExceptionStatusOverride;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -48,7 +60,7 @@ class const ErrorCard({
             ),
             const SizedBox(height: 8),
             Text(
-              title ?? 'エラーが発生しました',
+              title ?? '出错了',
               style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: .bold,
               ),
@@ -76,14 +88,14 @@ class const ErrorCard({
                             await reload();
                           },
                     icon: const Icon(Icons.refresh_rounded, size: 18),
-                    label: const Text('再試行'),
+                    label: const Text('重试'),
                   ),
                 if (showDetails)
                   M3ETextButton(
                     onPressed: () => ref
                         .read(errorDetailsSheetActionProvider)
                         .show(context, error: error, stackTrace: stackTrace),
-                    child: const Text('詳細'),
+                    child: const Text('详情'),
                   ),
                 if (showContact)
                   M3ETextButton(

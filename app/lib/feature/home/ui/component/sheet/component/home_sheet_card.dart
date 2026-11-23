@@ -6,8 +6,11 @@ import 'package:material_ui/material_ui.dart';
 /// 角丸・枠線・背景色をカード間で揃えるために利用する。
 /// 内側の余白は [HomeSheetCardHeader] / [HomeSheetCardFooter] と
 /// 各コンテンツ側で `spacing.lg` を基準に揃える。
-class const HomeSheetCard({required final List<Widget> children, super.key})
-    extends StatelessWidget {
+class HomeSheetCard extends StatelessWidget {
+  const new({required this.children, super.key});
+
+  final List<Widget> children;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -31,12 +34,13 @@ class const HomeSheetCard({required final List<Widget> children, super.key})
   }
 }
 
-class const HomeSheetCardHeader({
-  required final String title,
-  final Widget? titleTrailing,
-  final Widget? action,
-  super.key,
-}) extends StatelessWidget {
+class HomeSheetCardHeader extends StatelessWidget {
+  const new({required this.title, this.titleTrailing, this.action, super.key});
+
+  final String title;
+  final Widget? titleTrailing;
+  final Widget? action;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

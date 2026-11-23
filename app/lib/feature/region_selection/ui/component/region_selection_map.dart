@@ -1,13 +1,11 @@
 import 'dart:async';
 
 import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
-import 'package:eqmonitor/core/provider/log/talker.dart';
 import 'package:eqmonitor/feature/location/data/jma_map_isolate.dart';
 import 'package:eqmonitor/feature/map/data/notifier/map_configuration_notifier.dart';
 import 'package:eqmonitor/feature/map/ui/map_operation_queue_scope.dart';
 import 'package:eqmonitor/feature/map/utils/map_zoom_calculator.dart';
 import 'package:eqmonitor/feature/region_selection/data/logic/latest_map_operation_guard.dart';
-import 'package:eqmonitor/feature/region_selection/data/logic/region_option_label.dart';
 import 'package:eqmonitor/feature/region_selection/data/model/region_option.dart';
 import 'package:eqmonitor/feature/region_selection/data/repository/prefecture_boundary_repository.dart';
 import 'package:eqmonitor/feature/region_selection/data/provider/region_map_metadata_provider.dart';
@@ -19,15 +17,22 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const RegionSelectionMap({
-  required final RegionKind kind,
-  required final List<RegionOption> catalog,
-  required final List<RegionOption> selected,
-  required final ValueChanged<RegionOption> onSelected,
-  final RegionOption? parent,
-  final double bottomInset = 0,
-  super.key,
-}) extends HookConsumerWidget {
+class RegionSelectionMap extends HookConsumerWidget {
+  const new({
+    required this.kind,
+    required this.catalog,
+    required this.selected,
+    required this.onSelected,
+    this.parent,
+    super.key,
+  });
+
+  final RegionKind kind;
+  final List<RegionOption> catalog;
+  final List<RegionOption> selected;
+  final RegionOption? parent;
+  final ValueChanged<RegionOption> onSelected;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final configuration = ref.watch(mapConfigurationProvider);
@@ -118,31 +123,6 @@ class const RegionSelectionMap({
       return const Center(child: Text('観測点は一覧から選択してください'));
     }
     final action = ref.watch(regionSelectionMapActionProvider);
-    final focusTargets = useRef(selected)
-      ..value = selected.isNotEmpty ? selected : [?parent];
-    useEffect(
-      () {
-        final map = controller.value;
-        if (!ready.value || map == null) {
-          return null;
-        }
-        unawaited(() async {
-          try {
-            await action.focus(
-              ref: ref,
-              controller: map,
-              catalog: catalog,
-              targets: focusTargets.value,
-              padding: EdgeInsets.fromLTRB(32, 32, 32, 160 + bottomInset),
-            );
-          } on Exception catch (error, stack) {
-            talker.handle(error, stack);
-          }
-        }());
-        return null;
-      },
-      [ready.value, parent, catalog, action, focusTargets],
-    );
     return Stack(
       children: [
         MapOperationQueueScope(
@@ -230,7 +210,7 @@ class const RegionSelectionMap({
         Align(
           alignment: Alignment.bottomCenter,
           child: Padding(
-            padding: EdgeInsets.fromLTRB(12, 12, 12, 12 + bottomInset),
+            padding: const EdgeInsets.all(12),
             child: Card(
               child: Padding(
                 padding: const EdgeInsets.all(12),
@@ -243,23 +223,8 @@ class const RegionSelectionMap({
                         onPressed: () => retry.value++,
                         child: const Text('再試行'),
                       ),
-                    ] else ...[
-                      if (selected.isNotEmpty)
-                        Text(
-                          selected.length == 1
-                              ? const RegionOptionLabel().title(selected.first)
-                              : '${selected.length}件を選択中',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      if (message.value case final text?)
-                        Text(text)
-                      else if (selected.isEmpty)
-                        Text(
-                          parent == null
-                              ? '地図をタップして${kind.label}を選択'
-                              : '地図をタップして${parent?.name}の${kind.label}を選択',
-                        ),
-                    ],
+                    ] else
+                      Text(message.value ?? '地図をタップして${kind.label}を選択'),
                     if (kind == .epicenter)
                       const Text('地図に範囲のない震央地名は一覧から選択できます'),
                     for (final candidate in candidates.value)
@@ -269,7 +234,7 @@ class const RegionSelectionMap({
                           candidates.value = const [];
                         },
                         child: Text(
-                          const RegionOptionLabel().title(candidate),
+                          '${candidate.name}（${candidate.parentName ?? candidate.kind.label}）',
                         ),
                       ),
                   ],

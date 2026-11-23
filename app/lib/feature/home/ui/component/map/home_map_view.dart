@@ -7,7 +7,6 @@ import 'package:eqmonitor/feature/eew/data/eew_alive_telegram.dart';
 import 'package:eqmonitor/feature/home/data/model/home_configuration_model.dart';
 import 'package:eqmonitor/feature/home/data/notifier/home_configuration_notifier.dart';
 import 'package:eqmonitor/feature/home/data/provider/map_camera_state_provider.dart';
-import 'package:eqmonitor/feature/home/ui/component/debug/home_debug_hud.dart';
 import 'package:eqmonitor/feature/home/ui/component/map/home_map_controller_card.dart';
 import 'package:eqmonitor/feature/home/ui/component/map/home_map_options.dart';
 import 'package:eqmonitor/feature/home/ui/component/map/layer/eew_estimated_intensity_layer.dart';
@@ -33,7 +32,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const HomeMapView({super.key}) extends ConsumerWidget {
+class HomeMapView extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mapConfiguration = ref.watch(mapConfigurationProvider);
@@ -72,8 +73,11 @@ class const HomeMapView({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _MapContent({required final String styleString})
-    extends ConsumerWidget {
+class _MapContent extends ConsumerWidget {
+  const new({required this.styleString});
+
+  final String styleString;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeAsync = ref.watch(homeConfigurationProvider);
@@ -155,12 +159,18 @@ class const _MapContent({required final String styleString})
 /// [ValueKey] による remount（設定トグル・スタイル変更等）が発生すると
 /// この Widget 自体が unmount→remount されるため、破棄時に
 /// [HomeMapCameraState] が保持する [MapController] を確実にクリアできる。
-class const _MapLibreMapHost({
-  required final MapOptions mapOptions,
-  required final bool showLocation,
-  required final List<Widget> children,
-  super.key,
-}) extends HookConsumerWidget {
+class _MapLibreMapHost extends HookConsumerWidget {
+  const new({
+    required this.mapOptions,
+    required this.showLocation,
+    required this.children,
+    super.key,
+  });
+
+  final MapOptions mapOptions;
+  final bool showLocation;
+  final List<Widget> children;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controllerRef = useRef<MapController?>(null);
@@ -213,7 +223,9 @@ class const _MapLibreMapHost({
   }
 }
 
-class const _MapHeader() extends ConsumerWidget {
+class _MapHeader extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final useKmoni =
@@ -237,20 +249,20 @@ class const _MapHeader() extends ConsumerWidget {
         ),
         const ConnectionStatusCard(),
         if (showScale)
-          Padding(
-            padding: CardTheme.of(context).margin ?? const EdgeInsets.all(4),
-            child: const KyoshinMonitorScaleCard(),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: KyoshinMonitorScaleCard(),
           ),
       ],
     );
 
     final isDebug = ref.watch(debugProvider).value ?? false;
-    final isRealtimeFocusActive = ref.watch(
-      homeMapCameraStateProvider.select((state) => state.isRealtimeFocusActive),
+    final isEewFocusActive = ref.watch(
+      homeMapCameraStateProvider.select((state) => state.isEewFocusActive),
     );
 
     final controllerCard = HomeMapControllerCard(
-      isLocationButtonEnabled: !isRealtimeFocusActive,
+      isLocationButtonEnabled: !isEewFocusActive,
       onLayerButtonTap: () async =>
           const HomeMapLayerRoute().push<void>(context),
       onLocationButtonTap: () =>
@@ -267,21 +279,11 @@ class const _MapHeader() extends ConsumerWidget {
         mainAxisAlignment: .spaceBetween,
         crossAxisAlignment: .start,
         children: [
-          Flexible(
-            child: Column(
-              mainAxisSize: .min,
-              crossAxisAlignment: .start,
-              children: [
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: useKmoni
-                      ? kyoshinMonitorColumn
-                      : const SizedBox.shrink(),
-                ),
-                const HomeDebugHud(),
-              ],
-            ),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            child: useKmoni ? kyoshinMonitorColumn : const SizedBox.shrink(),
           ),
+          const Column(),
           controllerCard,
         ],
       ),

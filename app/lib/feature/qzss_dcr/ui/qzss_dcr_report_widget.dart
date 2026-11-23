@@ -6,7 +6,9 @@ import 'package:eqmonitor/feature/qzss_dcr/data/provider/qzss_serial_port_provid
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const QzssDcrReportWidget({super.key}) extends HookConsumerWidget {
+class QzssDcrReportWidget extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final report = ref.watch(latestQzssDcReportProvider);
@@ -155,11 +157,17 @@ class const QzssDcrReportWidget({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _InfoRow({
-  required final String label,
-  required final String value,
-  final IconData? icon,
-}) extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.value,
+    this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData? icon;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

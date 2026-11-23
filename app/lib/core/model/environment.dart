@@ -12,7 +12,7 @@ part 'environment.g.dart';
 enum Flavor { dev, prod }
 
 @freezed
-abstract class const BuildConfig._() with _$BuildConfig {
+abstract class BuildConfig with _$BuildConfig {
   const factory({
     required String restApiUrl,
     required String appIdSuffix,
@@ -30,7 +30,6 @@ abstract class const BuildConfig._() with _$BuildConfig {
     required String revenueCatApiKeyIos,
     required String revenueCatApiKeyAndroid,
     @Default(false) bool isProduction,
-    @Default(false) bool isBetaDistribution,
     @Default(false) bool isNativeSocialAuthEnabled,
     @Default(true) bool isShakeDetectionEnabled,
   }) = _BuildConfig;
@@ -64,7 +63,6 @@ abstract class const BuildConfig._() with _$BuildConfig {
       'REVENUECAT_API_KEY_ANDROID',
     ),
     isProduction: const bool.fromEnvironment('IS_PRODUCTION'),
-    isBetaDistribution: const bool.fromEnvironment('IS_BETA_DISTRIBUTION'),
     isNativeSocialAuthEnabled: const bool.fromEnvironment(
       'IS_NATIVE_SOCIAL_AUTH_ENABLED',
     ),
@@ -74,12 +72,15 @@ abstract class const BuildConfig._() with _$BuildConfig {
     ),
   );
 
+  const new _();
+
   /// デバッグ向け UI（デバッグメニュー・HTTP キャッシュ操作）を表示してよいか。
   ///
   /// production ビルドでは一般ユーザー向けの UI のみ表示する。
   bool get isDeveloperUiEnabled => !isProduction;
 
-  bool get isSubscriptionAvailable => !isBetaDistribution;
+  bool get isShakeDetectionAvailable =>
+      !isProduction && isShakeDetectionEnabled;
 
   /// プラットフォームに応じた RevenueCat の API キーを返す。
   /// 後続 PR の Paywall / サブスク状態取得実装で利用する想定。

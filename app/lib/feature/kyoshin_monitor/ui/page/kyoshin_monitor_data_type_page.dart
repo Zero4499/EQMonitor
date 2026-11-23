@@ -2,7 +2,9 @@ import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-class const KyoshinMonitorDataTypePage({super.key}) extends StatelessWidget {
+class KyoshinMonitorDataTypePage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -65,7 +67,9 @@ class const KyoshinMonitorDataTypePage({super.key}) extends StatelessWidget {
   }
 }
 
-class const _KyoshinMonitorSource() extends StatelessWidget {
+class _KyoshinMonitorSource extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -106,11 +110,17 @@ class const _KyoshinMonitorSource() extends StatelessWidget {
   }
 }
 
-class const _DataTypeInfo({
-  required final String title,
-  required final String description,
-  final bool isLast = false,
-}) extends StatelessWidget {
+class _DataTypeInfo extends StatelessWidget {
+  const new({
+    required this.title,
+    required this.description,
+    this.isLast = false,
+  });
+
+  final String title;
+  final String description;
+  final bool isLast;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

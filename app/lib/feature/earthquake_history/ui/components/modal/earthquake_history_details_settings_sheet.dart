@@ -5,10 +5,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const EarthquakeHistoryDetailsSettingsSheet({
-  required final bool showingDb,
-  super.key,
-}) extends ConsumerWidget {
+class EarthquakeHistoryDetailsSettingsSheet extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final config = ref.watch(earthquakeHistoryConfigProvider);
@@ -46,8 +45,8 @@ class const EarthquakeHistoryDetailsSettingsSheet({
                   SwitchListTile.adaptive(
                     title: const Text('観測点を表示'),
                     subtitle: const Text('各地の震度・長周期地震動の地図に観測点を表示します'),
-                    value: showingDb || details.showStations,
-                    onChanged: busy || showingDb
+                    value: details.showStations,
+                    onChanged: busy
                         ? null
                         : (value) async {
                             await EarthquakeHistoryConfigNotifier
@@ -96,8 +95,7 @@ class const EarthquakeHistoryDetailsSettingsSheet({
                     value: details.hypocenterAboveStations,
                     onChanged:
                         busy ||
-                            (!showingDb &&
-                                !details.showStations &&
+                            (!details.showStations &&
                                 !details.showStationsOnEstimatedIntensity)
                         ? null
                         : (value) async {

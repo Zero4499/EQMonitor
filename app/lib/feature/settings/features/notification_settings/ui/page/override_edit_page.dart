@@ -33,13 +33,20 @@ const List<JmaIntensity> _overrideIntensities = [
 
 const _maxOverrides = 12;
 
-class const OverrideEditPage({
-  required final String slotId,
-  required final NotificationSlotType slotType,
-  required final NotificationKind overrideType,
-  required final List<NotificationOverride> currentOverrides,
-  super.key,
-}) extends HookConsumerWidget {
+class OverrideEditPage extends HookConsumerWidget {
+  const new({
+    required this.slotId,
+    required this.slotType,
+    required this.overrideType,
+    required this.currentOverrides,
+    super.key,
+  });
+
+  final String slotId;
+  final NotificationSlotType slotType;
+  final NotificationKind overrideType;
+  final List<NotificationOverride> currentOverrides;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final slot = ref
@@ -61,7 +68,7 @@ class const OverrideEditPage({
       );
 
     final title = switch (overrideType) {
-      NotificationKind.eew => '緊急地震速報(予報) 震度別設定',
+      NotificationKind.eew => 'EEW 震度別設定',
       NotificationKind.earthquake => '地震情報 震度別設定',
     };
 
@@ -89,9 +96,7 @@ class const OverrideEditPage({
     listenError(NotificationSlotsNotifier.updateRegionMutation, '設定の保存に失敗しました');
 
     final usedIntensities = sorted.map((o) => o.minJmaIntensity).toSet();
-    final canAdd =
-        sorted.length < _maxOverrides &&
-        _overrideIntensities.any((i) => !usedIntensities.contains(i));
+    final canAdd = sorted.length < _maxOverrides;
 
     return Scaffold(
       appBar: AppBar(title: Text(title)),
@@ -317,8 +322,11 @@ class const OverrideEditPage({
   }
 }
 
-class const _OverrideTile({required final NotificationOverride entry})
-    extends ConsumerWidget {
+class _OverrideTile extends ConsumerWidget {
+  const new({required this.entry});
+
+  final NotificationOverride entry;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sound = ref
@@ -329,15 +337,18 @@ class const _OverrideTile({required final NotificationOverride entry})
       leading: _IntensityBadge(intensity: entry.minJmaIntensity),
       title: Text(entry.minJmaIntensity.minIntensityThresholdLabel),
       subtitle: Text(
-        '${sound?.displayName ?? '利用不可の通知音'} / ${entry.interruptionLevel.label}',
+        '${sound?.displayName ?? '利用不可の通知音'} / ${entry.interruptionLevel.name}',
       ),
       trailing: const Icon(Icons.chevron_right),
     );
   }
 }
 
-class const _IntensityBadge({required final JmaIntensity intensity})
-    extends StatelessWidget {
+class _IntensityBadge extends StatelessWidget {
+  const new({required this.intensity});
+
+  final JmaIntensity intensity;
+
   @override
   Widget build(BuildContext context) {
     final colorTheme = context.designSystem.colorTheme;
@@ -361,14 +372,23 @@ class const _IntensityBadge({required final JmaIntensity intensity})
   }
 }
 
-class const _OverrideFormDialog({
-  required final NotificationKind kind,
-  required final List<JmaIntensity> availableIntensities,
-  required final JmaIntensity initialIntensity,
-  final String? initialSound,
-  final InterruptionLevel initialInterruptionLevel = InterruptionLevel.active,
-  final bool isEditing = false,
-}) extends HookConsumerWidget {
+class _OverrideFormDialog extends HookConsumerWidget {
+  const new({
+    required this.kind,
+    required this.availableIntensities,
+    required this.initialIntensity,
+    this.initialSound,
+    this.initialInterruptionLevel = InterruptionLevel.active,
+    this.isEditing = false,
+  });
+
+  final NotificationKind kind;
+  final List<JmaIntensity> availableIntensities;
+  final JmaIntensity initialIntensity;
+  final String? initialSound;
+  final InterruptionLevel initialInterruptionLevel;
+  final bool isEditing;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIntensity = useState(initialIntensity);

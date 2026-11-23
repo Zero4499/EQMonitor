@@ -103,7 +103,9 @@ class const EarthquakeParameterStationItemJsonConverter()
 }
 
 /// EarthquakeParameter 系モデルの JSON 変換で共通利用する小さな変換ロジックを集約する。
-class const EarthquakeParameterJsonFieldConverter._() {
+class EarthquakeParameterJsonFieldConverter {
+  const new _();
+
   static Map<String, dynamic> localizedNameToJson(LocalizedName name) => {
     'ja': name.ja,
     if (name.en != null) 'en': name.en,

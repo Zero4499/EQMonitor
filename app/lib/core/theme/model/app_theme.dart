@@ -14,7 +14,7 @@ part 'app_theme.g.dart';
 enum ThemeBrightnessMode { light, dark }
 
 @freezed
-abstract class const AppTheme._() with _$AppTheme {
+abstract class AppTheme with _$AppTheme {
   const factory({
     required String name,
     required int version,
@@ -108,11 +108,11 @@ abstract class const AppTheme._() with _$AppTheme {
       ),
       estimatedIntensity: EstimatedIntensityColors(
         four: IntensityColorEntry(
-          background: Color(0xFFFFE600),
+          background: Color.fromARGB(255, 202, 158, 0),
           foreground: IntensityTextColor.auto(),
         ),
         fiveLower: IntensityColorEntry(
-          background: Color.fromARGB(255, 202, 158, 0),
+          background: Color(0xFFFFE600),
           foreground: IntensityTextColor.auto(),
         ),
         fiveUpper: IntensityColorEntry(
@@ -217,11 +217,11 @@ abstract class const AppTheme._() with _$AppTheme {
       ),
       estimatedIntensity: EstimatedIntensityColors(
         four: IntensityColorEntry(
-          background: Color(0xFFFFE600),
+          background: Color.fromARGB(255, 202, 158, 0),
           foreground: IntensityTextColor.auto(),
         ),
         fiveLower: IntensityColorEntry(
-          background: Color.fromARGB(255, 202, 158, 0),
+          background: Color(0xFFFFE600),
           foreground: IntensityTextColor.auto(),
         ),
         fiveUpper: IntensityColorEntry(
@@ -250,6 +250,8 @@ abstract class const AppTheme._() with _$AppTheme {
       ),
     ),
   );
+
+  const new _();
 
   ThemeColorSet colorSetFor(Brightness brightness) {
     final colorSet = switch (brightness) {

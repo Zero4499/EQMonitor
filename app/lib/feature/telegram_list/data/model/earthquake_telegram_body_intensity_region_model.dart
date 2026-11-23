@@ -1,5 +1,4 @@
 import 'package:eqmonitor/core/model/intensity/jma_intensity.dart';
-import 'package:eqmonitor/core/model/intensity/jma_lpgm_intensity.dart';
 import 'package:eqmonitor_api/eqmonitor_api.dart' as api;
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -13,7 +12,6 @@ abstract class EarthquakeTelegramBodyIntensityRegionModel
     required String code,
     required String name,
     JmaIntensity? intensity,
-    JmaLpgmIntensity? lpgmIntensity,
   }) = _EarthquakeTelegramBodyIntensityRegionModel;
 }
 
@@ -25,6 +23,5 @@ extension EarthquakeTelegramBodyIntensityRegionApiExtension
         code: code,
         name: name,
         intensity: intensity?.toJmaIntensity,
-        lpgmIntensity: lpgmIntensity?.toJmaLpgmIntensity,
       );
 }

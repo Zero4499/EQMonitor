@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:eqmonitor/core/fcm/local_notification_repository.dart';
+import 'package:eqmonitor/core/i18n/notification_strings.dart';
 import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
@@ -13,6 +14,14 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// 不依赖 FCM，因此在没有 Google 服务的环境里也能工作。
 const ntfyServerUrl = 'https://ntfy.sh';
 const ntfyTopic = 'quake-52e3e857741b43fb';
+
+/// 本地时间格式化为 `yyyy-MM-dd HH:mm`，测试通知正文不再直接显示 ISO 串。
+String _formatNow() {
+  final t = DateTime.now();
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${t.year}-${two(t.month)}-${two(t.day)} '
+      '${two(t.hour)}:${two(t.minute)}';
+}
 
 enum NtfyPushStatus {
   idle,
@@ -32,6 +41,19 @@ enum NtfyPushStatus {
     .connecting => 'Connecting…',
     .connected => 'Connected · live',
     .disconnected => 'Disconnected · retrying',
+  };
+
+  String get labelJa => switch (this) {
+    .idle => '未開始',
+    .connecting => '接続中…',
+    .connected => '接続済み・リアルタイム受信',
+    .disconnected => '切断・自動再接続',
+  };
+
+  String displayLabel(String language) => switch (language) {
+    'en' => labelEn,
+    'ja' => labelJa,
+    _ => label,
   };
 }
 
@@ -158,14 +180,14 @@ class NtfyPushService {
         (title?.contains('🌊') ?? false) || (title?.contains('海啸') ?? false);
     final effectiveTitle = title != null && title.isNotEmpty
         ? title
-        : 'USGS 地震情报';
+        : notifFallbackQuakeTitle();
     // 云主机已按规则映射：M7+ / PAGER red / 海啸 Warning・Threat → priority 5
     final priority = (json['priority'] as num?)?.toInt() ?? 3;
     unawaited(
       repository.showSimpleNotification(
         title: effectiveTitle,
         body: _stripMarkdown(message ?? ''),
-        channelId: isTsunami ? 'global_tsunami' : 'global_earthquake',
+        channelId: isTsunami ? 'global_tsunami_v3' : 'global_earthquake_v3',
         tag: json['id'] as String?,
         alert: priority >= 5,
       ),
@@ -179,14 +201,12 @@ class NtfyPushService {
     try {
       final request = await client.postUrl(Uri.parse(ntfyServerUrl));
       request.headers.contentType = ContentType.json;
+      final now = _formatNow();
       request.write(
         jsonEncode({
           'topic': ntfyTopic,
-          'title': '🧪 QuakeDroid 推送测试',
-          'message':
-              '**端到端链路测试**\n'
-              '云主机 quake-pusher → ntfy.sh → App 订阅流\n'
-              '时间 ${DateTime.now().toIso8601String()}',
+          'title': notifE2eTitle(),
+          'message': notifE2eMessage(now),
           'priority': 4,
           'tags': ['test_tube'],
         }),
@@ -204,25 +224,31 @@ class NtfyPushService {
   /// 本地测试：不经过网络，直接弹一条本地通知，用来验证
   /// 通知权限 / 通道 / 声音是否正常。
   Future<void> showLocalTest() => repository.showSimpleNotification(
-    title: '🧪 本地通知测试',
-    body:
-        '这条通知没有经过网络。\n'
-        '能看到它说明通知权限和通道正常。\n'
-        '时间 ${DateTime.now().toIso8601String()}',
-    channelId: 'global_earthquake',
+    title: notifLocalTestTitle(),
+    body: notifLocalTestBody(_formatNow()),
+    channelId: 'global_earthquake_v3',
     tag: 'local-test',
   );
 
   /// 警报级测试：全屏 + 闹钟音量 + 持续通知，验证 M7+ / 海啸警报的弹出方式。
   Future<void> showAlertTest() => repository.showSimpleNotification(
-    title: '🚨 警报级测试：M7.0 地震 / 海啸警报',
-    body:
-        '这是警报级通知测试（不会真发生地震）。\n'
-        '样式：全屏弹出 + 闹钟音量 + 持续通知，关掉 App 或锁屏也会出现在锁屏上。\n'
-        '真实触发条件：USGS M7+ / PAGER red，或 tsunami.gov Warning・Threat。\n'
-        '时间 ${DateTime.now().toIso8601String()}',
+    title: notifAlertTestTitle(),
+    body: notifAlertTestBody(_formatNow()),
     tag: 'alert-test',
     alert: true,
+  );
+
+  /// 按渠道试听：直接弹一条指定分级渠道的本地通知，用来核对该渠道的
+  /// 提示音 / 振动节奏 / 呼吸灯颜色。[alert] 对应全屏 + 闹钟音量。
+  Future<void> showChannelTest({
+    required String channelId,
+    bool alert = false,
+  }) => repository.showSimpleNotification(
+    title: notifLocalTestTitle(),
+    body: notifLocalTestBody(_formatNow()),
+    channelId: channelId,
+    tag: 'channel-test-$channelId',
+    alert: alert,
   );
 
   void dispose() {

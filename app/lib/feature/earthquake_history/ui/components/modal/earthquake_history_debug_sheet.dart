@@ -49,10 +49,11 @@ class const EarthquakeHistoryDebugSheetAction() {
   }
 }
 
-class const EarthquakeHistoryDebugSheet({
-  required final String eventId,
-  super.key,
-}) extends ConsumerWidget {
+class EarthquakeHistoryDebugSheet extends ConsumerWidget {
+  const new({required this.eventId, super.key});
+
+  final String eventId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final details = ref.watch(earthquakeHistoryDetailsProvider(eventId));
@@ -66,9 +67,11 @@ class const EarthquakeHistoryDebugSheet({
   }
 }
 
-class const _EarthquakeHistoryDebugSheetContent({
-  required final Earthquake current,
-}) extends ConsumerWidget {
+class _EarthquakeHistoryDebugSheetContent extends ConsumerWidget {
+  const new({required this.current});
+
+  final Earthquake current;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) => DefaultTabController(
     length: 2,
@@ -126,7 +129,9 @@ class const _EarthquakeHistoryDebugSheetContent({
   );
 }
 
-class const _SheetHandle() extends StatelessWidget {
+class _SheetHandle extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) => Center(
     child: Container(

@@ -1,3 +1,4 @@
+import 'package:eqmonitor/core/feed/quake_feed.dart';
 import 'package:eqmonitor/core/i18n/tri.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,12 +72,9 @@ class PushFilter {
     return magnitude != null && magnitude >= minMagnitude;
   }
 
-  /// 海啸公报是否该推送。按标题判断级别。
-  bool allowsTsunami(String title) {
-    final t = title.toLowerCase();
-    final isWarning = t.contains('warning') || t.contains('threat');
-    final isAdvisory = t.contains('watch') || t.contains('advisory');
-    if (isWarning) {
+  /// 海啸公报是否该推送。按解析出的分级判断。
+  bool allowsTsunami(TsunamiCategory category) {
+    if (category == .warning) {
       return true;
     }
     if (alertOnly) {
@@ -84,7 +82,7 @@ class PushFilter {
     }
     return switch (tsunamiLevel) {
       .all => true,
-      .advisory => isAdvisory,
+      .advisory => category == .advisory,
       .warning => false,
     };
   }

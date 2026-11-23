@@ -1,7 +1,6 @@
 import 'package:eqmonitor/core/provider/log/talker.dart';
 import 'package:eqmonitor/feature/location/data/background_location_monitoring_lifecycle.dart';
 import 'package:eqmonitor/feature/location/data/repository/device_location_consumers_repository.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/model/shake_detection_settings.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/notification_slots_notifier.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/shake_detection_settings_notifier.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -22,15 +21,11 @@ DeviceLocationMonitoringReconciler deviceLocationMonitoringReconciler(
       ..invalidate(notificationSlotsProvider, asReload: true)
       ..invalidate(shakeDetectionSettingsProvider, asReload: true);
     try {
-      final (slots, shake) = await (
-        ref.read(notificationSlotsProvider.future),
-        ref.read(shakeDetectionSettingsProvider.future),
-      ).wait;
+      final slots = await ref.read(notificationSlotsProvider.future);
+      final shake = await ref.read(shakeDetectionSettingsProvider.future);
       await const BackgroundLocationMonitoringLifecycle().reconcile(
         slots: slots,
-        isShakeCurrentLocationEnabled: shake.entries.any(
-          (entry) => entry.isCurrentLocation && entry.enabled,
-        ),
+        shakeDetectionState: shake,
       );
     } on Object catch (error, stackTrace) {
       talker.error(

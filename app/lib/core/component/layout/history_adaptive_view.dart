@@ -7,12 +7,18 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 一覧と詳細の要素を維持し、表示領域だけを切り替える。
-class const HistoryAdaptiveView({
-  required final Widget list,
-  required final Widget? detail,
-  required final VoidCallback onCloseDetail,
-  super.key,
-}) extends HookWidget {
+class HistoryAdaptiveView extends HookWidget {
+  const new({
+    required this.list,
+    required this.detail,
+    required this.onCloseDetail,
+    super.key,
+  });
+
+  final Widget list;
+  final Widget? detail;
+  final VoidCallback onCloseDetail;
+
   @override
   Widget build(BuildContext context) {
     final media = MediaQuery.of(context);
@@ -103,7 +109,9 @@ class const HistoryAdaptiveView({
   }
 }
 
-class const _UnselectedDetail() extends StatelessWidget {
+class _UnselectedDetail extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) => Material(
     child: Center(

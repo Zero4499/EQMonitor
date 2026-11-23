@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/gen/assets.gen.dart';
 import 'package:eqmonitor/core/gen/fonts.gen.dart';
@@ -5,12 +7,16 @@ import 'package:eqmonitor/core/filter/push_filter.dart';
 import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/i18n/tri.dart';
 import 'package:eqmonitor/core/notification/notification_permissions.dart';
+import 'package:eqmonitor/core/provider/firebase/firebase_messaging_foreground.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
-import 'package:eqmonitor/core/router/router.dart';
+import 'package:eqmonitor/core/updater/github_release.dart';
 import 'package:eqmonitor/feature/settings/component/settings_section_header.dart';
+import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/usgs_push_tile.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class SettingsPage extends ConsumerWidget {
   const new({super.key});
@@ -46,13 +52,6 @@ class SettingsPage extends ConsumerWidget {
             margin: const EdgeInsets.symmetric(horizontal: 16),
             children: [
               ListTile(
-                title: Text(s.settingsNotificationTile),
-                subtitle: Text(s.settingsNotificationSubtitle),
-                leading: const Icon(Icons.notifications_outlined),
-                onTap: () async =>
-                    const NotificationSettingsRoute().push<void>(context),
-              ),
-              ListTile(
                 title: Text(
                   tri3(
                     ref.watch(appLocaleProvider).languageCode,
@@ -64,9 +63,9 @@ class SettingsPage extends ConsumerWidget {
                 subtitle: Text(
                   tri3(
                     ref.watch(appLocaleProvider).languageCode,
-                    zh: '通知 · 全屏 intent · 精确闹钟 · 勿扰访问 · 电池白名单',
-                    en: 'Notifications · full-screen intent · exact alarms · DND · battery whitelist',
-                    ja: '通知 · 全画面 intent · 正確なアラーム · サイレントモード · バッテリー最適化除外',
+                    zh: '通知 · 全屏 intent · 勿扰访问 · 电池白名单',
+                    en: 'Notifications · full-screen intent · DND · battery whitelist',
+                    ja: '通知 · 全画面 intent · サイレントモード · バッテリー最適化除外',
                   ),
                 ),
                 leading: const Icon(Icons.verified_user_outlined),
@@ -77,45 +76,22 @@ class SettingsPage extends ConsumerWidget {
                 title: Text(
                   tri3(
                     ref.watch(appLocaleProvider).languageCode,
-                    zh: '勿扰模式例外',
-                    en: 'Do Not Disturb exception',
-                    ja: 'サイレントモードの例外',
+                    zh: '测试通知',
+                    en: 'Test notification',
+                    ja: '通知テスト',
                   ),
                 ),
                 subtitle: Text(
                   tri3(
                     ref.watch(appLocaleProvider).languageCode,
-                    zh: '把本应用加进系统的勿扰白名单，否则勿扰模式下通知不响',
-                    en: 'Whitelist this app in system Do Not Disturb settings',
-                    ja: 'サイレントモード中も鳴らすため、システム側で許可します',
+                    zh: '端到端 · 本地 · 警报级测试',
+                    en: 'End-to-end · local · alert-level test',
+                    ja: 'エンドツーエンド · ローカル · 警報レベルのテスト',
                   ),
                 ),
-                leading: const Icon(Icons.do_not_disturb_off_outlined),
-                onTap: () async {
-                  final granted = await NotificationPermissions.requestDndAccess();
-                  if (!context.mounted) {
-                    return;
-                  }
-                  final lang = ref.watch(appLocaleProvider).languageCode;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        tri3(
-                          lang,
-                          zh: granted == true
-                              ? '已加入勿扰例外，通知在静音模式下也会响'
-                              : '请在打开的系统页面里把本应用打开为允许例外',
-                          en: granted == true
-                              ? 'Allowed to interrupt Do Not Disturb'
-                              : 'Please allow this app in the system settings that just opened',
-                          ja: granted == true
-                              ? 'サイレントモード中も通知が鳴ります'
-                              : '開いたシステム設定でこのアプリを許可してください',
-                        ),
-                      ),
-                    ),
-                  );
-                },
+                leading: const Icon(Icons.send_outlined),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => openUsgsPushSheet(context),
               ),
             ],
           ),
@@ -128,6 +104,7 @@ class SettingsPage extends ConsumerWidget {
           SettingsSectionHeader(text: s.settingsLanguage),
           const _LanguageSelector(),
           SettingsSectionHeader(text: s.settingsAboutSection),
+          const _UpdateCheckTile(),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: Text(
@@ -186,6 +163,8 @@ class _LanguageSelector extends ConsumerWidget {
 
   Future<void> _apply(WidgetRef ref, Locale locale) async {
     await ref.read(appLocaleProvider.notifier).change(locale);
+    // 渠道名/分组名跟随新语言重建（后台异步，失败不影响界面切换）。
+    unawaited(ref.read(localNotificationRepositoryProvider).refreshLocalizedChannels());
   }
 }
 
@@ -286,5 +265,163 @@ class _AppVersionInformation extends HookConsumerWidget {
       ),
       textAlign: .center,
     );
+  }
+}
+
+/// 从 GitHub Releases 检查新版本：只提示并跳转 Release 页，不在 App 内下载安装包。
+class _UpdateCheckTile extends HookConsumerWidget {
+  const _UpdateCheckTile();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(appLocaleProvider).languageCode;
+    final checking = useState(false);
+
+    Future<void> check() async {
+      if (checking.value) {
+        return;
+      }
+      final pkg = ref.read(packageInfoProvider);
+      final localCode = int.tryParse(pkg.buildNumber) ?? 0;
+      checking.value = true;
+      final release = await GithubReleaseChecker.fetchLatest();
+      if (!context.mounted) {
+        return;
+      }
+      checking.value = false;
+
+      if (release == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tri3(
+                lang,
+                zh: '检查失败，请稍后再试',
+                en: 'Update check failed, try again later',
+                ja: '確認に失敗しました。後でもう一度お試しください',
+              ),
+            ),
+          ),
+        );
+        return;
+      }
+      if (release.versionCode > localCode) {
+        await _UpdateCheckTile.showUpdateDialog(context, release, lang);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              tri3(
+                lang,
+                zh: '已是最新版本',
+                en: 'You are on the latest version',
+                ja: '最新バージョンです',
+              ),
+            ),
+          ),
+        );
+      }
+    }
+
+    return M3ESegmentedColumn(
+      padding: EdgeInsets.zero,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      children: [
+        ListTile(
+          leading: const Icon(Icons.system_update_outlined),
+          title: Text(
+            tri3(
+              lang,
+              zh: '检查更新',
+              en: 'Check for updates',
+              ja: 'アップデートを確認',
+            ),
+          ),
+          subtitle: Text(
+            checking.value
+                ? tri3(
+                    lang,
+                    zh: '正在检查…',
+                    en: 'Checking…',
+                    ja: '確認中…',
+                  )
+                : tri3(
+                    lang,
+                    zh: '从 GitHub Releases 检查最新版本',
+                    en: 'Check the latest release on GitHub',
+                    ja: 'GitHub リリースから最新版を確認',
+                  ),
+          ),
+          trailing: checking.value
+              ? const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.open_in_new),
+          onTap: checking.value ? null : check,
+        ),
+      ],
+    );
+  }
+
+  /// 更新提示对话框：正文来自 Release 说明，按钮只负责打开浏览器到 Release 页。
+  static Future<void> showUpdateDialog(
+  BuildContext context,
+  GithubReleaseInfo release,
+  String lang,
+) async {
+  final body = release.body?.trim();
+  final clipped = body == null || body.isEmpty
+      ? null
+      : body.length > 800
+          ? '${body.substring(0, 800)}…'
+          : body;
+  final remoteName = release.name?.trim();
+  final versionLabel =
+      (remoteName == null || remoteName.isEmpty) ? release.tagName : remoteName;
+  await showDialog<void>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      title: Text(
+        tri3(
+          lang,
+          zh: '发现新版本',
+          en: 'Update available',
+          ja: '新しいバージョン',
+        ),
+      ),
+      content: SingleChildScrollView(
+        child: Text(
+          [
+            versionLabel,
+            if (clipped != null) clipped,
+          ].join('\n\n'),
+        ),
+      ),
+      actions: [
+        M3ETextButton(
+          onPressed: () => Navigator.of(ctx).pop(),
+          child: Text(
+            tri3(lang, zh: '关闭', en: 'Close', ja: '閉じる'),
+          ),
+        ),
+        M3EFilledButton(
+          onPressed: () => launchUrlString(
+            release.htmlUrl,
+            mode: LaunchMode.externalApplication,
+          ),
+          child: Text(
+            tri3(
+              lang,
+              zh: '在浏览器打开',
+              en: 'Open in browser',
+              ja: 'ブラウザで開く',
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
   }
 }

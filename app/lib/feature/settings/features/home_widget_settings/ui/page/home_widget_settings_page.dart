@@ -11,7 +11,9 @@ import 'package:eqmonitor/feature/subscription/data/provider/is_pro_provider.dar
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const HomeWidgetSettingsPage({super.key}) extends ConsumerWidget {
+class HomeWidgetSettingsPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -41,10 +43,12 @@ class const HomeWidgetSettingsPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _WidgetRegionSection({
-  required final bool isPro,
-  required final AsyncValue<WidgetRegionSelection?> regionAsync,
-}) extends ConsumerWidget {
+class _WidgetRegionSection extends ConsumerWidget {
+  const new({required this.isPro, required this.regionAsync});
+
+  final bool isPro;
+  final AsyncValue<WidgetRegionSelection?> regionAsync;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final region = regionAsync.value;
@@ -58,7 +62,6 @@ class const _WidgetRegionSection({
         $extra: RegionSelectionRequest(
           title: '任意地域を選択',
           kinds: const [.prefecture, .city],
-          hierarchical: true,
           initialSelection: [
             if (region != null)
               RegionOption(

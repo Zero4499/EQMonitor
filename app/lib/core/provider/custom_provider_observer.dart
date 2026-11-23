@@ -3,8 +3,11 @@ import 'dart:developer';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
-final class CustomProviderObserver(final Talker talker)
-    extends ProviderObserver {
+final class CustomProviderObserver extends ProviderObserver {
+  new(this.talker);
+
+  final Talker talker;
+
   @override
   void didAddProvider(
     ProviderObserverContext context,
@@ -50,9 +53,6 @@ final class CustomProviderObserver(final Talker talker)
     'kyoshinMonitorTimerStreamProvider' ||
     'kyoshinMonitorTimerProvider' ||
     'kyoshinMonitorProvider' ||
-    'deviceShakeDetectionProvider' ||
-    'shakeDetectionProvider' ||
-    'shakeDetectionActiveProvider' ||
     'shakeDetectionVisibleProvider' ||
     'kyoshinMonitorObservationGeoJsonProvider' ||
     'eewProvider' ||

@@ -6,7 +6,9 @@ import 'package:flutter/services.dart';
 const _widgetChannel = MethodChannel('net.yumnumm.eqmonitor/widget');
 
 /// iOS ホーム画面ウィジェットのタイムラインを再読み込みさせる。
-class const WidgetTimelineReloader._() {
+class WidgetTimelineReloader {
+  const new _();
+
   /// App Group UserDefaults の内容を更新したあとに呼ぶと、ネイティブ側
   /// (`WidgetCenter.shared.reloadAllTimelines()`) が新しい設定でウィジェットを
   /// 再描画する。iOS 以外・チャネル未登録時は握りつぶす。

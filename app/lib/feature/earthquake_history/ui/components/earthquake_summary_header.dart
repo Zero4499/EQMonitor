@@ -15,11 +15,16 @@ import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_ty
 import 'package:eqmonitor/feature/earthquake_history/ui/components/magnitude_text.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeSummaryHeader({
-  required final Earthquake item,
-  final bool showStatusWatermark = false,
-  super.key,
-}) extends StatelessWidget {
+class EarthquakeSummaryHeader extends StatelessWidget {
+  const new({
+    required this.item,
+    this.showStatusWatermark = false,
+    super.key,
+  });
+
+  final Earthquake item;
+  final bool showStatusWatermark;
+
   @override
   Widget build(BuildContext context) {
     final maxIntensity = item.intensity?.maxIntensity;
@@ -82,8 +87,11 @@ class const EarthquakeSummaryHeader({
 /// 最大震度アイコン・地震種別アイコンの表示サイズ。
 const _leadingIconSize = 60.0;
 
-class const _MaxIntensityWidget({required final JmaIntensity intensity})
-    extends StatelessWidget {
+class _MaxIntensityWidget extends StatelessWidget {
+  const new({required this.intensity});
+
+  final JmaIntensity intensity;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -101,12 +109,19 @@ class const _MaxIntensityWidget({required final JmaIntensity intensity})
   }
 }
 
-class const _EarthquakeInformationBody({
-  required final Earthquake item,
-  required final EarthquakeHypocenter? hypocenter,
-  required final EarthquakeType earthquakeType,
-  required final bool hasIntensityDetails,
-}) extends StatelessWidget {
+class _EarthquakeInformationBody extends StatelessWidget {
+  const new({
+    required this.item,
+    required this.hypocenter,
+    required this.earthquakeType,
+    required this.hasIntensityDetails,
+  });
+
+  final Earthquake item;
+  final EarthquakeHypocenter? hypocenter;
+  final EarthquakeType earthquakeType;
+  final bool hasIntensityDetails;
+
   @override
   Widget build(BuildContext context) {
     final epicenterName = hypocenter?.name;
@@ -148,7 +163,9 @@ class const _EarthquakeInformationBody({
         const Row(),
         if (isOverseasEvent) ...[
           if (!isMagnitudeUnknown)
-            MagnitudeText(magnitude: magnitude, variant: .display),
+            MagnitudeText(magnitude: magnitude, variant: .display)
+          else if (earthquakeType == EarthquakeType.volcano)
+            const _VolcanoEruptionWidget(),
           if (!isDepthUnknown) DepthText(depth: depth),
           const SizedBox(width: double.infinity),
           hypocenterWidget,
@@ -166,7 +183,6 @@ class const _EarthquakeInformationBody({
           hypocenterWidget,
         ],
         const Row(),
-        if (earthquakeType == .volcano) const Text('大規模な火山の噴火'),
         if (timeText != null)
           Text(
             timeText,
@@ -183,11 +199,17 @@ class const _EarthquakeInformationBody({
   }
 }
 
-class const _HypocenterWidget({
-  required final String label,
-  required final String? epicenterName,
-  required final String? epicenterDetailName,
-}) extends StatelessWidget {
+class _HypocenterWidget extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.epicenterName,
+    required this.epicenterDetailName,
+  });
+
+  final String label;
+  final String? epicenterName;
+  final String? epicenterDetailName;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -229,9 +251,24 @@ class const _HypocenterWidget({
   }
 }
 
-class const _MagnitudeDepthUnknownWidget({
-  required final bool hasIntensityDetails,
-}) extends StatelessWidget {
+/// 火山噴火でマグニチュードが発表されない場合に、
+/// 「M不明」の代わりに事象そのものを示す表示。
+class _VolcanoEruptionWidget extends StatelessWidget {
+  const new();
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Text('火山の噴火', style: textTheme.valueStyle(textTheme.headlineMedium));
+  }
+}
+
+class _MagnitudeDepthUnknownWidget extends StatelessWidget {
+  const new({required this.hasIntensityDetails});
+
+  final bool hasIntensityDetails;
+
   @override
   Widget build(BuildContext context) {
     return _UnknownInfoWidget(
@@ -241,8 +278,11 @@ class const _MagnitudeDepthUnknownWidget({
   }
 }
 
-class const _EarthquakeNullWidget({required final bool hasIntensityDetails})
-    extends StatelessWidget {
+class _EarthquakeNullWidget extends StatelessWidget {
+  const new({required this.hasIntensityDetails});
+
+  final bool hasIntensityDetails;
+
   @override
   Widget build(BuildContext context) {
     return _UnknownInfoWidget(
@@ -252,10 +292,12 @@ class const _EarthquakeNullWidget({required final bool hasIntensityDetails})
   }
 }
 
-class const _UnknownInfoWidget({
-  required final String label,
-  required final String value,
-}) extends StatelessWidget {
+class _UnknownInfoWidget extends StatelessWidget {
+  const new({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;

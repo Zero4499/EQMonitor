@@ -18,19 +18,19 @@ class ErrorMessageBuilder {
           {'error': final String errorMsg} => errorMsg,
           {'code': final String code, 'details': final String details} =>
             '$code: $details',
-          _ => '少し時間をおいて再度お試しください。',
+          _ => '请稍后再试。',
         };
         final statusCode = response.statusCode;
         if (statusCode != null) {
           final baseMessage =
               onDioExceptionStatusOverride?.call(statusCode) ??
               switch (statusCode) {
-                400 => '不正なリクエストです',
-                403 => 'アクセスが拒否されました',
-                404 => 'リソースが見つかりません',
-                500 => 'サーバーエラーが発生しました',
-                503 => 'サービスが利用できません',
-                _ => 'エラーが発生しました',
+                400 => '请求不合法',
+                403 => '访问被拒绝',
+                404 => '找不到资源',
+                500 => '服务器错误',
+                503 => '服务不可用',
+                _ => '出错了',
               };
           if (response.data is Map<String, dynamic>) {
             return '$baseMessage\n$advancedErrorMessage';
@@ -40,19 +40,19 @@ class ErrorMessageBuilder {
         return advancedErrorMessage;
       }
       return switch (error.type) {
-        .badCertificate => 'SSL証明書が不正です',
-        .badResponse => 'サーバーからのレスポンスが不正です',
-        .connectionTimeout => 'サーバーとの接続がタイムアウトしました',
-        .receiveTimeout => 'サーバーからのレスポンスがタイムアウトしました',
-        .sendTimeout => 'サーバーへのリクエストがタイムアウトしました',
-        .connectionError => 'サーバーとの接続に失敗しました。ネットワーク接続を確認してください',
-        .unknown => '不明なエラーが発生しました',
-        .cancel => 'キャンセルされました',
-        .transformTimeout => '変換がタイムアウトしました',
+        .badCertificate => 'SSL 证书无效',
+        .badResponse => '服务器响应异常',
+        .connectionTimeout => '连接服务器超时',
+        .receiveTimeout => '等待服务器响应超时',
+        .sendTimeout => '请求服务器超时',
+        .connectionError => '连接服务器失败，请检查网络',
+        .unknown => '发生未知错误',
+        .cancel => '已取消',
+        .transformTimeout => '转换超时',
       };
     }
-    return 'エラーが発生しました\n'
-        '少し時間をおいて再度お試しください。\n'
+    return '出错了\n'
+        '请稍后再试。\n'
         '\n($error)';
   }
 }

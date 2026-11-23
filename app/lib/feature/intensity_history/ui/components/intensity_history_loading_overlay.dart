@@ -3,7 +3,9 @@ import 'package:eqmonitor/feature/intensity_history/data/notifier/city_max_inten
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const IntensityHistoryLoadingOverlay({super.key}) extends ConsumerWidget {
+class IntensityHistoryLoadingOverlay extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = ref.watch(cityMaxIntensityProvider);

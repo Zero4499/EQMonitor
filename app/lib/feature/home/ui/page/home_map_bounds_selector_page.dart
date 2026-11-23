@@ -13,7 +13,9 @@ import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 現在の表示範囲をホームのカスタム矩形として保存する。
-class const HomeMapBoundsSelectorPage({super.key}) extends ConsumerWidget {
+class HomeMapBoundsSelectorPage extends ConsumerWidget {
+  const new({super.key});
+
   static Future<void> open(BuildContext context) =>
       Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
@@ -43,10 +45,12 @@ class const HomeMapBoundsSelectorPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _Body({
-  required final String styleString,
-  required final HomeMapSettings mapSettings,
-}) extends HookConsumerWidget {
+class _Body extends HookConsumerWidget {
+  const new({required this.styleString, required this.mapSettings});
+
+  final String styleString;
+  final HomeMapSettings mapSettings;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final controllerRef = useRef<MapController?>(null);

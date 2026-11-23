@@ -23,7 +23,9 @@ enum _StoreKind { shared, appGroup }
 
 typedef _Entry = ({String key, Object? value});
 
-class const DebugSharedPreferencesPage({super.key}) extends HookConsumerWidget {
+class DebugSharedPreferencesPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isIOS = Platform.isIOS;
@@ -76,7 +78,9 @@ class const DebugSharedPreferencesPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _SharedView() extends ConsumerWidget {
+class _SharedView extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(debugSharedPreferencesEntriesProvider);
@@ -88,7 +92,9 @@ class const _SharedView() extends ConsumerWidget {
   }
 }
 
-class const _AppGroupView() extends ConsumerWidget {
+class _AppGroupView extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entries = ref.watch(debugAppGroupPreferencesEntriesProvider);
@@ -100,11 +106,17 @@ class const _AppGroupView() extends ConsumerWidget {
   }
 }
 
-class const _EntriesList({
-  required final AsyncValue<List<_Entry>> entries,
-  required final _StoreKind kind,
-  required final VoidCallback onRefresh,
-}) extends ConsumerWidget {
+class _EntriesList extends ConsumerWidget {
+  const new({
+    required this.entries,
+    required this.kind,
+    required this.onRefresh,
+  });
+
+  final AsyncValue<List<_Entry>> entries;
+  final _StoreKind kind;
+  final VoidCallback onRefresh;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return entries.when(
@@ -303,10 +315,12 @@ class const _DebugPreferencesEditorAction() {
   }
 }
 
-class const _EditDialog({
-  required final _StoreKind kind,
-  required final _Entry entry,
-}) extends HookConsumerWidget {
+class _EditDialog extends HookConsumerWidget {
+  const new({required this.kind, required this.entry});
+
+  final _StoreKind kind;
+  final _Entry entry;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = entry.value;
@@ -327,16 +341,24 @@ class const _EditDialog({
 /// 型に応じた入力UIと保存処理をまとめる。新規追加時は [initialValue] が
 /// 選択された型のデフォルト値で渡ってくる。[keyName] は保存時に評価するため
 /// 関数で受け取る（新規追加ダイアログでキー入力が後から確定するため）。
-class const _ValueEditor({
-  required final _StoreKind kind,
-  required final String Function() keyName,
-  required final Object? initialValue,
-  required final VoidCallback onSaved,
+class _ValueEditor extends HookConsumerWidget {
+  const new({
+    required this.kind,
+    required this.keyName,
+    required this.initialValue,
+    required this.onSaved,
+    this.guard,
+    super.key,
+  });
+
+  final _StoreKind kind;
+  final String Function() keyName;
+  final Object? initialValue;
+  final VoidCallback onSaved;
 
   /// 保存前チェック。false を返したら保存しない。
-  final bool Function()? guard,
-  super.key,
-}) extends HookConsumerWidget {
+  final bool Function()? guard;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final value = initialValue;
@@ -428,10 +450,12 @@ class const _ValueEditor({
 /// `_ValueEditor.build` の switch の中で直接 `useState` を呼ぶと、
 /// 値の実行時型によってフックの呼び出し順が変わってしまう
 /// (Rules of Hooks 違反)。専用のHookWidgetへ切り出して回避する。
-class const _BoolEditor({
-  required final bool initialValue,
-  required final ValueChanged<bool> onSave,
-}) extends HookWidget {
+class _BoolEditor extends HookWidget {
+  const new({required this.initialValue, required this.onSave});
+
+  final bool initialValue;
+  final ValueChanged<bool> onSave;
+
   @override
   Widget build(BuildContext context) {
     final state = useState(initialValue);
@@ -449,12 +473,19 @@ class const _BoolEditor({
   }
 }
 
-class const _SingleFieldEditor({
-  required final TextEditingController controller,
-  required final VoidCallback onSave,
-  final TextInputType? keyboardType,
-  final int maxLines = 1,
-}) extends StatelessWidget {
+class _SingleFieldEditor extends StatelessWidget {
+  const new({
+    required this.controller,
+    required this.onSave,
+    this.keyboardType,
+    this.maxLines = 1,
+  });
+
+  final TextEditingController controller;
+  final VoidCallback onSave;
+  final TextInputType? keyboardType;
+  final int maxLines;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -473,10 +504,12 @@ class const _SingleFieldEditor({
   }
 }
 
-class const _StringListEditor({
-  required final List<String> initial,
-  required final void Function(List<String>) onSave,
-}) extends HookWidget {
+class _StringListEditor extends HookWidget {
+  const new({required this.initial, required this.onSave});
+
+  final List<String> initial;
+  final void Function(List<String>) onSave;
+
   @override
   Widget build(BuildContext context) {
     final items = useState<List<String>>([...initial]);
@@ -523,8 +556,11 @@ class const _StringListEditor({
   }
 }
 
-class const _SaveButton({required final VoidCallback onPressed})
-    extends StatelessWidget {
+class _SaveButton extends StatelessWidget {
+  const new({required this.onPressed});
+
+  final VoidCallback onPressed;
+
   @override
   Widget build(BuildContext context) {
     return M3EFilledButton(onPressed: onPressed, child: const Text('保存'));
@@ -533,8 +569,11 @@ class const _SaveButton({required final VoidCallback onPressed})
 
 enum _NewValueType { boolType, intType, doubleType, stringType, stringListType }
 
-class const _AddDialog({required final _StoreKind kind})
-    extends HookConsumerWidget {
+class _AddDialog extends HookConsumerWidget {
+  const new({required this.kind});
+
+  final _StoreKind kind;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final keyController = useTextEditingController();

@@ -36,10 +36,12 @@ class const EarthquakeHistoryParameterRow({
   }
 }
 
-class const _FilterChipBar({
-  required final EarthquakeHistoryParameter parameter,
-  required final void Function(EarthquakeHistoryParameter) onChanged,
-}) extends ConsumerWidget {
+class _FilterChipBar extends ConsumerWidget {
+  const new({required this.parameter, required this.onChanged});
+
+  final EarthquakeHistoryParameter parameter;
+  final void Function(EarthquakeHistoryParameter) onChanged;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final spacing = context.designSystem.spacing;

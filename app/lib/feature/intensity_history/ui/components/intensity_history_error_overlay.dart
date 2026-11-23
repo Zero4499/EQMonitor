@@ -36,7 +36,9 @@ class const IntensityHistoryErrorOverlayAction() {
   }
 }
 
-class const IntensityHistoryErrorOverlay({super.key}) extends ConsumerWidget {
+class IntensityHistoryErrorOverlay extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cityMaxIntensityAsync = ref.watch(cityMaxIntensityProvider);

@@ -2,6 +2,7 @@ import 'package:eqmonitor/core/component/error/error_card.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/component/layout/history_adaptive_view.dart';
 import 'package:eqmonitor/core/component/layout/history_selection.dart';
+import 'package:eqmonitor/feature/eew/data/eew_simulation_notifier.dart';
 import 'package:eqmonitor/feature/eew/ui/page/eew_details_by_event_id_page.dart';
 import 'package:eqmonitor/feature/eew/data/model/eew_telegram_item.dart';
 import 'package:eqmonitor/feature/eew_history/data/flow/show_eew_history_notice_flow.dart';
@@ -19,7 +20,9 @@ import 'package:paging_view/paging_view.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:m3e_core/m3e_core.dart';
 
-class const EewHistoryPage({super.key}) extends StatelessWidget {
+class EewHistoryPage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) => const ProFeatureGate(
     title: '緊急地震速報の履歴',
@@ -28,7 +31,9 @@ class const EewHistoryPage({super.key}) extends StatelessWidget {
   );
 }
 
-class const _EewHistoryContent() extends HookConsumerWidget {
+class _EewHistoryContent extends HookConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final parameter = useState(const EewListParameter());
@@ -36,6 +41,7 @@ class const _EewHistoryContent() extends HookConsumerWidget {
     final eventId = selectedEventId.value;
     final ValueChanged<String?> selectEvent = (value) {
       if (selectedEventId.value != value) {
+        ref.read(eewSimulationProvider.notifier).stop();
         selectedEventId.value = value;
       }
     };
@@ -94,13 +100,21 @@ class const _EewHistoryContent() extends HookConsumerWidget {
   }
 }
 
-class const _PagingBody({
-  required final EewListDataSource dataSource,
-  required final String? selectedEventId,
-  required final ValueChanged<String> onSelect,
-  required final ValueNotifier<EewListParameter> parameter,
-  required final Future<void> Function() onRefresh,
-}) extends StatelessWidget {
+class _PagingBody extends StatelessWidget {
+  const new({
+    required this.dataSource,
+    required this.selectedEventId,
+    required this.onSelect,
+    required this.parameter,
+    required this.onRefresh,
+  });
+
+  final EewListDataSource dataSource;
+  final String? selectedEventId;
+  final ValueChanged<String> onSelect;
+  final ValueNotifier<EewListParameter> parameter;
+  final Future<void> Function() onRefresh;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -166,8 +180,12 @@ class const _PagingBody({
   }
 }
 
-class const _Skeleton({final int itemCount = 5, final bool scrollable = true})
-    extends StatelessWidget {
+class _Skeleton extends StatelessWidget {
+  const new({this.itemCount = 5, this.scrollable = true});
+
+  final int itemCount;
+  final bool scrollable;
+
   @override
   Widget build(BuildContext context) {
     final tiles = [
@@ -187,7 +205,11 @@ class const _Skeleton({final int itemCount = 5, final bool scrollable = true})
   }
 }
 
-class const _DateHeader({required final String date}) extends StatelessWidget {
+class _DateHeader extends StatelessWidget {
+  const new({required this.date});
+
+  final String date;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

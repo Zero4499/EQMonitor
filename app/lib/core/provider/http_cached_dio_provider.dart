@@ -12,19 +12,13 @@ Future<Dio> httpCachedDio(Ref ref) async {
   final factory = await ref.watch(apiDioFactoryProvider.future);
   final disabled = await ref.watch(httpCacheDisabledProvider.future);
   if (disabled) {
-    final dio = factory.build();
-    ref.onDispose(() => dio.close(force: true));
-    return dio;
+    return factory.build();
   }
   try {
     final store = await ref.watch(httpCacheStoreProvider.future);
-    final dio = factory.build(httpCacheStore: store);
-    ref.onDispose(() => dio.close(force: true));
-    return dio;
+    return factory.build(httpCacheStore: store);
   } catch (error, stackTrace) {
     talker.warning('HTTPキャッシュを利用できないため通常通信へ切り替えます', error, stackTrace);
-    final dio = factory.build();
-    ref.onDispose(() => dio.close(force: true));
-    return dio;
+    return factory.build();
   }
 }

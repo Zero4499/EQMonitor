@@ -18,13 +18,20 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const EarthquakeHistoryFillLayer({
-  required final Earthquake earthquake,
-  required final EarthquakeHistoryMapLayerParameter parameter,
-  final EarthquakeHistoryFillMode fillMode = EarthquakeHistoryFillMode.auto,
-  final bool showingLpgmIntensity = false,
-  super.key,
-}) extends ConsumerWidget {
+class EarthquakeHistoryFillLayer extends ConsumerWidget {
+  const new({
+    required this.earthquake,
+    required this.parameter,
+    this.fillMode = EarthquakeHistoryFillMode.auto,
+    this.showingLpgmIntensity = false,
+    super.key,
+  });
+
+  final Earthquake earthquake;
+  final EarthquakeHistoryMapLayerParameter parameter;
+  final EarthquakeHistoryFillMode fillMode;
+  final bool showingLpgmIntensity;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final intensity = earthquake.intensity;
@@ -53,13 +60,21 @@ class const EarthquakeHistoryFillLayer({
   }
 }
 
-class const _EarthquakeHistoryFillLayerBody({
-  required final EarthquakeIntensity intensity,
-  required final EarthquakeHistoryMapLayerParameter parameter,
-  required final EarthquakeHistoryMapLayerMode mode,
-  required final bool showingLpgmIntensity,
-  required final EarthquakeHistoryMapLayerModeResolver modeResolver,
-}) extends HookConsumerWidget {
+class _EarthquakeHistoryFillLayerBody extends HookConsumerWidget {
+  const new({
+    required this.intensity,
+    required this.parameter,
+    required this.mode,
+    required this.showingLpgmIntensity,
+    required this.modeResolver,
+  });
+
+  final EarthquakeIntensity intensity;
+  final EarthquakeHistoryMapLayerParameter parameter;
+  final EarthquakeHistoryMapLayerMode mode;
+  final bool showingLpgmIntensity;
+  final EarthquakeHistoryMapLayerModeResolver modeResolver;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final styleController = MapController.maybeOf(context)?.style;

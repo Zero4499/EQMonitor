@@ -18,7 +18,9 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// デバッグ用。ホーム画面と同じ [EewCard] の見た目を、パラメータ操作で検証する。
-class const DebugEewCardPage({super.key}) extends HookConsumerWidget {
+class DebugEewCardPage extends HookConsumerWidget {
+  const new({super.key});
+
   static const _paramLabelStyle = TextStyle(fontSize: 11);
   static const _paramValueStyle = TextStyle(fontSize: 11);
 
@@ -884,10 +886,12 @@ final _kSampleEews = <EewTelegramItem>[
   ),
 ];
 
-class const _ParamSection({
-  required final String title,
-  required final Widget child,
-}) extends StatelessWidget {
+class _ParamSection extends StatelessWidget {
+  const new({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -911,10 +915,12 @@ class const _ParamSection({
   }
 }
 
-class const _LabeledRow({
-  required final String label,
-  required final Widget child,
-}) extends StatelessWidget {
+class _LabeledRow extends StatelessWidget {
+  const new({required this.label, required this.child});
+
+  final String label;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -930,11 +936,17 @@ class const _LabeledRow({
   }
 }
 
-class const _BoolRow({
-  required final String label,
-  required final bool value,
-  required final ValueChanged<bool> onChanged,
-}) extends StatelessWidget {
+class _BoolRow extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String label;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
   @override
   Widget build(BuildContext context) {
     return ListTile(
@@ -947,14 +959,20 @@ class const _BoolRow({
   }
 }
 
-class const _SmallField({
-  required final String label,
-  final TextEditingController? controller,
-  final Widget? child,
-  final String? hint,
-  final int maxLines = 1,
-}) extends StatelessWidget {
-  this : assert(controller != null || child != null, 'controller or child');
+class _SmallField extends StatelessWidget {
+  const new({
+    required this.label,
+    this.controller,
+    this.child,
+    this.hint,
+    this.maxLines = 1,
+  }) : assert(controller != null || child != null, 'controller or child');
+
+  final String label;
+  final TextEditingController? controller;
+  final Widget? child;
+  final String? hint;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {

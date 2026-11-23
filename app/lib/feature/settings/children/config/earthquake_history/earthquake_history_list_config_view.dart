@@ -2,11 +2,16 @@ import 'package:eqmonitor/core/component/widget/app_switch.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_history_config_model.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeHistoryListConfigView({
-  required final EarthquakeHistoryListConfig config,
-  required final Future<void> Function(EarthquakeHistoryListConfig) onChanged,
-  super.key,
-}) extends StatelessWidget {
+class EarthquakeHistoryListConfigView extends StatelessWidget {
+  const new({
+    required this.config,
+    required this.onChanged,
+    super.key,
+  });
+
+  final EarthquakeHistoryListConfig config;
+  final Future<void> Function(EarthquakeHistoryListConfig) onChanged;
+
   @override
   Widget build(BuildContext context) {
     return Column(

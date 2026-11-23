@@ -14,7 +14,6 @@ import 'package:eqmonitor/feature/devices/data/provider/notification_token_strea
 import 'package:eqmonitor/feature/devices/data/provider/push_token_platform_capabilities.dart';
 import 'package:eqmonitor/feature/devices/data/repository/device_provisioning_repository.dart';
 import 'package:eqmonitor/feature/devices/data/repository/device_repository.dart';
-import 'package:eqmonitor/feature/devices/data/repository/push_token_sync_state_repository.dart';
 import 'package:eqmonitor/feature/devices/data/repository/push_token_sync_worker.dart';
 import 'package:eqmonitor/feature/devices/data/retry/interruptible_backoff.dart';
 import 'package:eqmonitor/feature/telemetry/data/provider/telemetry_recorder_provider.dart';
@@ -40,30 +39,19 @@ class PushTokenSyncNotifier extends _$PushTokenSyncNotifier {
     final provisioningRepository = await ref.watch(
       deviceProvisioningRepositoryProvider.future,
     );
-    final syncStateRepository = await ref.watch(
-      pushTokenSyncStateRepositoryProvider.future,
-    );
     final telemetryRecorder = ref.watch(telemetryRecorderProvider);
     final telemetryUploader = ref.watch(telemetryUploaderProvider);
     final capabilities = ref.watch(pushTokenPlatformCapabilitiesProvider);
 
     PushTokenSyncWorker createWorker(PushTokenKind kind) {
       final worker = PushTokenSyncWorker(
-        shouldSync: (token) =>
-            syncStateRepository.shouldSync(kind: kind, token: token),
         upsert: (token) async {
-          final credentialGeneration = syncStateRepository.credentialGeneration;
           final result = await repository.upsertPushToken(
             kind: kind,
             token: token,
           );
           switch (result) {
             case Success():
-              await syncStateRepository.recordSuccess(
-                kind: kind,
-                token: token,
-                credentialGeneration: credentialGeneration,
-              );
               return;
             case Failure(:final exception, :final stackTrace):
               final mapped = switch (exception) {
@@ -187,10 +175,6 @@ class PushTokenSyncNotifier extends _$PushTokenSyncNotifier {
       PushTokenKind.apnsPushToStart => notificationToken?.apnsPushToStartToken,
     };
     if (streamToken != null && streamToken.isNotEmpty) {
-      final syncStateRepository = await ref.read(
-        pushTokenSyncStateRepositoryProvider.future,
-      );
-      await syncStateRepository.clear(kind: kind);
       worker.accept(token: streamToken);
       worker.forceResync();
       return PushTokenForceResyncResult.started;
@@ -201,10 +185,6 @@ class PushTokenSyncNotifier extends _$PushTokenSyncNotifier {
       return PushTokenForceResyncResult.tokenAbsent;
     }
 
-    final syncStateRepository = await ref.read(
-      pushTokenSyncStateRepositoryProvider.future,
-    );
-    await syncStateRepository.clear(kind: kind);
     worker.forceResync();
     return PushTokenForceResyncResult.started;
   }

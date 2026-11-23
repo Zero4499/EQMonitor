@@ -22,10 +22,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const NearbyEarthquakeCard({
-  required final Earthquake earthquake,
-  super.key,
-}) extends StatelessWidget {
+class NearbyEarthquakeCard extends StatelessWidget {
+  const new({required this.earthquake, super.key});
+
+  final Earthquake earthquake;
+
   @override
   Widget build(BuildContext context) {
     if (earthquake.hypocenter?.coordinates is! CoordinateLatLng) {
@@ -38,9 +39,13 @@ class const NearbyEarthquakeCard({
   }
 }
 
-class const _NearbyEarthquakeContent({
-  required final Earthquake earthquake,
-}) extends HookConsumerWidget {
+class _NearbyEarthquakeContent extends HookConsumerWidget {
+  const new({
+    required this.earthquake,
+  });
+
+  final Earthquake earthquake;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final coordinates = earthquake.hypocenter?.coordinates;
@@ -139,9 +144,11 @@ class const _NearbyEarthquakeContent({
   }
 }
 
-class const _NearbyEarthquakeHeader({
-  required final VoidCallback onSettingsPressed,
-}) extends StatelessWidget {
+class _NearbyEarthquakeHeader extends StatelessWidget {
+  const new({required this.onSettingsPressed});
+
+  final VoidCallback onSettingsPressed;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -168,10 +175,15 @@ class const _NearbyEarthquakeHeader({
   }
 }
 
-class const _NearbyEarthquakeParameterSummary({
-  required final NearbyEarthquakeParameter parameter,
-  required final bool hasDepth,
-}) extends StatelessWidget {
+class _NearbyEarthquakeParameterSummary extends StatelessWidget {
+  const new({
+    required this.parameter,
+    required this.hasDepth,
+  });
+
+  final NearbyEarthquakeParameter parameter;
+  final bool hasDepth;
+
   @override
   Widget build(BuildContext context) {
     final depthText = hasDepth ? '  深さ±${parameter.depthOffset}km' : '';
@@ -188,7 +200,9 @@ class const _NearbyEarthquakeParameterSummary({
   }
 }
 
-class const _NearbyEarthquakeLoading() extends StatelessWidget {
+class _NearbyEarthquakeLoading extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return const Center(
@@ -203,8 +217,11 @@ class const _NearbyEarthquakeLoading() extends StatelessWidget {
   }
 }
 
-class const _NearbyEarthquakeError({required final VoidCallback onRetry})
-    extends StatelessWidget {
+class _NearbyEarthquakeError extends StatelessWidget {
+  const new({required this.onRetry});
+
+  final VoidCallback onRetry;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -226,7 +243,9 @@ class const _NearbyEarthquakeError({required final VoidCallback onRetry})
   }
 }
 
-class const _NearbyEarthquakeEmpty() extends StatelessWidget {
+class _NearbyEarthquakeEmpty extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -243,11 +262,17 @@ class const _NearbyEarthquakeEmpty() extends StatelessWidget {
   }
 }
 
-class const _NearbyEarthquakeList({
-  required final List<EarthquakePartial> items,
-  required final EarthquakeHistoryParameter searchParameter,
-  required final VoidCallback onShowAll,
-}) extends StatelessWidget {
+class _NearbyEarthquakeList extends StatelessWidget {
+  const new({
+    required this.items,
+    required this.searchParameter,
+    required this.onShowAll,
+  });
+
+  final List<EarthquakePartial> items;
+  final EarthquakeHistoryParameter searchParameter;
+  final VoidCallback onShowAll;
+
   @override
   Widget build(BuildContext context) {
     return Column(

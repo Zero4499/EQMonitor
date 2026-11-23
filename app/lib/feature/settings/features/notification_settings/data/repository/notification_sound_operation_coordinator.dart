@@ -15,10 +15,10 @@ NotificationSoundOperationCoordinator notificationSoundOperationCoordinator(
 );
 
 /// Serializes deletion with settings writes, including preset restoration.
-class NotificationSoundOperationCoordinator({
-  NotificationSoundDataSource? dataSource,
-}) {
-  final NotificationSoundDataSource? _dataSource = dataSource;
+class NotificationSoundOperationCoordinator {
+  new({NotificationSoundDataSource? dataSource}) : _dataSource = dataSource;
+
+  final NotificationSoundDataSource? _dataSource;
   Future<void> _tail = Future<void>.value();
   final Map<String, int> _reservations = {};
 

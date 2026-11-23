@@ -27,10 +27,12 @@ final _valSetRamUbxRxmSfrbxUart1On = Uint8List.fromList([
   0x30,
 ]);
 
-class QzssSerialPortService({
-  required final String portName,
-  required final int baudRate,
-}) {
+class QzssSerialPortService {
+  new({required this.portName, required this.baudRate});
+
+  final String portName;
+  final int baudRate;
+
   SerialPort? _port;
   SerialPortReader? _reader;
   StreamSubscription<Uint8List>? _subscription;

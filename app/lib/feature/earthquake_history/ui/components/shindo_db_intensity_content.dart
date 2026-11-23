@@ -10,10 +10,11 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:m3e_core/m3e_core.dart';
 
-class const ShindoDbIntensityContent({
-  required final ShindoDbIntensityTree tree,
-  super.key,
-}) extends HookWidget {
+class ShindoDbIntensityContent extends HookWidget {
+  const new({required this.tree, super.key});
+
+  final ShindoDbIntensityTree tree;
+
   @override
   Widget build(BuildContext context) {
     final intensityColors = context.designSystem.colorTheme.intensity;
@@ -56,12 +57,19 @@ class const ShindoDbIntensityContent({
   }
 }
 
-class const _ShindoDbIntensityLevelSection({
-  required final ShindoDbIntensityClass intensityClass,
-  required final List<ShindoDbPrefectureNode> prefectures,
-  required final List<ShindoDbStationNode> unresolvedStations,
-  required final Color dividerColor,
-}) extends HookWidget {
+class _ShindoDbIntensityLevelSection extends HookWidget {
+  const new({
+    required this.intensityClass,
+    required this.prefectures,
+    required this.unresolvedStations,
+    required this.dividerColor,
+  });
+
+  final ShindoDbIntensityClass intensityClass;
+  final List<ShindoDbPrefectureNode> prefectures;
+  final List<ShindoDbStationNode> unresolvedStations;
+  final Color dividerColor;
+
   @override
   Widget build(BuildContext context) {
     final isExpanded = useState(false);
@@ -144,9 +152,11 @@ class const _ShindoDbIntensityLevelSection({
   }
 }
 
-class const _ShindoDbPrefectureTile({
-  required final ShindoDbPrefectureNode prefecture,
-}) extends HookWidget {
+class _ShindoDbPrefectureTile extends HookWidget {
+  const new({required this.prefecture});
+
+  final ShindoDbPrefectureNode prefecture;
+
   @override
   Widget build(BuildContext context) {
     final isExpanded = useState(false);
@@ -185,8 +195,11 @@ class const _ShindoDbPrefectureTile({
   }
 }
 
-class const _ShindoDbCityTile({required final ShindoDbCityNode city})
-    extends HookWidget {
+class _ShindoDbCityTile extends HookWidget {
+  const new({required this.city});
+
+  final ShindoDbCityNode city;
+
   @override
   Widget build(BuildContext context) {
     final isExpanded = useState(false);
@@ -217,9 +230,11 @@ class const _ShindoDbCityTile({required final ShindoDbCityNode city})
   }
 }
 
-class const _ShindoDbUnresolvedTile({
-  required final List<ShindoDbStationNode> stations,
-}) extends HookWidget {
+class _ShindoDbUnresolvedTile extends HookWidget {
+  const new({required this.stations});
+
+  final List<ShindoDbStationNode> stations;
+
   @override
   Widget build(BuildContext context) {
     final isExpanded = useState(false);
@@ -251,9 +266,11 @@ class const _ShindoDbUnresolvedTile({
   }
 }
 
-class const _ShindoDbStationChips({
-  required final List<ShindoDbStationNode> stations,
-}) extends StatelessWidget {
+class _ShindoDbStationChips extends StatelessWidget {
+  const new({required this.stations});
+
+  final List<ShindoDbStationNode> stations;
+
   @override
   Widget build(BuildContext context) {
     return Padding(

@@ -22,7 +22,7 @@ typedef EewQuery = ({
 });
 
 @freezed
-abstract class const EewListParameter._() with _$EewListParameter {
+abstract class EewListParameter with _$EewListParameter {
   const factory({
     double? magnitudeGte,
     double? magnitudeLte,
@@ -34,6 +34,8 @@ abstract class const EewListParameter._() with _$EewListParameter {
     Date? originTimeLte,
     bool? isWarning,
   }) = _EewListParameter;
+
+  const new _();
 
   factory fromJson(Map<String, dynamic> json) =>
       _$EewListParameterFromJson(json);

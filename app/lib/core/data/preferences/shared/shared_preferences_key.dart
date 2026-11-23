@@ -10,16 +10,14 @@ enum SharedPreferencesKey(final String key) {
   intensityColor('intensity_color'),
   locationTrackingMode('location_tracking_mode'),
   homeConfiguration('home_configuration'),
-  keepScreenAwake('keep_screen_awake'),
-  // Android の ScreenBehaviorPreferences も同じ保存値を起動時に読み取る。
-  showWhenLocked('show_when_locked'),
+  liveMonitorSettings('live_monitor_settings'),
   onboardingCompleted('onboarding_completed'),
   betaTestingAgreed('beta_testing_agreed'),
   startEtag('start_etag'),
   startBody('start_body'),
   changelogEtag('changelog_etag'),
   changelogBody('changelog_body'),
-  releaseHighlightSeenVersion('release_highlight_seen_version'),
+  whatsNewSeenVersion('whats_new_seen_version'),
   assetPackDistributionEtag('asset_pack_distribution_etag'),
   assetPackDistributionManifest('asset_pack_distribution_manifest'),
   assetPackDistributionSignature('asset_pack_distribution_signature'),
@@ -30,11 +28,8 @@ enum SharedPreferencesKey(final String key) {
   /// v2.6アプリがSupabase device IDの保存に使用していたキー（移行用）
   legacyDeviceId('device_id'),
   deviceProvisioned('device_provisioned'),
-  fcmTokenLastSent('fcm_token_last_sent'),
-  apnsNotificationTokenLastSent('apns_notification_token_last_sent'),
-  apnsPushToStartTokenLastSent('apns_push_to_start_token_last_sent'),
   deviceMigratedFromLegacy('device_migrated_from_legacy'),
-  deviceRole('device_role'),
+  adsOptOut('ads_opt_out'),
   autoReturnToRealtime('auto_return_to_realtime'),
   earthquakeHistoryMapLayerParameter('earthquake_history_map_layer_parameter'),
   homeMapLabelParameter('home_map_label_parameter'),
@@ -52,7 +47,6 @@ enum SharedPreferencesKey(final String key) {
   ),
   notificationPreset('notification_preset'),
   notificationCustomSnapshot('notification_custom_snapshot'),
-  notificationSlotsCache('notification_slots_cache'),
   appThemeLight('app_theme_light'),
   appThemeDark('app_theme_dark'),
 
@@ -66,18 +60,10 @@ enum SharedPreferencesKey(final String key) {
   backgroundLocationCurrentSlotEnabled(
     'background_location_current_slot_enabled',
   ),
-  backgroundLocationShakeCurrentLocationEnabled(
-    'background_location_shake_current_location_enabled',
-  ),
   backgroundLocationHeadlessDiagnostic(
     'background_location_headless_diagnostic',
   ),
   feedLastReadPublishedAt('feed_last_read_published_at'),
   eewHistoryNoticeShown('eew_history_notice_shown'),
   eewWarningOverlayEnabled('eew_warning_overlay_enabled'),
-  shakeDetectionNoticeAgreedVersion('shake_detection_notice_agreed_version'),
-  shakeDetectionSettings('shake_detection_settings'),
-  shakeDetectionNotificationsDisabledConfirmed(
-    'shake_detection_notifications_disabled_confirmed',
-  ),
 }

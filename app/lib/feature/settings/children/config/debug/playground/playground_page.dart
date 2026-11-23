@@ -11,7 +11,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart'; // 追加
 
 /// メインメニュー
-class const PlaygroundPage({super.key}) extends StatelessWidget {
+class PlaygroundPage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,7 +196,9 @@ class KyoshinMonitorScaleUtil {
   }
 }
 
-class const ScaleCheckList({super.key}) extends StatelessWidget {
+class ScaleCheckList extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     final pValues = List.generate(101, (i) => i * 0.01);
@@ -238,7 +242,9 @@ class const ScaleCheckList({super.key}) extends StatelessWidget {
   }
 }
 
-class const KyoshinMonitorScaleColorPage({super.key}) extends HookWidget {
+class KyoshinMonitorScaleColorPage extends HookWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     // ドロップダウンパラメータ

@@ -18,14 +18,18 @@ Future<UserJwtProvider> userJwtService(Ref ref) async {
   return provider;
 }
 
-final class UserJwtProvider({
-  required BetterAuthApiClient apiClient,
-  required DateTime Function() now,
-  AuthSessionLifecycle? lifecycle,
-}) {
-  final BetterAuthApiClient _apiClient = apiClient;
-  final DateTime Function() _now = now;
-  final AuthSessionLifecycle _lifecycle = lifecycle ?? AuthSessionLifecycle();
+final class UserJwtProvider {
+  new({
+    required BetterAuthApiClient apiClient,
+    required DateTime Function() now,
+    AuthSessionLifecycle? lifecycle,
+  }) : _apiClient = apiClient,
+       _now = now,
+       _lifecycle = lifecycle ?? AuthSessionLifecycle();
+
+  final BetterAuthApiClient _apiClient;
+  final DateTime Function() _now;
+  final AuthSessionLifecycle _lifecycle;
   String? _cachedJwt;
   DateTime? _expiresAt;
   Future<Result<String, AuthFailure>>? _refreshInFlight;

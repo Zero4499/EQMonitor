@@ -34,9 +34,11 @@ final class const EstimatedIntensityArchiveHttpOperationFactory() {
 }
 
 /// 一回のdownloadだけを所有する`dart:io` HTTP adapter。
-final class DartIoEstimatedIntensityArchiveHttpOperation({
-  required final HttpClient client,
-}) implements EstimatedIntensityArchiveHttpOperation {
+final class DartIoEstimatedIntensityArchiveHttpOperation
+    implements EstimatedIntensityArchiveHttpOperation {
+  new({required this.client});
+
+  final HttpClient client;
   HttpClientRequest? activeRequest;
   var aborted = false;
 

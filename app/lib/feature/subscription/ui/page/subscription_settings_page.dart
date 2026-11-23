@@ -1,4 +1,3 @@
-import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/router/router.dart';
@@ -14,7 +13,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 /// サブスクリプションの状態確認 / 管理画面。
-class const SubscriptionSettingsPage({super.key}) extends ConsumerWidget {
+class SubscriptionSettingsPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(subscriptionProvider);
@@ -49,8 +50,11 @@ class const SubscriptionSettingsPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _ActiveSection({required final SubscriptionStatusActive status})
-    extends ConsumerWidget {
+class _ActiveSection extends ConsumerWidget {
+  const new({required this.status});
+
+  final SubscriptionStatusActive status;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -122,7 +126,9 @@ class const _ActiveSection({required final SubscriptionStatusActive status})
   }
 }
 
-class const _InactiveSection() extends ConsumerWidget {
+class _InactiveSection extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -133,9 +139,6 @@ class const _InactiveSection() extends ConsumerWidget {
       SubscriptionNotifier.restorePurchasesMutation,
     );
     final isRestoring = restoreState is MutationPending;
-    final isSubscriptionAvailable = ref.watch(
-      buildConfigProvider.select((config) => config.isSubscriptionAvailable),
-    );
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
@@ -155,7 +158,7 @@ class const _InactiveSection() extends ConsumerWidget {
               Text('Free', style: textTheme.titleLarge),
               const SizedBox(height: 12),
               Text(
-                'EQMonitor Pro にアップグレードすると、通知地点の拡張などの '
+                'EQMonitor Pro にアップグレードすると、通知地点の拡張・広告非表示などの '
                 '特典をご利用いただけます。',
                 style: textTheme.bodyMedium,
               ),
@@ -173,7 +176,7 @@ class const _InactiveSection() extends ConsumerWidget {
         ),
         const SizedBox(height: 8),
         M3ETextButton(
-          onPressed: isRestoring || !isSubscriptionAvailable
+          onPressed: isRestoring
               ? null
               : () async => flow.restorePurchases(ref, context),
           child: const Text('購入を復元'),

@@ -2,16 +2,26 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// Each expressive range thumb exposes an independent accessible control.
-class const AccessibleRangeSlider({
-  required final RangeValues value,
-  required final ValueChanged<RangeValues>? onChanged,
-  final double min = 0,
-  final double max = 1,
-  final int? divisions,
-  final String? label,
-  final String Function(double)? semanticFormatterCallback,
-  super.key,
-}) extends StatelessWidget {
+class AccessibleRangeSlider extends StatelessWidget {
+  const new({
+    required this.value,
+    required this.onChanged,
+    this.min = 0,
+    this.max = 1,
+    this.divisions,
+    this.label,
+    this.semanticFormatterCallback,
+    super.key,
+  });
+
+  final RangeValues value;
+  final ValueChanged<RangeValues>? onChanged;
+  final double min;
+  final double max;
+  final int? divisions;
+  final String? label;
+  final String Function(double)? semanticFormatterCallback;
+
   @override
   Widget build(BuildContext context) {
     final enabled = onChanged != null && max > min;
@@ -58,16 +68,27 @@ class const AccessibleRangeSlider({
   }
 }
 
-class const _RangeThumbSemantics({
-  required final double value,
-  required final double min,
-  required final double max,
-  required final double step,
-  required final bool enabled,
-  required final String label,
-  required final String Function(double)? formatter,
-  required final ValueChanged<double> onChanged,
-}) extends StatelessWidget {
+class _RangeThumbSemantics extends StatelessWidget {
+  const new({
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.step,
+    required this.enabled,
+    required this.label,
+    required this.formatter,
+    required this.onChanged,
+  });
+
+  final double value;
+  final double min;
+  final double max;
+  final double step;
+  final bool enabled;
+  final String label;
+  final String Function(double)? formatter;
+  final ValueChanged<double> onChanged;
+
   @override
   Widget build(BuildContext context) {
     final increased = (value + step).clamp(min, max);

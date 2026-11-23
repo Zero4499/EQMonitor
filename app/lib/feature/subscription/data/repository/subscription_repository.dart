@@ -23,11 +23,13 @@ Future<SubscriptionRepository> subscriptionRepository(Ref ref) async {
   );
 }
 
-class const SubscriptionRepository({
-  required String monthlyProductId,
-  required final RevenueCatSession session,
-}) {
-  final String _monthlyProductId = monthlyProductId;
+class SubscriptionRepository {
+  const new({required String monthlyProductId, required this.session})
+    : _monthlyProductId = monthlyProductId;
+
+  final RevenueCatSession session;
+
+  final String _monthlyProductId;
 
   Future<SubscriptionStatus> fetchStatus() async {
     final info = await session.run(operation: rc.Purchases.getCustomerInfo);

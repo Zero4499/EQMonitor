@@ -4,7 +4,6 @@ import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.
 
 import 'dart:async';
 
-import 'package:eqmonitor/core/component/error/error_card.dart';
 import 'package:eqmonitor/core/component/error/error_details_sheet.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/gen/assets.gen.dart';
@@ -48,7 +47,9 @@ class const _OnboardingStepNavigation({
   required final _OnboardingNavigationRegistrar register,
 });
 
-class const OnboardingPage({super.key}) extends HookConsumerWidget {
+class OnboardingPage extends HookConsumerWidget {
+  const new({super.key});
+
   static const List<_OnboardingStep> _steps = _OnboardingStep.values;
 
   @override

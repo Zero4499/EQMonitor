@@ -4,11 +4,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const StatusFilterChip({
-  required final List<TelegramStatus>? statuses,
-  final void Function(List<TelegramStatus>?)? onChanged,
-  super.key,
-}) extends StatelessWidget {
+class StatusFilterChip extends StatelessWidget {
+  const new({required this.statuses, this.onChanged, super.key});
+
+  final void Function(List<TelegramStatus>?)? onChanged;
+  final List<TelegramStatus>? statuses;
+
   static const List<TelegramStatus> initialStatuses = [TelegramStatus.normal];
 
   @override
@@ -49,8 +50,11 @@ class const StatusFilterChip({
   }
 }
 
-class const _StatusFilterModal({final List<TelegramStatus>? currentStatuses})
-    extends HookWidget {
+class _StatusFilterModal extends HookWidget {
+  const new({this.currentStatuses});
+
+  final List<TelegramStatus>? currentStatuses;
+
   @override
   Widget build(BuildContext context) {
     final selectedStatuses = useState<Set<TelegramStatus>>(

@@ -55,12 +55,15 @@ final class const AppleSignInPluginAdapter() implements AppleSignInPlugin {
   }
 }
 
-final class AppleAuthRepository({
-  required AppleSignInPlugin plugin,
-  required NativeAuthNonceGenerator nonceGenerator,
-}) implements AppleAuthGateway {
-  final AppleSignInPlugin _plugin = plugin;
-  final NativeAuthNonceGenerator _nonceGenerator = nonceGenerator;
+final class AppleAuthRepository implements AppleAuthGateway {
+  new({
+    required AppleSignInPlugin plugin,
+    required NativeAuthNonceGenerator nonceGenerator,
+  }) : _plugin = plugin,
+       _nonceGenerator = nonceGenerator;
+
+  final AppleSignInPlugin _plugin;
+  final NativeAuthNonceGenerator _nonceGenerator;
 
   @override
   Future<Result<NativeAuthCredential, AuthFailure>> signIn({

@@ -1,7 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:telemetry_store/telemetry_store.dart';
 
-class ApiEventSender(final Future<Dio> _dioFuture) extends EventSender {
+class ApiEventSender extends EventSender {
+  new(this._dioFuture);
+
+  final Future<Dio> _dioFuture;
+
   @override
   Future<bool> send(List<Map<String, dynamic>> events) async {
     try {

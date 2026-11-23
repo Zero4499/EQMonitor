@@ -7,8 +7,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 /// 強制アップデートが必要かどうかを監視し、必要なら非解除可能ダイアログを表示するWrapper。
-class const ForcedUpdateWrapper({required final Widget child, super.key})
-    extends HookConsumerWidget {
+class ForcedUpdateWrapper extends HookConsumerWidget {
+  const new({required this.child, super.key});
+
+  final Widget child;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final dialogShown = useRef(false);

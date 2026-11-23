@@ -2,10 +2,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const NotificationSoundNameDialog({
-  required final String initialName,
-  super.key,
-}) extends HookWidget {
+class NotificationSoundNameDialog extends HookWidget {
+  const new({required this.initialName, super.key});
+
+  final String initialName;
+
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController(text: initialName);

@@ -10,117 +10,72 @@ part of 'shake_detection_region_provider.dart';
 
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
+/// 揺れ検知イベントのバウンディングボックス内に含まれる観測点の
+/// 都道府県ごとの地域名リストを返す。
+///
+/// キー: 都道府県名（例: "岩手県"）
+/// 値: EEW予報区名のリスト（例: ["岩手県沿岸北部", "岩手県内陸北部"]）
 
-@ProviderFor(shakeDetectionRegionCatalog)
-final shakeDetectionRegionCatalogProvider =
-    ShakeDetectionRegionCatalogProvider._();
+@ProviderFor(shakeDetectionRegions)
+final shakeDetectionRegionsProvider = ShakeDetectionRegionsFamily._();
 
-final class ShakeDetectionRegionCatalogProvider
+/// 揺れ検知イベントのバウンディングボックス内に含まれる観測点の
+/// 都道府県ごとの地域名リストを返す。
+///
+/// キー: 都道府県名（例: "岩手県"）
+/// 値: EEW予報区名のリスト（例: ["岩手県沿岸北部", "岩手県内陸北部"]）
+
+final class ShakeDetectionRegionsProvider
     extends
         $FunctionalProvider<
-          AsyncValue<ShakeDetectionRegionCatalog>,
-          ShakeDetectionRegionCatalog,
-          FutureOr<ShakeDetectionRegionCatalog>
+          AsyncValue<Map<String, List<String>>>,
+          Map<String, List<String>>,
+          FutureOr<Map<String, List<String>>>
         >
     with
-        $FutureModifier<ShakeDetectionRegionCatalog>,
-        $FutureProvider<ShakeDetectionRegionCatalog> {
-  ShakeDetectionRegionCatalogProvider._()
-    : super(
-        from: null,
-        argument: null,
-        retry: null,
-        name: r'shakeDetectionRegionCatalogProvider',
-        isAutoDispose: false,
-        dependencies: null,
-        $allTransitiveDependencies: null,
-      );
-
-  @override
-  String debugGetCreateSourceHash() => _$shakeDetectionRegionCatalogHash();
-
-  @$internal
-  @override
-  $FutureProviderElement<ShakeDetectionRegionCatalog> $createElement(
-    $ProviderPointer pointer,
-  ) => $FutureProviderElement(pointer);
-
-  @override
-  FutureOr<ShakeDetectionRegionCatalog> create(Ref ref) {
-    return shakeDetectionRegionCatalog(ref);
-  }
-}
-
-String _$shakeDetectionRegionCatalogHash() =>
-    r'65c3b885e7ed53f4601ed684cb650ae3ae203e93';
-
-/// 揺れ検知イベントの最大レベルで揺れた範囲の要約。
-///
-/// 観測点の地域コードは地震情報の細分区域で、名前は震度観測点のパラメータから引く。
-
-@ProviderFor(shakeDetectionEventRegions)
-final shakeDetectionEventRegionsProvider = ShakeDetectionEventRegionsFamily._();
-
-/// 揺れ検知イベントの最大レベルで揺れた範囲の要約。
-///
-/// 観測点の地域コードは地震情報の細分区域で、名前は震度観測点のパラメータから引く。
-
-final class ShakeDetectionEventRegionsProvider
-    extends
-        $FunctionalProvider<
-          ShakeDetectionRegionSummary?,
-          ShakeDetectionRegionSummary?,
-          ShakeDetectionRegionSummary?
-        >
-    with $Provider<ShakeDetectionRegionSummary?> {
-  /// 揺れ検知イベントの最大レベルで揺れた範囲の要約。
+        $FutureModifier<Map<String, List<String>>>,
+        $FutureProvider<Map<String, List<String>>> {
+  /// 揺れ検知イベントのバウンディングボックス内に含まれる観測点の
+  /// 都道府県ごとの地域名リストを返す。
   ///
-  /// 観測点の地域コードは地震情報の細分区域で、名前は震度観測点のパラメータから引く。
-  ShakeDetectionEventRegionsProvider._({
-    required ShakeDetectionEventRegionsFamily super.from,
+  /// キー: 都道府県名（例: "岩手県"）
+  /// 値: EEW予報区名のリスト（例: ["岩手県沿岸北部", "岩手県内陸北部"]）
+  ShakeDetectionRegionsProvider._({
+    required ShakeDetectionRegionsFamily super.from,
     required ShakeDetectionEvent super.argument,
   }) : super(
          retry: null,
-         name: r'shakeDetectionEventRegionsProvider',
+         name: r'shakeDetectionRegionsProvider',
          isAutoDispose: true,
          dependencies: null,
          $allTransitiveDependencies: null,
        );
 
   @override
-  String debugGetCreateSourceHash() => _$shakeDetectionEventRegionsHash();
+  String debugGetCreateSourceHash() => _$shakeDetectionRegionsHash();
 
   @override
   String toString() {
-    return r'shakeDetectionEventRegionsProvider'
+    return r'shakeDetectionRegionsProvider'
         ''
         '($argument)';
   }
 
   @$internal
   @override
-  $ProviderElement<ShakeDetectionRegionSummary?> $createElement(
+  $FutureProviderElement<Map<String, List<String>>> $createElement(
     $ProviderPointer pointer,
-  ) => $ProviderElement(pointer);
+  ) => $FutureProviderElement(pointer);
 
   @override
-  ShakeDetectionRegionSummary? create(Ref ref) {
+  FutureOr<Map<String, List<String>>> create(Ref ref) {
     final argument = this.argument as ShakeDetectionEvent;
-    return shakeDetectionEventRegions(ref, argument);
-  }
-
-  /// {@macro riverpod.override_with_value}
-  Override overrideWithValue(ShakeDetectionRegionSummary? value) {
-    return $ProviderOverride(
-      origin: this,
-      providerOverride: $SyncValueProvider<ShakeDetectionRegionSummary?>(value),
-    );
+    return shakeDetectionRegions(ref, argument);
   }
 
   @override
   bool operator ==(Object other) {
-    return other is ShakeDetectionEventRegionsProvider &&
-        other.argument == argument;
+    return other is ShakeDetectionRegionsProvider && other.argument == argument;
   }
 
   @override
@@ -129,35 +84,39 @@ final class ShakeDetectionEventRegionsProvider
   }
 }
 
-String _$shakeDetectionEventRegionsHash() =>
-    r'652efbd513707210e699dd01b2fae373ace975b0';
+String _$shakeDetectionRegionsHash() =>
+    r'49a3b277715796cec950e6ac67cdc28f5f2dc802';
 
-/// 揺れ検知イベントの最大レベルで揺れた範囲の要約。
+/// 揺れ検知イベントのバウンディングボックス内に含まれる観測点の
+/// 都道府県ごとの地域名リストを返す。
 ///
-/// 観測点の地域コードは地震情報の細分区域で、名前は震度観測点のパラメータから引く。
+/// キー: 都道府県名（例: "岩手県"）
+/// 値: EEW予報区名のリスト（例: ["岩手県沿岸北部", "岩手県内陸北部"]）
 
-final class ShakeDetectionEventRegionsFamily extends $Family
+final class ShakeDetectionRegionsFamily extends $Family
     with
         $FunctionalFamilyOverride<
-          ShakeDetectionRegionSummary?,
+          FutureOr<Map<String, List<String>>>,
           ShakeDetectionEvent
         > {
-  ShakeDetectionEventRegionsFamily._()
+  ShakeDetectionRegionsFamily._()
     : super(
         retry: null,
-        name: r'shakeDetectionEventRegionsProvider',
+        name: r'shakeDetectionRegionsProvider',
         dependencies: null,
         $allTransitiveDependencies: null,
         isAutoDispose: true,
       );
 
-  /// 揺れ検知イベントの最大レベルで揺れた範囲の要約。
+  /// 揺れ検知イベントのバウンディングボックス内に含まれる観測点の
+  /// 都道府県ごとの地域名リストを返す。
   ///
-  /// 観測点の地域コードは地震情報の細分区域で、名前は震度観測点のパラメータから引く。
+  /// キー: 都道府県名（例: "岩手県"）
+  /// 値: EEW予報区名のリスト（例: ["岩手県沿岸北部", "岩手県内陸北部"]）
 
-  ShakeDetectionEventRegionsProvider call(ShakeDetectionEvent event) =>
-      ShakeDetectionEventRegionsProvider._(argument: event, from: this);
+  ShakeDetectionRegionsProvider call(ShakeDetectionEvent event) =>
+      ShakeDetectionRegionsProvider._(argument: event, from: this);
 
   @override
-  String toString() => r'shakeDetectionEventRegionsProvider';
+  String toString() => r'shakeDetectionRegionsProvider';
 }

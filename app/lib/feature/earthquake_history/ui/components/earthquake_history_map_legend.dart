@@ -1,157 +1,147 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:eqmonitor/core/component/intenisty/jma_intensity_icon.dart';
 import 'package:eqmonitor/core/component/intenisty/jma_lpgm_intensity_icon.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
-import 'package:eqmonitor/core/model/intensity/jma_intensity.dart';
 import 'package:eqmonitor/core/model/intensity/jma_lpgm_intensity.dart';
-import 'package:eqmonitor/core/theme/model/estimated_intensity_colors.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_intensity.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/model/intensity_display_mode.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/shindo_db_intensity_tree.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/shindo_db_intensity_class_icon.dart';
-import 'package:flutter/physics.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-const _legendIconSize = 24.0;
+/// 震度凡例オーバーレイウィジェット
+///
+/// 現在のデータで実際に観測されている震度範囲のみを表示する。
+/// [showingLpgmIntensity] が true の場合は長周期地震動階級を表示する。
+/// [shindoDbTree] が指定された場合は震度DBモードの凡例を表示する。
+class EarthquakeHistoryMapLegend extends StatelessWidget {
+  const new({
+    required this.intensity,
+    this.showingLpgmIntensity = false,
+    this.shindoDbTree,
+    super.key,
+  });
 
-class const EarthquakeHistoryMapLegend({
-  required final EarthquakeIntensity? intensity,
-  final IntensityDisplayMode displayMode = IntensityDisplayMode.jma,
-  final ShindoDbIntensityTree? shindoDbTree,
-  super.key,
-}) extends StatelessWidget {
+  final EarthquakeIntensity? intensity;
+  final bool showingLpgmIntensity;
+  final ShindoDbIntensityTree? shindoDbTree;
+
   @override
   Widget build(BuildContext context) {
     final tree = shindoDbTree;
     if (tree != null) {
-      return _ShindoDbLegend(tree: tree);
+      return Card(
+        color: context.designSystem.colorTheme.surface.withValues(alpha: 0.85),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          child: _ShindoDbLegend(tree: tree),
+        ),
+      );
     }
-    return switch (displayMode) {
-      .jma => _JmaLegend(intensity: intensity),
-      .lpgm => _LpgmLegend(intensity: intensity),
-      .estimated => const _JmaLegend(estimated: true),
-    };
-  }
-}
 
-class const _JmaLegend({
-  final EarthquakeIntensity? intensity,
-  final bool estimated = false,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final levels = estimated
-        ? <JmaIntensity>[
-            .four,
-            .fiveLower,
-            .fiveUpper,
-            .sixLower,
-            .sixUpper,
-            .seven,
-          ]
-        : switch (intensity) {
-            final current? => {
-              ...current.intensityTree.keys,
-              ...current.regions.keys,
-              if (current.maxIntensity != JmaIntensity.unknown)
-                current.maxIntensity,
-            }.toList(),
-            null => <JmaIntensity>[],
-          };
-    levels.sort((a, b) => b.orderIndex.compareTo(a.orderIndex));
-    final estimatedColors = context.designSystem.colorTheme.estimatedIntensity;
-    return _AnimatedLegend(
-      label: estimated ? '推計震度' : '震度',
-      entries: [
-        for (final level in levels.where(
-          (level) => level != JmaIntensity.fiveUnknown,
-        ))
-          (
-            label: '震度${level.mainText}${level.suffix}',
-            borderRadius: BorderRadius.circular(_legendIconSize / 4),
-            icon: JmaIntensityIcon(
-              intensity: level,
-              type: .filled,
-              size: _legendIconSize,
-              colorEntry: estimated
-                  ? estimatedColors.fromJmaIntensity(level)
-                  : null,
-            ),
-          ),
-      ],
+    final currentIntensity = intensity;
+    if (currentIntensity == null) {
+      return const SizedBox.shrink();
+    }
+
+    return Card(
+      color: context.designSystem.colorTheme.surface.withValues(alpha: 0.85),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: showingLpgmIntensity
+            ? _LpgmLegend(intensity: currentIntensity)
+            : _JmaLegend(intensity: currentIntensity),
+      ),
     );
   }
 }
 
-class const _LpgmLegend({required final EarthquakeIntensity? intensity})
-    extends StatelessWidget {
+class _JmaLegend extends StatelessWidget {
+  const new({required this.intensity});
+  final EarthquakeIntensity intensity;
+
   @override
   Widget build(BuildContext context) {
-    final levels = switch (intensity) {
-      final current? => {
-        ...current.lpgmIntensityTree.keys,
-        if (current.maxLpgmIntensity case final maximum?) maximum,
-      }.where((level) => level != JmaLpgmIntensity.zero).toList(),
-      null => <JmaLpgmIntensity>[],
-    };
-    levels.sort((a, b) => b.index.compareTo(a.index));
-    return _AnimatedLegend(
-      label: '長周期地震動階級',
-      entries: [
+    final levels = intensity.intensityTree.keys.toList()
+      ..sort((a, b) => b.index.compareTo(a.index));
+    if (levels.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      mainAxisSize: .min,
+      spacing: 4,
+      children: [
         for (final level in levels)
-          (
-            label: '階級${level.label}',
-            borderRadius: BorderRadius.circular(_legendIconSize / 5),
-            icon: JmaLpgmIntensityIcon(
-              intensity: level,
-              type: .filled,
-              size: _legendIconSize,
-            ),
-          ),
+          JmaIntensityIcon(intensity: level, type: .filled, size: 28),
       ],
     );
   }
 }
 
-class const _ShindoDbLegend({required final ShindoDbIntensityTree tree})
-    extends StatelessWidget {
+class _LpgmLegend extends StatelessWidget {
+  const new({required this.intensity});
+  final EarthquakeIntensity intensity;
+
+  @override
+  Widget build(BuildContext context) {
+    final levels =
+        intensity.lpgmIntensityTree.keys
+            .where((k) => k != JmaLpgmIntensity.zero)
+            .toList()
+          ..sort((a, b) => b.index.compareTo(a.index));
+    if (levels.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Row(
+      mainAxisSize: .min,
+      spacing: 4,
+      children: [
+        for (final level in levels)
+          JmaLpgmIntensityIcon(intensity: level, type: .filled, size: 28),
+      ],
+    );
+  }
+}
+
+class _ShindoDbLegend extends StatelessWidget {
+  const new({required this.tree});
+  final ShindoDbIntensityTree tree;
+
   @override
   Widget build(BuildContext context) {
     final classes = tree.tree.keys.toList()
       ..sort((a, b) => b.orderIndex.compareTo(a.orderIndex));
-    final colorTheme = context.designSystem.colorTheme;
-    return _AnimatedLegend(
-      label: '震度',
-      entries: [
-        for (final cls in classes.where((cls) => cls.colorJmaIntensity != null))
-          (
-            label: cls.sectionTitle,
-            borderRadius: BorderRadius.circular(_legendIconSize / 4),
-            icon: ShindoDbIntensityClassIcon(
-              intensityClass: cls,
-              size: _legendIconSize,
-            ),
-          ),
-        if (classes.any((cls) => cls.colorJmaIntensity == null))
-          (
-            label: '震度不明',
-            borderRadius: BorderRadius.circular(_legendIconSize / 4),
-            icon: Container(
-              width: _legendIconSize,
-              height: _legendIconSize,
+    if (classes.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    final hasHistorical = classes.any((c) => c.colorJmaIntensity == null);
+    final numericClasses = classes.where((c) => c.colorJmaIntensity != null);
+
+    return Row(
+      mainAxisSize: .min,
+      spacing: 4,
+      children: [
+        for (final cls in numericClasses)
+          ShindoDbIntensityClassIcon(intensityClass: cls, size: 28),
+        if (hasHistorical)
+          Tooltip(
+            message: '不明 (グレー)',
+            child: Container(
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
-                color: colorTheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(_legendIconSize / 4),
+                color: context.designSystem.colorTheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(7),
               ),
               child: Center(
                 child: Text(
                   '?',
                   style: TextStyle(
-                    color: colorTheme.onSurface,
-                    fontSize: _legendIconSize / 2,
+                    color: context.designSystem.colorTheme.onSurface,
+                    fontSize: 14,
                     fontWeight: .bold,
                   ),
                 ),
@@ -159,142 +149,6 @@ class const _ShindoDbLegend({required final ShindoDbIntensityTree tree})
             ),
           ),
       ],
-    );
-  }
-}
-
-class const _AnimatedLegend({
-  required final String label,
-  required final List<({String label, BorderRadius borderRadius, Widget icon})>
-  entries,
-}) extends HookWidget {
-  @override
-  Widget build(BuildContext context) {
-    final expanded = useState(true);
-    final animation = useAnimationController(
-      initialValue: 1,
-      lowerBound: -0.2,
-      upperBound: 1.2,
-    );
-    final disableAnimations = MediaQuery.disableAnimationsOf(context);
-    final designSystem = context.designSystem;
-    final spacing = designSystem.spacing;
-    const motion = M3EMotion.expressiveSpatialDefault;
-    final spring = useMemoized(
-      () => SpringDescription.withDampingRatio(
-        mass: 1,
-        stiffness: motion.stiffness,
-        ratio: motion.damping,
-      ),
-    );
-    useEffect(() {
-      if (disableAnimations) {
-        animation.stop();
-        animation.value = expanded.value ? 1 : 0;
-      }
-      return null;
-    }, [disableAnimations, expanded.value]);
-
-    if (entries.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    final visibleStackCount = entries.length.clamp(1, 3);
-    final stackedWidth = _legendIconSize + (visibleStackCount - 1) * spacing.sm;
-    final expandedWidth =
-        entries.length * _legendIconSize + (entries.length - 1) * spacing.xs;
-    return Semantics(
-      expanded: expanded.value,
-      child: M3EButton(
-        style: .tonal,
-        semanticLabel:
-            '$labelの凡例、${entries.map((entry) => entry.label).join('、')}',
-        tooltip: expanded.value ? '凡例を折りたたむ' : '凡例を展開',
-        decoration: M3EButtonDecoration.styleFrom(
-          backgroundColor: designSystem.colorTheme.surface.withValues(
-            alpha: 0.9,
-          ),
-          foregroundColor: designSystem.colorTheme.onSurface,
-          elevation: 2,
-          padding: EdgeInsets.all(spacing.sm),
-          minimumSize: const Size(48, 48),
-          borderRadius: designSystem.shape.card,
-          motion: motion,
-          haptic: .light,
-        ),
-        onPressed: () async {
-          expanded.value = !expanded.value;
-          final target = expanded.value ? 1.0 : 0.0;
-          if (disableAnimations) {
-            animation.value = target;
-            return;
-          }
-          try {
-            await animation
-                .animateWith(
-                  SpringSimulation(
-                    spring,
-                    animation.value,
-                    target,
-                    animation.velocity,
-                  ),
-                )
-                .orCancel;
-          } on TickerCanceled {
-            // 連続タップや画面を閉じる操作で中断されたアニメーション。
-          }
-        },
-        child: ExcludeSemantics(
-          child: FittedBox(
-            fit: .scaleDown,
-            child: AnimatedBuilder(
-              animation: animation,
-              builder: (context, child) {
-                final progress = animation.value;
-                final shadowOpacity = entries.length > 1
-                    ? 0.2 * (1 - progress.clamp(0.0, 1.0))
-                    : 0.0;
-                return SizedBox(
-                  width: lerpDouble(stackedWidth, expandedWidth, progress),
-                  height: _legendIconSize,
-                  child: Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      for (var index = entries.length - 1; index >= 0; index--)
-                        Positioned(
-                          left: lerpDouble(
-                            index.clamp(0, 2) * spacing.sm,
-                            index * (_legendIconSize + spacing.xs),
-                            progress,
-                          ),
-                          child: Opacity(
-                            opacity: index < 3 ? 1 : progress.clamp(0.0, 1.0),
-                            child: DecoratedBox(
-                              decoration: BoxDecoration(
-                                borderRadius: entries[index].borderRadius,
-                                boxShadow: [
-                                  if (shadowOpacity > 0)
-                                    BoxShadow(
-                                      color: Colors.black.withValues(
-                                        alpha: shadowOpacity,
-                                      ),
-                                      blurRadius: spacing.xs,
-                                      offset: Offset(0, spacing.xs / 4),
-                                    ),
-                                ],
-                              ),
-                              child: entries[index].icon,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

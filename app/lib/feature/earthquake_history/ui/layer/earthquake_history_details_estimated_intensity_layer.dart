@@ -13,10 +13,15 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
 /// 地震履歴詳細の推計震度（PMTiles ラスタ）レイヤー
-class const EarthquakeHistoryDetailsEstimatedIntensityLayer({
-  required final String tileUrl,
-  super.key,
-}) extends HookConsumerWidget {
+class EarthquakeHistoryDetailsEstimatedIntensityLayer
+    extends HookConsumerWidget {
+  const new({
+    required this.tileUrl,
+    super.key,
+  });
+
+  final String tileUrl;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final styleController = MapController.maybeOf(context)?.style;

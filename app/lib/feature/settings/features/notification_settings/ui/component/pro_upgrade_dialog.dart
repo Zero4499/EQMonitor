@@ -12,7 +12,9 @@ class const ProUpgradeDialogAction() {
   }
 }
 
-class const _ProUpgradeDialog() extends StatelessWidget {
+class _ProUpgradeDialog extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

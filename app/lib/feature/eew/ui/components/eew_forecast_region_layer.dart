@@ -19,12 +19,18 @@ import 'package:maplibre/maplibre.dart';
 ///
 /// `displayMode` に応じて、予報区を予想震度別、または府県予報区を
 /// 警報発表区域として塗りつぶす。
-class const EewForecastRegionLayer({
-  required final EewTelegramItem? eew,
-  required final EewDisplayMode displayMode,
-  final List<EewForecastRegionInfo>? additionalRegions,
-  super.key,
-}) extends HookConsumerWidget {
+class EewForecastRegionLayer extends HookConsumerWidget {
+  const new({
+    required this.eew,
+    required this.displayMode,
+    this.additionalRegions,
+    super.key,
+  });
+
+  final EewTelegramItem? eew;
+  final EewDisplayMode displayMode;
+  final List<EewForecastRegionInfo>? additionalRegions;
+
   static const _sourceId = 'eqmonitor_map';
   static const _intensitySourceLayerId = 'areaForecastLocalE';
   static const _warningSourceLayerId = 'areaForecastLocalEew';
@@ -43,9 +49,6 @@ class const EewForecastRegionLayer({
     );
 
     final regionMaxIntensities = useMemoized(() {
-      if (eew?.isCanceled ?? false) {
-        return const <EewForecastRegionInfo>[];
-      }
       final regions = <EewForecastRegionInfo>[
         ...eew?.forecastIntensity?.regions ?? const [],
         ...?additionalRegions,
@@ -178,7 +181,7 @@ class const EewForecastRegionLayer({
               filter: filter,
               paint: const {'fill-color': '#DD0000', 'fill-opacity': 1},
             ),
-            belowLayerId: BaseLayer.regionFillAnchor.name,
+            belowLayerId: BaseLayer.areaForecastLocalEewLine.name,
           );
           await styleController.addLayer(
             LineStyleLayer(
@@ -191,7 +194,6 @@ class const EewForecastRegionLayer({
                 'line-width': 1,
               },
             ),
-            belowLayerId: BaseLayer.markerBackgroundAnchor.name,
           );
           final latestFilter = _areaFilterBuilder.build(
             latestWarningCodes.value,

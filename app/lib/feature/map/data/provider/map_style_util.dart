@@ -15,11 +15,11 @@ MapStyleUtil mapStyleUtil(Ref ref) => MapStyleUtil(
   baseMapPmtilesRepository: ref.watch(baseMapPmtilesRepositoryProvider),
 );
 
-class MapStyleUtil({
-  required BaseMapPmtilesRepository baseMapPmtilesRepository,
-}) {
-  final BaseMapPmtilesRepository _baseMapPmtilesRepository =
-      baseMapPmtilesRepository;
+class MapStyleUtil {
+  new({required BaseMapPmtilesRepository baseMapPmtilesRepository})
+    : _baseMapPmtilesRepository = baseMapPmtilesRepository;
+
+  final BaseMapPmtilesRepository _baseMapPmtilesRepository;
 
   Future<String> _saveStyleJson(Map<String, dynamic> json) async {
     final jsonStr = jsonEncode(json);
@@ -37,19 +37,7 @@ class MapStyleUtil({
 
   Future<String> getStyle({required MapColors mapColors}) async {
     final mapSourceUrl = await _baseMapPmtilesRepository.resolveSourceUri();
-    return _saveStyleJson(
-      buildStyleJson(mapColors: mapColors, mapSourceUrl: mapSourceUrl),
-    );
-  }
-
-  /// ベーススタイルの JSON を組み立てる。
-  ///
-  /// `layers` は [BaseLayer] の宣言順（下→上）と一致させる。
-  static Map<String, dynamic> buildStyleJson({
-    required MapColors mapColors,
-    required String mapSourceUrl,
-  }) {
-    return {
+    final json = {
       'version': 8,
       'name': 'EQMonitor Style',
       'glyphs': 'https://glyphs.geolonia.com/{fontstack}/{range}.pbf',
@@ -100,7 +88,6 @@ class MapStyleUtil({
           'source-layer': 'areaForecastLocalE',
           'paint': {'fill-color': mapColors.japanLand.toHexStringRGB()},
         },
-        _anchor(BaseLayer.regionFillAnchor),
         // 緊急地震速報用区域（境界線）
         {
           'id': BaseLayer.areaForecastLocalEewLine.name,
@@ -165,59 +152,19 @@ class MapStyleUtil({
             ],
           },
         },
-        // 以降は、レイヤーWidgetが `belowLayerId` に指定する常設アンカー。
-        // style 読み込み時点で必ず存在するため、Widget の初期化順・再追加の
-        // タイミングに左右されずに描画順を固定できる。
-        _anchor(BaseLayer.regionOverlayAnchor),
-        _anchor(BaseLayer.foregroundOverlayAnchor),
-        _anchor(BaseLayer.markerBackgroundAnchor),
-        _anchor(BaseLayer.waveLineAnchor),
-        _anchor(BaseLayer.markerLowerAnchor),
-        _anchor(BaseLayer.markerUpperAnchor),
       ],
     };
-  }
 
-  static Map<String, dynamic> _anchor(BaseLayer layer) => {
-    'id': layer.name,
-    'type': 'background',
-    'paint': {'background-opacity': 0},
-  };
+    return _saveStyleJson(json);
+  }
 }
 
-/// ベーススタイルが常に持つレイヤー。宣言順が描画順（下→上）。
-///
-/// `*Anchor` は描画されない挿入位置で、動的レイヤーは目的のアンカーを
-/// `belowLayerId` に指定して追加する。別の Widget が追加するレイヤーを
-/// 挿入位置に使うと、初期化順によっては存在せず追加に失敗するため使わない。
 enum BaseLayer {
   background,
   countriesFill,
   countriesLine,
   areaForecastLocalEFill,
-
-  /// 不透明な区域 fill の上限。S 波 fill はこれより上
-  /// （[areaForecastLocalEewLine] の下）へ追加する。
-  regionFillAnchor,
   areaForecastLocalEewLine,
   areaForecastLocalELine,
   areaInformationCityQuakeLine,
-
-  /// 境界線より上に重ねる半透明の区域 fill の上限。
-  regionOverlayAnchor,
-
-  /// 強震モニタ観測点の上限。
-  foregroundOverlayAnchor,
-
-  /// マーカーの背面に置く線（震源誤差範囲・区域の線）の上限。
-  markerBackgroundAnchor,
-
-  /// P/S 波の線の上限。
-  waveLineAnchor,
-
-  /// 下側のマーカーの上限。
-  markerLowerAnchor,
-
-  /// 上側のマーカーの上限。
-  markerUpperAnchor,
 }

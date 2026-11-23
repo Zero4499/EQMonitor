@@ -44,24 +44,33 @@ abstract interface class NativeSocialAuthGateway {
   Future<Result<void, AuthFailure>> signInWithApple();
 }
 
-final class NativeSocialAuthRepository({
-  required BetterAuthApiClient apiClient,
-  required GoogleAuthGateway googleAuthRepository,
-  required AppleAuthGateway appleAuthRepository,
-  required BuildConfig buildConfig,
-  required TelegramUrlModel telegramUrl,
-  required NativeAuthPlatform platform,
-  required NativeAuthAttemptCoordinator attemptCoordinator,
-  required AcceptNativeSocialSignIn acceptSignIn,
-}) implements NativeSocialAuthGateway {
-  final BetterAuthApiClient _apiClient = apiClient;
-  final GoogleAuthGateway _googleAuthRepository = googleAuthRepository;
-  final AppleAuthGateway _appleAuthRepository = appleAuthRepository;
-  final BuildConfig _buildConfig = buildConfig;
-  final TelegramUrlModel _telegramUrl = telegramUrl;
-  final NativeAuthPlatform _platform = platform;
-  final NativeAuthAttemptCoordinator _attemptCoordinator = attemptCoordinator;
-  final AcceptNativeSocialSignIn _acceptSignIn = acceptSignIn;
+final class NativeSocialAuthRepository implements NativeSocialAuthGateway {
+  new({
+    required BetterAuthApiClient apiClient,
+    required GoogleAuthGateway googleAuthRepository,
+    required AppleAuthGateway appleAuthRepository,
+    required BuildConfig buildConfig,
+    required TelegramUrlModel telegramUrl,
+    required NativeAuthPlatform platform,
+    required NativeAuthAttemptCoordinator attemptCoordinator,
+    required AcceptNativeSocialSignIn acceptSignIn,
+  }) : _apiClient = apiClient,
+       _googleAuthRepository = googleAuthRepository,
+       _appleAuthRepository = appleAuthRepository,
+       _buildConfig = buildConfig,
+       _telegramUrl = telegramUrl,
+       _platform = platform,
+       _attemptCoordinator = attemptCoordinator,
+       _acceptSignIn = acceptSignIn;
+
+  final BetterAuthApiClient _apiClient;
+  final GoogleAuthGateway _googleAuthRepository;
+  final AppleAuthGateway _appleAuthRepository;
+  final BuildConfig _buildConfig;
+  final TelegramUrlModel _telegramUrl;
+  final NativeAuthPlatform _platform;
+  final NativeAuthAttemptCoordinator _attemptCoordinator;
+  final AcceptNativeSocialSignIn _acceptSignIn;
 
   @override
   Future<Result<void, AuthFailure>> signInWithGoogle() async {

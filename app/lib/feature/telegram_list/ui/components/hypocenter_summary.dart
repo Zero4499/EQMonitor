@@ -9,11 +9,12 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// VXSE52, VXSE53, VXSE61, VXSE62 タイルで使用。
 /// 震源名・M・深さ・発生時刻を表示し、前報との差分があればチップで示す。
-class const HypocenterSummary({
-  required final EarthquakeTelegramBodyQuakeModel quake,
-  final HypocenterDiff? diff,
-  super.key,
-}) extends StatelessWidget {
+class HypocenterSummary extends StatelessWidget {
+  const new({required this.quake, this.diff, super.key});
+
+  final EarthquakeTelegramBodyQuakeModel quake;
+  final HypocenterDiff? diff;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -74,8 +75,11 @@ class const HypocenterSummary({
   }
 }
 
-class const _OriginTimeLine({required final String originTime})
-    extends StatelessWidget {
+class _OriginTimeLine extends StatelessWidget {
+  const new({required this.originTime});
+
+  final String originTime;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -99,7 +103,11 @@ class const _OriginTimeLine({required final String originTime})
   }
 }
 
-class const _DiffChip({required final String text}) extends StatelessWidget {
+class _DiffChip extends StatelessWidget {
+  const new({required this.text});
+
+  final String text;
+
   @override
   Widget build(BuildContext context) {
     final colorTheme = context.designSystem.colorTheme;

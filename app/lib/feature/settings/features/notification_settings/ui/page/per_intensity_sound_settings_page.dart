@@ -9,7 +9,9 @@ import 'package:eqmonitor/feature/settings/features/notification_settings/ui/pag
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const PerIntensitySoundSettingsPage({super.key}) extends ConsumerWidget {
+class PerIntensitySoundSettingsPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final slotsAsync = ref.watch(notificationSlotsProvider);
@@ -47,10 +49,15 @@ class const PerIntensitySoundSettingsPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _SlotOverrideCard({
-  required final List<NotificationSlot> slots,
-  required final NotificationKind overrideType,
-}) extends StatelessWidget {
+class _SlotOverrideCard extends StatelessWidget {
+  const new({
+    required this.slots,
+    required this.overrideType,
+  });
+
+  final List<NotificationSlot> slots;
+  final NotificationKind overrideType;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;
@@ -85,10 +92,15 @@ class const _SlotOverrideCard({
   }
 }
 
-class const _SlotOverrideTile({
-  required final NotificationSlot slot,
-  required final NotificationKind overrideType,
-}) extends StatelessWidget {
+class _SlotOverrideTile extends StatelessWidget {
+  const new({
+    required this.slot,
+    required this.overrideType,
+  });
+
+  final NotificationSlot slot;
+  final NotificationKind overrideType;
+
   @override
   Widget build(BuildContext context) {
     final name = switch (slot.slotType) {

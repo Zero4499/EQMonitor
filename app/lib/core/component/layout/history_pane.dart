@@ -2,12 +2,18 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 各ペインに独立したスクロールと、その領域の MediaQuery を与える。
-class const HistoryPane({
-  required final Rect bounds,
-  required final Size viewport,
-  required final Widget child,
-  super.key,
-}) extends HookWidget {
+class HistoryPane extends HookWidget {
+  const new({
+    required this.bounds,
+    required this.viewport,
+    required this.child,
+    super.key,
+  });
+
+  final Rect bounds;
+  final Size viewport;
+  final Widget child;
+
   @override
   Widget build(BuildContext context) {
     final controller = useScrollController();

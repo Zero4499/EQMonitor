@@ -24,10 +24,12 @@ class const EewListParameterRow({
   }
 }
 
-class const _FilterChipBar({
-  required final EewListParameter parameter,
-  required final void Function(EewListParameter) onChanged,
-}) extends StatelessWidget {
+class _FilterChipBar extends StatelessWidget {
+  const new({required this.parameter, required this.onChanged});
+
+  final EewListParameter parameter;
+  final void Function(EewListParameter) onChanged;
+
   @override
   Widget build(BuildContext context) {
     final spacing = context.designSystem.spacing;

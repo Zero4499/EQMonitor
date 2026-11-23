@@ -3,26 +3,32 @@ import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/gen/fonts.gen.dart';
 import 'package:eqmonitor/core/theme/model/intensity_colors.dart';
 import 'package:eqmonitor/core/util/date_time_format.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/logic/earthquake_catalog_hypocenter_order.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_catalog.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_info_text_style.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/shindo_db_intensity_class_icon.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const ShindoDbHypocenterInformationCard({
-  required final EarthquakeCatalog catalog,
-  required final DateTime? originTime,
-  super.key,
-}) extends StatelessWidget {
+class ShindoDbHypocenterInformationCard extends StatelessWidget {
+  const new({
+    required this.catalog,
+    required this.originTime,
+    super.key,
+  });
+
+  final EarthquakeCatalog catalog;
+  final DateTime? originTime;
+
   @override
   Widget build(BuildContext context) {
-    final hypocenters = const EarthquakeCatalogHypocenterOrder().sort(
-      catalog.hypocenters,
-    );
-    final primary = hypocenters.firstOrNull;
-    if (primary == null) {
+    final hypocenters = catalog.hypocenters;
+    if (hypocenters.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final primary = hypocenters.firstWhere(
+      (h) => h.seq == 0,
+      orElse: () => hypocenters.first,
+    );
 
     final intensityColors = context.designSystem.colorTheme.intensity;
     final colorJma = primary.maxIntensity?.colorJmaIntensity;
@@ -58,10 +64,7 @@ class const ShindoDbHypocenterInformationCard({
                 ),
               ],
             ),
-            _DetailsTile(
-              primary: primary,
-              others: hypocenters.skip(1).toList(),
-            ),
+            _DetailsTile(catalog: catalog, primary: primary),
           ],
         ),
       ),
@@ -69,9 +72,11 @@ class const ShindoDbHypocenterInformationCard({
   }
 }
 
-class const _MaxIntensityWidget({
-  required final EarthquakeCatalogHypocenter hypocenter,
-}) extends StatelessWidget {
+class _MaxIntensityWidget extends StatelessWidget {
+  const new({required this.hypocenter});
+
+  final EarthquakeCatalogHypocenter hypocenter;
+
   @override
   Widget build(BuildContext context) {
     final maxIntensity = hypocenter.maxIntensity;
@@ -89,10 +94,15 @@ class const _MaxIntensityWidget({
   }
 }
 
-class const _PrimaryHypocenterBody({
-  required final EarthquakeCatalogHypocenter hypocenter,
-  required final DateTime? originTime,
-}) extends StatelessWidget {
+class _PrimaryHypocenterBody extends StatelessWidget {
+  const new({
+    required this.hypocenter,
+    required this.originTime,
+  });
+
+  final EarthquakeCatalogHypocenter hypocenter;
+  final DateTime? originTime;
+
   @override
   Widget build(BuildContext context) {
     final effectiveOriginTime = hypocenter.originTime ?? originTime;
@@ -121,9 +131,11 @@ class const _PrimaryHypocenterBody({
   }
 }
 
-class const _MagnitudeRow({
-  required final List<EarthquakeCatalogMagnitude> magnitudes,
-}) extends StatelessWidget {
+class _MagnitudeRow extends StatelessWidget {
+  const new({required this.magnitudes});
+
+  final List<EarthquakeCatalogMagnitude> magnitudes;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -168,8 +180,11 @@ class const _MagnitudeRow({
   }
 }
 
-class const _DepthRow({required final EarthquakeCatalogHypocenter hypocenter})
-    extends StatelessWidget {
+class _DepthRow extends StatelessWidget {
+  const new({required this.hypocenter});
+
+  final EarthquakeCatalogHypocenter hypocenter;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -224,10 +239,12 @@ class const _DepthRow({required final EarthquakeCatalogHypocenter hypocenter})
   }
 }
 
-class const _OriginTimeRow({
-  required final DateTime originTime,
-  required final double? stderrSeconds,
-}) extends StatelessWidget {
+class _OriginTimeRow extends StatelessWidget {
+  const new({required this.originTime, required this.stderrSeconds});
+
+  final DateTime originTime;
+  final double? stderrSeconds;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -252,8 +269,11 @@ class const _OriginTimeRow({
   }
 }
 
-class const _EpicenterWidget({required final String epicenterName})
-    extends StatelessWidget {
+class _EpicenterWidget extends StatelessWidget {
+  const new({required this.epicenterName});
+
+  final String epicenterName;
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -276,13 +296,18 @@ class const _EpicenterWidget({required final String epicenterName})
   }
 }
 
-class const _DetailsTile({
-  required final EarthquakeCatalogHypocenter primary,
-  required final List<EarthquakeCatalogHypocenter> others,
-}) extends StatelessWidget {
+class _DetailsTile extends StatelessWidget {
+  const new({required this.catalog, required this.primary});
+
+  final EarthquakeCatalog catalog;
+  final EarthquakeCatalogHypocenter primary;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final others = catalog.hypocenters
+        .where((h) => h.seq != primary.seq)
+        .toList();
 
     return ExpandableSection(
       title: Text(
@@ -312,10 +337,12 @@ class const _DetailsTile({
   }
 }
 
-class const _HypocenterSection({
-  required final int index,
-  required final EarthquakeCatalogHypocenter hypocenter,
-}) extends StatelessWidget {
+class _HypocenterSection extends StatelessWidget {
+  const new({required this.index, required this.hypocenter});
+
+  final int index;
+  final EarthquakeCatalogHypocenter hypocenter;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -350,8 +377,12 @@ class const _HypocenterSection({
   }
 }
 
-class const _InfoRow({required final String label, required final String value})
-    extends StatelessWidget {
+class _InfoRow extends StatelessWidget {
+  const new({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

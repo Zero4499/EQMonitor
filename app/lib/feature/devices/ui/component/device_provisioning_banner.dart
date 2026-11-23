@@ -1,3 +1,5 @@
+import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
+
 import 'dart:async';
 
 import 'package:eqmonitor/core/component/banner/app_banner.dart';
@@ -12,7 +14,9 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const DeviceProvisioningBanner({super.key}) extends ConsumerWidget {
+class DeviceProvisioningBanner extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final provisionStatus = ref.watch(deviceProvisioningProvider);
@@ -73,12 +77,19 @@ class const DeviceProvisioningBanner({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _DeviceProvisioningBannerContent({
-  required final RetryControllerState activeRetry,
-  required final bool isLoading,
-  required final bool isProvisioningRequired,
-  required final VoidCallback onRetry,
-}) extends StatelessWidget {
+class _DeviceProvisioningBannerContent extends StatelessWidget {
+  const new({
+    required this.activeRetry,
+    required this.isLoading,
+    required this.isProvisioningRequired,
+    required this.onRetry,
+  });
+
+  final RetryControllerState activeRetry;
+  final bool isLoading;
+  final bool isProvisioningRequired;
+  final VoidCallback onRetry;
+
   @override
   Widget build(BuildContext context) {
     final colorTheme = context.designSystem.colorTheme;
@@ -98,7 +109,28 @@ class const _DeviceProvisioningBannerContent({
         resumeAt: resumeAt,
         error: lastError,
       ),
-      RetryRunning() || RetryIdle() when isLoading => const SizedBox.shrink(),
+      RetryRunning(:final attempt) => _BannerTile(
+        icon: Icons.sync,
+        backgroundColor: colorTheme.secondaryContainer,
+        foregroundColor: colorTheme.onSecondaryContainer,
+        message: attempt == 0 ? '通知設定を更新しています…' : '再試行中… ($attempt 回目)',
+        trailing: const SizedBox(
+          width: 20,
+          height: 20,
+          child: AccessibleCircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
+      RetryIdle() when isLoading => _BannerTile(
+        icon: Icons.sync,
+        backgroundColor: colorTheme.secondaryContainer,
+        foregroundColor: colorTheme.onSecondaryContainer,
+        message: '通知設定を更新しています…',
+        trailing: const SizedBox(
+          width: 20,
+          height: 20,
+          child: AccessibleCircularProgressIndicator(strokeWidth: 2),
+        ),
+      ),
       RetryIdle() when isProvisioningRequired => _BannerTile(
         icon: Icons.warning_amber_outlined,
         backgroundColor: colorTheme.errorContainer,
@@ -114,10 +146,12 @@ class const _DeviceProvisioningBannerContent({
   }
 }
 
-class const _WaitingBanner({
-  required final DateTime resumeAt,
-  required final DeviceProvisioningException error,
-}) extends HookWidget {
+class _WaitingBanner extends HookWidget {
+  const new({required this.resumeAt, required this.error});
+
+  final DateTime resumeAt;
+  final DeviceProvisioningException error;
+
   @override
   Widget build(BuildContext context) {
     Duration calcRemaining() {
@@ -152,13 +186,21 @@ class const _WaitingBanner({
   }
 }
 
-class const _BannerTile({
-  required final IconData icon,
-  required final Color backgroundColor,
-  required final Color foregroundColor,
-  required final String message,
-  final Widget? trailing,
-}) extends StatelessWidget {
+class _BannerTile extends StatelessWidget {
+  const new({
+    required this.icon,
+    required this.backgroundColor,
+    required this.foregroundColor,
+    required this.message,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final Color backgroundColor;
+  final Color foregroundColor;
+  final String message;
+  final Widget? trailing;
+
   @override
   Widget build(BuildContext context) => AppBanner(
     icon: icon,

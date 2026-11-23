@@ -10,7 +10,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 /// 呼び出し順序が変わらない形で使うこと（`use()` の実体は
 /// `HookElement._currentHookElement` を参照するため、トップレベル関数か
 /// クラスの static メソッドかは Hook の登録順序に影響しない）。
-class const EewEstimatedRegionsStaleCacheHook._() {
+class EewEstimatedRegionsStaleCacheHook {
+  const new _();
+
   /// 推定震度を取得する。新しい EEW 報へ切り替わって再計算中も、
   /// 直前の結果を表示し続ける。
   static List<EewEstimatedRegion>? use({
@@ -19,19 +21,12 @@ class const EewEstimatedRegionsStaleCacheHook._() {
     required bool isEnabled,
   }) {
     final cache = useRef<List<EewEstimatedRegion>?>(null);
-    final previousEew = useRef<EewTelegramItem?>(null);
-    final previous = previousEew.value;
-    if (previous?.eventId != eew?.eventId ||
-        (previous != null && eew != null && eew.serialNo < previous.serialNo)) {
-      cache.value = null;
-    }
-    previousEew.value = eew;
 
-    final asyncValue = isEnabled && eew != null && !eew.isCanceled
+    final asyncValue = isEnabled && eew != null
         ? ref.watch(eewEstimatedRegionIntensityProvider(eew))
         : null;
 
-    if (!isEnabled || eew == null || eew.isCanceled) {
+    if (!isEnabled || eew == null) {
       cache.value = null;
       return null;
     }

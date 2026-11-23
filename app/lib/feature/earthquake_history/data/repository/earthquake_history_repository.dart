@@ -36,12 +36,17 @@ Future<EarthquakeHistoryRepository> earthquakeHistoryRepository(Ref ref) async {
   );
 }
 
-class EarthquakeHistoryRepository({
-  required api.EarthquakeApiClient earthquake,
-  required final EarthquakeParameter earthquakeParameter,
-  required final ShindoDbStationsParameter shindoDbStations,
-}) {
-  final api.EarthquakeApiClient _earthquake = earthquake;
+class EarthquakeHistoryRepository {
+  new({
+    required api.EarthquakeApiClient earthquake,
+    required this.earthquakeParameter,
+    required this.shindoDbStations,
+  }) : _earthquake = earthquake;
+
+  final api.EarthquakeApiClient _earthquake;
+  final EarthquakeParameter earthquakeParameter;
+  final ShindoDbStationsParameter shindoDbStations;
+
   Future<PaginatedResponse<EarthquakePartial>> fetchEarthquakeList({
     int? limit,
     String? cursor,

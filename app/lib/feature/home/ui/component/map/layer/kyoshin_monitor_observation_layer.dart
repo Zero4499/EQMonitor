@@ -10,13 +10,14 @@ import 'package:eqmonitor/feature/home/data/notifier/home_configuration_notifier
 import 'package:eqmonitor/feature/home/data/provider/kyoshin_monitor_points_provider.dart';
 import 'package:eqmonitor/feature/kyoshin_monitor/data/model/kyoshin_monitor_settings_model.dart';
 import 'package:eqmonitor/feature/kyoshin_monitor/data/notifier/kyoshin_monitor_settings.dart';
-import 'package:eqmonitor/feature/map/data/provider/map_style_util.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const KyoshinMonitorObservationLayer({super.key}) extends ConsumerWidget {
+class KyoshinMonitorObservationLayer extends ConsumerWidget {
+  const new({super.key});
+
   static const _sourceId = 'kyoshin-monitor-observations';
   static const _layerId = 'kyoshin-monitor-circles';
 
@@ -32,7 +33,9 @@ class const KyoshinMonitorObservationLayer({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _KyoshinMonitorObservationLayerBody() extends HookConsumerWidget {
+class _KyoshinMonitorObservationLayerBody extends HookConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final styleController = MapController.maybeOf(context)?.style;
@@ -126,7 +129,6 @@ class const _KyoshinMonitorObservationLayerBody() extends HookConsumerWidget {
               markerType: markerType,
               hasActiveEew: hasActiveEew,
             ),
-            belowLayerId: BaseLayer.foregroundOverlayAnchor.name,
           );
           isLayerInitialized.value = true;
         }),

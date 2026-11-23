@@ -1,7 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 
 /// WCAG コントラスト比に基づく前景色の導出ユーティリティ。
-class const ContrastColorUtil._() {
+class ContrastColorUtil {
+  const new _();
+
   /// [background]に対してWCAGコントラスト比がより高い前景色（黒/白）を導出する。
   ///
   /// 白/黒それぞれと[background]とのコントラスト比を計算し、

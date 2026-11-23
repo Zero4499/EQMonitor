@@ -18,20 +18,24 @@ AppCheckInterceptor appCheckInterceptor(Ref ref) {
   );
 }
 
-class AppCheckInterceptor({
-  required AppCheckTokenGetter getToken,
-  required AppCheckTokenGetter getLimitedUseToken,
-  Duration tokenTimeout = const Duration(seconds: 10),
-}) extends Interceptor {
-  final AppCheckTokenGetter _getToken = getToken;
-  final AppCheckTokenGetter _getLimitedUseToken = getLimitedUseToken;
+class AppCheckInterceptor extends Interceptor {
+  new({
+    required AppCheckTokenGetter getToken,
+    required AppCheckTokenGetter getLimitedUseToken,
+    Duration tokenTimeout = const Duration(seconds: 10),
+  }) : _getToken = getToken,
+       _getLimitedUseToken = getLimitedUseToken,
+       _tokenTimeout = tokenTimeout;
+
+  final AppCheckTokenGetter _getToken;
+  final AppCheckTokenGetter _getLimitedUseToken;
 
   /// AppCheck トークン取得の上限時間。
   ///
   /// interceptor 内の待ち時間は Dio の各種 timeout の対象外なので、ここで
   /// 明示的に打ち切らないと Play Integrity / App Attest の応答待ちで
   /// リクエストが永久に発行されないままになる。
-  final Duration _tokenTimeout = tokenTimeout;
+  final Duration _tokenTimeout;
 
   @override
   Future<void> onRequest(

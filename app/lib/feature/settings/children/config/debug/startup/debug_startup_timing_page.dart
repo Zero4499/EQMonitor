@@ -2,7 +2,9 @@ import 'package:eqmonitor/core/startup/startup_profiler_provider.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugStartupTimingPage({super.key}) extends ConsumerWidget {
+class DebugStartupTimingPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final timings = ref.watch(startupProfilerProvider).timingsMicros;

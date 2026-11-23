@@ -11,10 +11,13 @@ class OnboardingCompleted extends _$OnboardingCompleted {
     final dataSource = await ref.watch(
       sharedPreferencesDataSourceProvider.future,
     );
+    // 自前ビルド（API 未接続）で UI を確認するとき用のビルドスイッチ。
+    // 既定は false なので通常ビルドの挙動は変わらない。
+    const skipOnboarding = bool.fromEnvironment('SKIP_ONBOARDING');
     return await dataSource.getBool(
           key: .onboardingCompleted,
         ) ??
-        false;
+        skipOnboarding;
   }
 
   static final completeMutation = Mutation<void>();

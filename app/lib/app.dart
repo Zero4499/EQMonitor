@@ -1,6 +1,5 @@
 import 'package:cupertino_ui/cupertino_ui.dart'
     show GlobalCupertinoLocalizations;
-import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/provider/package_info.dart';
 import 'package:eqmonitor/core/router/router.dart';
@@ -9,6 +8,7 @@ import 'package:eqmonitor/core/theme/provider/app_theme_notifier.dart';
 import 'package:eqmonitor/core/theme/theme_provider.dart';
 import 'package:eqmonitor/feature/debug/launcher/debug_launcher.dart';
 import 'package:eqmonitor/feature/eew/ui/components/eew_warning_overlay_host.dart';
+import 'package:eqmonitor/core/i18n/app_strings.dart';
 import 'package:eqmonitor/feature/live_monitor/data/provider/live_monitor_wake_lock_controller.dart';
 import 'package:eqmonitor/feature/start/ui/component/forced_update_dialog.dart';
 import 'package:flutter/foundation.dart';
@@ -36,7 +36,7 @@ class App extends HookConsumerWidget {
 
     final app = MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      title: 'QuakePush',
+      title: 'EQMonitor',
       themeMode: theme.value,
       routerConfig: routerConfig,
       builder: (context, child) => EewWarningOverlayHost(
@@ -53,6 +53,7 @@ class App extends HookConsumerWidget {
       ),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
+        // Flutter Material を使う依存との互換性のため両方の delegate が必要。
         // ignore: deprecated_member_use
         flutter_localizations.GlobalMaterialLocalizations.delegate,
         flutter_localizations.GlobalWidgetsLocalizations.delegate,
@@ -61,7 +62,10 @@ class App extends HookConsumerWidget {
       supportedLocales: appSupportedLocales,
       locale: ref.watch(appLocaleProvider),
     );
+    final buildConfig = ref.watch(buildConfigProvider);
     Widget result = ForcedUpdateWrapper(child: app);
+
+    // 版本角标已按需求移除；同时关掉 Flutter 的 DEBUG 丝带。
 
     return result;
   }

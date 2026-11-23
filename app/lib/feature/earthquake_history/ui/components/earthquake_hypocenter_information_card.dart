@@ -4,10 +4,11 @@ import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake.dart'
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_summary_header.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeHypocenterInformationCard({
-  required final Earthquake item,
-  super.key,
-}) extends StatelessWidget {
+class EarthquakeHypocenterInformationCard extends StatelessWidget {
+  const new({required this.item, super.key});
+
+  final Earthquake item;
+
   @override
   Widget build(BuildContext context) {
     final intensityColors = context.designSystem.colorTheme.intensity;

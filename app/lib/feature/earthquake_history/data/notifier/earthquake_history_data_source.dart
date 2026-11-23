@@ -69,12 +69,14 @@ Future<EarthquakeHistoryDataSource> earthquakeHistoryDataSource(
   return dataSource;
 }
 
-class EarthquakeHistoryDataSource({
-  required EarthquakeHistoryRepository repository,
-  required EarthquakeHistoryParameter parameter,
-  VoidCallback? onRefreshStarted,
-}) extends GroupedDataSource<String?, String, EarthquakePartial> {
-  this {
+class EarthquakeHistoryDataSource
+    extends GroupedDataSource<String?, String, EarthquakePartial> {
+  new({
+    required EarthquakeHistoryRepository repository,
+    required EarthquakeHistoryParameter parameter,
+    VoidCallback? onRefreshStarted,
+  }) : _repository = repository,
+       _parameter = parameter {
     onLoadStarted = (action) {
       if (action is Refresh) {
         onRefreshStarted?.call();
@@ -82,8 +84,8 @@ class EarthquakeHistoryDataSource({
     };
   }
 
-  final EarthquakeHistoryRepository _repository = repository;
-  final EarthquakeHistoryParameter _parameter = parameter;
+  final EarthquakeHistoryRepository _repository;
+  final EarthquakeHistoryParameter _parameter;
   final List<_RealtimeListMutation> _mutations = [];
   var _mutationSequence = 0;
   var _hasCompletedInitialLoad = false;

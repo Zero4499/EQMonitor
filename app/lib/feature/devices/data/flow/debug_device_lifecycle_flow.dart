@@ -14,14 +14,15 @@ part 'debug_device_lifecycle_flow.g.dart';
 DebugDeviceLifecycleFlow debugDeviceLifecycleFlow(Ref ref) =>
     DebugDeviceLifecycleFlow();
 
-class DebugDeviceLifecycleFlow({
-  DebugDeviceLifecycleMessages? messages,
-  DebugDeviceLifecycleConfirmDialog? confirmDialog,
-}) {
-  final DebugDeviceLifecycleMessages messages =
-      messages ?? DebugDeviceLifecycleMessages();
-  final DebugDeviceLifecycleConfirmDialog confirmDialog =
-      confirmDialog ?? DebugDeviceLifecycleConfirmDialog();
+class DebugDeviceLifecycleFlow {
+  new({
+    DebugDeviceLifecycleMessages? messages,
+    DebugDeviceLifecycleConfirmDialog? confirmDialog,
+  }) : messages = messages ?? DebugDeviceLifecycleMessages(),
+       confirmDialog = confirmDialog ?? DebugDeviceLifecycleConfirmDialog();
+
+  final DebugDeviceLifecycleMessages messages;
+  final DebugDeviceLifecycleConfirmDialog confirmDialog;
 
   Future<void> confirmAndDelete(WidgetRef ref, BuildContext context) async {
     final confirmed = await confirmDialog.show(

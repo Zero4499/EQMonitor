@@ -34,9 +34,8 @@ abstract interface class HeadlessBackgroundLocationBridge {
   });
 }
 
-class const BackgroundLocationTrackerHeadlessBridge({
-  final void Function()? beforeComplete,
-}) implements HeadlessBackgroundLocationBridge {
+class const BackgroundLocationTrackerHeadlessBridge()
+    implements HeadlessBackgroundLocationBridge {
   @override
   Future<bool> acknowledgePendingLocation({
     required String updateId,
@@ -50,13 +49,10 @@ class const BackgroundLocationTrackerHeadlessBridge({
   Future<void> completeHeadlessTask({
     required String updateId,
     required HeadlessTaskResult result,
-  }) async {
-    beforeComplete?.call();
-    await BackgroundLocationTracker.completeHeadlessTask(
-      updateId: updateId,
-      result: result,
-    );
-  }
+  }) => BackgroundLocationTracker.completeHeadlessTask(
+    updateId: updateId,
+    result: result,
+  );
 
   @override
   Future<PendingLocationMessage?> peekPendingLocation({
@@ -80,18 +76,23 @@ class const HeadlessDeviceLocationErrorClassifier() {
   }
 }
 
-class HeadlessDeviceLocationRunner({
-  required final HeadlessBackgroundLocationBridge bridge,
-  required final CreateHeadlessDeviceLocationSyncService createSyncService,
-  RecordHeadlessTerminalFailure? recordTerminalFailure,
-  LogHeadlessTaskResult? logResult,
-  final HeadlessDeviceLocationErrorClassifier errorClassifier =
-      const HeadlessDeviceLocationErrorClassifier(),
-}) {
-  final RecordHeadlessTerminalFailure recordTerminalFailure =
-      recordTerminalFailure ?? HeadlessDeviceLocationRunner.ignoreFailure;
-  final LogHeadlessTaskResult logResult =
-      logResult ?? HeadlessDeviceLocationRunner.logSafeResult;
+class HeadlessDeviceLocationRunner {
+  new({
+    required this.bridge,
+    required this.createSyncService,
+    RecordHeadlessTerminalFailure? recordTerminalFailure,
+    LogHeadlessTaskResult? logResult,
+    this.errorClassifier = const HeadlessDeviceLocationErrorClassifier(),
+  }) : recordTerminalFailure =
+           recordTerminalFailure ?? HeadlessDeviceLocationRunner.ignoreFailure,
+       logResult = logResult ?? HeadlessDeviceLocationRunner.logSafeResult;
+
+  final HeadlessBackgroundLocationBridge bridge;
+  final CreateHeadlessDeviceLocationSyncService createSyncService;
+  final RecordHeadlessTerminalFailure recordTerminalFailure;
+  final LogHeadlessTaskResult logResult;
+  final HeadlessDeviceLocationErrorClassifier errorClassifier;
+
   static Future<void> ignoreFailure({
     required String updateId,
     required int statusCode,

@@ -14,10 +14,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeActivityPage({
-  required final EarthquakeActivityQuery initialQuery,
-  super.key,
-}) extends HookConsumerWidget {
+class EarthquakeActivityPage extends HookConsumerWidget {
+  const new({required this.initialQuery, super.key});
+
+  final EarthquakeActivityQuery initialQuery;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final query = useState(initialQuery);
@@ -134,12 +135,18 @@ class const EarthquakeActivityPage({
   }
 }
 
-class const _ActivityControls({
-  required final EarthquakeActivityQuery query,
-  required final EarthquakeActivityBinInterval interval,
-  required final ValueChanged<EarthquakeActivityQuery> onQueryChanged,
-  required final ValueChanged<EarthquakeActivityBinInterval> onIntervalChanged,
-}) extends StatelessWidget {
+class _ActivityControls extends StatelessWidget {
+  const new({
+    required this.query,
+    required this.interval,
+    required this.onQueryChanged,
+    required this.onIntervalChanged,
+  });
+  final EarthquakeActivityQuery query;
+  final EarthquakeActivityBinInterval interval;
+  final ValueChanged<EarthquakeActivityQuery> onQueryChanged;
+  final ValueChanged<EarthquakeActivityBinInterval> onIntervalChanged;
+
   @override
   Widget build(BuildContext context) => Card(
     child: Padding(
@@ -250,10 +257,10 @@ class const _ActivityControls({
   );
 }
 
-class const _ActivitySummary({
-  required final EarthquakeActivityQuery query,
-  required final List<EarthquakePartialNormal> items,
-}) extends StatelessWidget {
+class _ActivitySummary extends StatelessWidget {
+  const new({required this.query, required this.items});
+  final EarthquakeActivityQuery query;
+  final List<EarthquakePartialNormal> items;
   @override
   Widget build(BuildContext context) {
     final summary = const EarthquakeActivitySummaryBuilder().build(
@@ -271,8 +278,9 @@ class const _ActivitySummary({
   }
 }
 
-class const _ActivityChart({required final List<EarthquakeActivityBin> bins})
-    extends StatelessWidget {
+class _ActivityChart extends StatelessWidget {
+  const new({required this.bins});
+  final List<EarthquakeActivityBin> bins;
   @override
   Widget build(BuildContext context) {
     final maximum = bins.fold<int>(

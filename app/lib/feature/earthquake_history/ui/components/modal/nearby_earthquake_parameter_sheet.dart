@@ -6,13 +6,18 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
 /// 震源近傍の地震探索パラメータを調整する BottomSheet
-class const NearbyEarthquakeParameterSheet({
-  required final NearbyEarthquakeParameter initial,
+class NearbyEarthquakeParameterSheet extends HookWidget {
+  const new({
+    required this.initial,
+    required this.hasDepth,
+    super.key,
+  });
+
+  final NearbyEarthquakeParameter initial;
 
   /// 深さが判明しているか（false の場合は深さオフセットを非表示）
-  required final bool hasDepth,
-  super.key,
-}) extends HookWidget {
+  final bool hasDepth;
+
   @override
   Widget build(BuildContext context) {
     final latitudeOffset = useState(initial.latitudeOffset);
@@ -95,15 +100,25 @@ class const NearbyEarthquakeParameterSheet({
   }
 }
 
-class const _SliderRow({
-  required final String label,
-  required final double value,
-  required final double min,
-  required final double max,
-  required final int divisions,
-  required final String displayText,
-  required final ValueChanged<double> onChanged,
-}) extends StatelessWidget {
+class _SliderRow extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.value,
+    required this.min,
+    required this.max,
+    required this.divisions,
+    required this.displayText,
+    required this.onChanged,
+  });
+
+  final String label;
+  final double value;
+  final double min;
+  final double max;
+  final int divisions;
+  final String displayText;
+  final ValueChanged<double> onChanged;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

@@ -26,7 +26,9 @@ class const RectangleSelectionState({
 /// トップレベル関数かを区別しないため、クラスの static メソッドとして
 /// 定義しても Hook の登録順序は変わらない
 /// (`docs/knowledge/development_environment.md`)。
-class const RectangleSelectionHook._() {
+class RectangleSelectionHook {
+  const new _();
+
   static RectangleSelectionState use() {
     final dragStart = useState<Offset?>(null);
     final dragCurrent = useState<Offset?>(null);

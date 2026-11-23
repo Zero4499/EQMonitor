@@ -7,12 +7,18 @@ import 'package:eqmonitor/feature/eew/ui/formatter/eew_warning_overlay_label_for
 import 'package:eqmonitor/feature/map/features/icon/data/model/intensity_icon.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EewWarningOverlayBanner({
-  required final EewWarningOverlayDisplayModel displayModel,
-  required final VoidCallback onExpand,
-  required final VoidCallback onClose,
-  super.key,
-}) extends StatelessWidget {
+class EewWarningOverlayBanner extends StatelessWidget {
+  const new({
+    required this.displayModel,
+    required this.onExpand,
+    required this.onClose,
+    super.key,
+  });
+
+  final EewWarningOverlayDisplayModel displayModel;
+  final VoidCallback onExpand;
+  final VoidCallback onClose;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

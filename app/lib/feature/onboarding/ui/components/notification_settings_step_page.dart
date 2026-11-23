@@ -1,8 +1,10 @@
 part of '../page/onboarding_page.dart';
 
-class const _NotificationSettingsStepPage({
-  required final _OnboardingStepNavigation navigation,
-}) extends HookConsumerWidget {
+class _NotificationSettingsStepPage extends HookConsumerWidget {
+  const new({required this.navigation});
+
+  final _OnboardingStepNavigation navigation;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isMigrated =
@@ -14,9 +16,11 @@ class const _NotificationSettingsStepPage({
   }
 }
 
-class const _MigratedNotificationSettingsStepPage({
-  required final _OnboardingStepNavigation navigation,
-}) extends HookConsumerWidget {
+class _MigratedNotificationSettingsStepPage extends HookConsumerWidget {
+  const new({required this.navigation});
+
+  final _OnboardingStepNavigation navigation;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;
@@ -86,9 +90,11 @@ class const _MigratedNotificationSettingsStepPage({
   }
 }
 
-class const _NewUserNotificationSettingsStepPage({
-  required final _OnboardingStepNavigation navigation,
-}) extends HookConsumerWidget {
+class _NewUserNotificationSettingsStepPage extends HookConsumerWidget {
+  const new({required this.navigation});
+
+  final _OnboardingStepNavigation navigation;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;
@@ -106,31 +112,29 @@ class const _NewUserNotificationSettingsStepPage({
       hasSaveError.value = false;
       try {
         await ref.read(notificationPresetApplierProvider).apply(preset);
-      } on Exception catch (_) {
-        if (context.mounted) {
-          hasSaveError.value = true;
+        if (!context.mounted) {
+          return;
         }
-        return;
-      } finally {
-        if (context.mounted) {
-          isProcessing.value = false;
-        }
-      }
-      if (!context.mounted) {
-        return;
-      }
 
-      if (preset == NotificationPreset.custom) {
-        await Navigator.of(context).push<void>(
-          MaterialPageRoute<void>(
-            builder: (_) => const _OnboardingCustomSettingsWrapper(),
-          ),
-        );
-        if (context.mounted) {
+        if (preset == NotificationPreset.custom) {
+          isProcessing.value = false;
+          await Navigator.of(context).push<void>(
+            MaterialPageRoute<void>(
+              builder: (_) => const _OnboardingCustomSettingsWrapper(),
+            ),
+          );
+          if (context.mounted) {
+            await navigation.nextPage();
+          }
+        } else {
+          isProcessing.value = false;
           await navigation.nextPage();
         }
-      } else {
-        await navigation.nextPage();
+      } on Exception catch (_) {
+        if (context.mounted) {
+          isProcessing.value = false;
+          hasSaveError.value = true;
+        }
       }
     }
 
@@ -192,7 +196,9 @@ class const _NewUserNotificationSettingsStepPage({
   }
 }
 
-class const _OnboardingCustomSettingsWrapper() extends StatelessWidget {
+class _OnboardingCustomSettingsWrapper extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return const NotificationSettingsPage();

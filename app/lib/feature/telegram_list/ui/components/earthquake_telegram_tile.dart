@@ -8,7 +8,6 @@ import 'package:eqmonitor/feature/telegram_list/data/model/telegram_item.dart';
 import 'package:eqmonitor/feature/telegram_list/data/repository/earthquake_body_diff_calculator.dart';
 import 'package:eqmonitor/feature/telegram_list/ui/components/hypocenter_summary.dart';
 import 'package:eqmonitor/feature/telegram_list/ui/components/intensity_region_list.dart';
-import 'package:eqmonitor/feature/telegram_list/ui/components/lpgm_intensity_region_list.dart';
 import 'package:extensions/extensions.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -17,23 +16,31 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 ///
 /// VXSE51〜53, VXSE61, VXSE62 の電文タイプに応じて
 /// 震源サマリや震度地域リストの表示を切り替える。
-class const EarthquakeTelegramTile({
+class EarthquakeTelegramTile extends ConsumerWidget {
+  const new({
+    required this.telegram,
+    required this.body,
+    required this.sequenceNumber,
+    this.previousBody,
+    this.comments,
+    super.key,
+  });
+
   /// 電文メタ情報
-  required final TelegramItem telegram,
-
-  /// 地震情報本文（EARTHQUAKE 型）
-  required final EarthquakeTelegramBodyModel body,
-
-  /// 報番号（1-based、1 = 初報）
-  required final int sequenceNumber,
-
-  /// 前報の本文（差分表示用、初報の場合は null）
-  final EarthquakeTelegramBodyModel? previousBody,
+  final TelegramItem telegram;
 
   /// 電文コメント
-  final TelegramCommentsModel? comments,
-  super.key,
-}) extends ConsumerWidget {
+  final TelegramCommentsModel? comments;
+
+  /// 地震情報本文（EARTHQUAKE 型）
+  final EarthquakeTelegramBodyModel body;
+
+  /// 報番号（1-based、1 = 初報）
+  final int sequenceNumber;
+
+  /// 前報の本文（差分表示用、初報の場合は null）
+  final EarthquakeTelegramBodyModel? previousBody;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
@@ -43,12 +50,14 @@ class const EarthquakeTelegramTile({
     final currentRegions = switch (telegram.type) {
       .vxse51 => body.intensityRegions,
       .vxse53 => body.intensityCities ?? body.intensityRegions,
+      .vxse62 => body.intensityRegions,
       _ => null,
     };
     final previousRegions = switch (telegram.type) {
       .vxse51 => previousBody?.intensityRegions,
       .vxse53 =>
         previousBody?.intensityCities ?? previousBody?.intensityRegions,
+      .vxse62 => previousBody?.intensityRegions,
       _ => null,
     };
     final intensityPrefectures = body.intensityPrefectures;
@@ -122,7 +131,6 @@ class const EarthquakeTelegramTile({
             _EarthquakeTelegramTileContent(
               telegramType: telegram.type,
               body: body,
-              previousBody: previousBody,
               regionDiff: regionDiff,
               hypocenterDiff: hypocenterDiff,
               prefectureMap: prefectureMap,
@@ -151,14 +159,21 @@ class const EarthquakeTelegramTile({
   }
 }
 
-class const _EarthquakeTelegramTileContent({
-  required final TelegramType telegramType,
-  required final EarthquakeTelegramBodyModel body,
-  required final EarthquakeTelegramBodyModel? previousBody,
-  required final List<IntensityRegionDiffEntry>? regionDiff,
-  required final HypocenterDiff? hypocenterDiff,
-  required final Map<String, String>? prefectureMap,
-}) extends StatelessWidget {
+class _EarthquakeTelegramTileContent extends StatelessWidget {
+  const new({
+    required this.telegramType,
+    required this.body,
+    required this.regionDiff,
+    required this.hypocenterDiff,
+    required this.prefectureMap,
+  });
+
+  final TelegramType telegramType;
+  final EarthquakeTelegramBodyModel body;
+  final List<IntensityRegionDiffEntry>? regionDiff;
+  final HypocenterDiff? hypocenterDiff;
+  final Map<String, String>? prefectureMap;
+
   @override
   Widget build(BuildContext context) {
     final quake = body.quake;
@@ -195,11 +210,9 @@ class const _EarthquakeTelegramTileContent({
         children: [
           if (quake != null)
             HypocenterSummary(quake: quake, diff: hypocenterDiff),
-          if (body.intensityRegions case final regions?)
-            LpgmIntensityRegionList(
-              regions: regions,
-              previousRegions: previousBody?.intensityRegions,
-            ),
+          if (quake != null && regionDiff != null) const SizedBox(height: 8),
+          if (regionDiff case final entries?)
+            IntensityRegionList(entries: entries),
         ],
       ),
       _ => const SizedBox.shrink(),

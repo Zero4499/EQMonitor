@@ -25,12 +25,15 @@ Future<DeviceProvisioningRepository> deviceProvisioningRepository(
   );
 }
 
-class DeviceProvisioningRepository({
-  required SharedPreferencesDataSource dataSource,
-  required SharedPreferencesWorkflowPersistence persistence,
-}) {
-  final SharedPreferencesDataSource _dataSource = dataSource;
-  final SharedPreferencesWorkflowPersistence _persistence = persistence;
+class DeviceProvisioningRepository {
+  new({
+    required SharedPreferencesDataSource dataSource,
+    required SharedPreferencesWorkflowPersistence persistence,
+  }) : _dataSource = dataSource,
+       _persistence = persistence;
+
+  final SharedPreferencesDataSource _dataSource;
+  final SharedPreferencesWorkflowPersistence _persistence;
 
   Future<bool> isProvisioned() async =>
       await _dataSource.getBool(key: SharedPreferencesKey.deviceProvisioned) ??

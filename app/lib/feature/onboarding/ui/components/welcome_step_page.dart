@@ -1,8 +1,10 @@
 part of '../page/onboarding_page.dart';
 
-class const _WelcomeStepPage({
-  required final _OnboardingStepNavigation navigation,
-}) extends HookConsumerWidget {
+class _WelcomeStepPage extends HookConsumerWidget {
+  const new({required this.navigation});
+
+  final _OnboardingStepNavigation navigation;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final designSystem = context.designSystem;
@@ -12,7 +14,10 @@ class const _WelcomeStepPage({
     );
     final isProvisioned =
         deviceProvisioningStatus.value == .notRequired ||
-        deviceProvisioningMutation is MutationSuccess;
+        deviceProvisioningMutation is MutationSuccess ||
+        // デバイス登録が拒否された環境（自前ビルド・App Check 未登録など）でも
+        // オンボーディングを進められるようにする。失敗内容は下のカードに残す。
+        deviceProvisioningMutation is MutationError;
     final isRegisteringDevice = deviceProvisioningMutation is MutationPending;
     final isProcessing =
         deviceProvisioningStatus.isLoading || isRegisteringDevice;
@@ -183,10 +188,12 @@ class const DeviceProvisioningErrorMessage() {
 }
 
 /// デバイス登録に失敗したことを画面上に残し、再試行の導線を提供するカード。
-class const _DeviceProvisioningFailureCard({
-  required final String message,
-  required final VoidCallback onRetry,
-}) extends StatelessWidget {
+class _DeviceProvisioningFailureCard extends StatelessWidget {
+  const new({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

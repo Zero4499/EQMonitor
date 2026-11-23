@@ -23,30 +23,24 @@ Future<DeviceRepository> deviceRepository(Ref ref) async => DeviceRepository(
   apnsEnvironment: ref.watch(apnsEnvironmentProvider),
 );
 
-class DeviceRepository({
-  required api.ApiClient api,
-  required DeviceAuthRepository authRepository,
-  required api.ApnsEnvironment apnsEnvironment,
-}) {
-  final api.ApiClient _api = api;
-  final DeviceAuthRepository _authRepository = authRepository;
-  final api.ApnsEnvironment _apnsEnvironment = apnsEnvironment;
+class DeviceRepository {
+  new({
+    required api.ApiClient api,
+    required DeviceAuthRepository authRepository,
+    required api.ApnsEnvironment apnsEnvironment,
+  }) : _api = api,
+       _authRepository = authRepository,
+       _apnsEnvironment = apnsEnvironment;
+
+  final api.ApiClient _api;
+  final DeviceAuthRepository _authRepository;
+  final api.ApnsEnvironment _apnsEnvironment;
 
   Future<Result<RegisteredDevice, Exception>> getDevice() =>
       Result.capture(() async {
         final response = await _api.device.getV2DeviceMe();
         return response.data.toRegisteredDevice;
       });
-
-  Future<Result<RegisteredDevice, Exception>> updateLocale({
-    required DeviceLocale locale,
-  }) => Result.capture(() async {
-    await _api.device.patchV2DeviceMeLocale(
-      body: api.DeviceLocaleUpdateRequest(locale: locale.toDeviceLocale),
-    );
-    final response = await _api.device.getV2DeviceMe();
-    return response.data.toRegisteredDevice;
-  });
 
   /// このデバイスのロールを取得する。
   ///

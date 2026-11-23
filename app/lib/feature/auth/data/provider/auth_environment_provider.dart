@@ -8,11 +8,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'auth_environment_provider.g.dart';
 
-enum AuthEnvironment({
-  required final Flavor flavor,
-  required final String appIdSuffix,
-  required final String baseUrl,
-}) {
+enum AuthEnvironment {
   develop(
     flavor: Flavor.dev,
     appIdSuffix: '.dev',
@@ -23,6 +19,16 @@ enum AuthEnvironment({
     appIdSuffix: '',
     baseUrl: 'https://v2.api.eqmonitor.app',
   );
+
+  new({
+    required this.flavor,
+    required this.appIdSuffix,
+    required this.baseUrl,
+  });
+
+  final Flavor flavor;
+  final String appIdSuffix;
+  final String baseUrl;
 
   Uri get appleAndroidCallbackUri =>
       Uri.parse('$baseUrl/api/auth/apple/android/callback');

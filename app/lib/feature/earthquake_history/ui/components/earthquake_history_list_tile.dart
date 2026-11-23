@@ -6,7 +6,6 @@ import 'package:eqmonitor/core/theme/model/intensity_colors.dart';
 import 'package:eqmonitor/core/util/date_time_format.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_depth.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_history_parameter.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_magnitude.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_partial.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_type.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/earthquake_type_icon.dart';
@@ -16,21 +15,37 @@ import 'package:extensions/extensions.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EarthquakeHistoryListTile({
-  required final EarthquakePartial item,
-  required final EarthquakeHistoryParameter searchParameter,
-  final void Function()? onTap,
-  final bool showBackgroundColor = true,
-  final double intensityIconSize = 40.0,
-  final Color? titleTextColor,
-  final Color? descriptionTextColor,
-  final Color? magnitudeTextColor,
-  final VisualDensity? visualDensity,
-  final bool dense = false,
-  final EdgeInsets? contentPadding,
-  final bool showCurrentLocationIntensity = false,
-  super.key,
-}) extends StatelessWidget {
+class EarthquakeHistoryListTile extends StatelessWidget {
+  const new({
+    required this.item,
+    required this.searchParameter,
+    this.onTap,
+    this.showBackgroundColor = true,
+    this.intensityIconSize = 40.0,
+    this.titleTextColor,
+    this.descriptionTextColor,
+    this.magnitudeTextColor,
+    this.visualDensity,
+    this.dense = false,
+    this.contentPadding,
+    this.showCurrentLocationIntensity = false,
+    super.key,
+  });
+
+  final EarthquakePartial item;
+  final EarthquakeHistoryParameter searchParameter;
+
+  final void Function()? onTap;
+  final bool showBackgroundColor;
+  final double intensityIconSize;
+  final Color? titleTextColor;
+  final Color? descriptionTextColor;
+  final Color? magnitudeTextColor;
+  final VisualDensity? visualDensity;
+  final bool dense;
+  final EdgeInsets? contentPadding;
+  final bool showCurrentLocationIntensity;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -98,11 +113,6 @@ class const EarthquakeHistoryListTile({
         crossAxisAlignment: .start,
         mainAxisSize: .min,
         children: [
-          if (earthquake.earthquakeType == EarthquakeType.volcano)
-            Text(
-              '大規模な火山の噴火',
-              style: TextStyle(color: descriptionTextColor),
-            ),
           Text.rich(
             TextSpan(
               children: [
@@ -171,10 +181,7 @@ class const EarthquakeHistoryListTile({
         ),
         EarthquakeType.normal => null,
       },
-      trailing: switch ((earthquake.earthquakeType, magnitude)) {
-        (.volcano, null || EarthquakeMagnitudeUnknown()) => null,
-        _ => MagnitudeText(magnitude: magnitude, color: magnitudeTextColor),
-      },
+      trailing: MagnitudeText(magnitude: magnitude, color: magnitudeTextColor),
       dense: dense,
       contentPadding: contentPadding,
     );
@@ -183,11 +190,17 @@ class const EarthquakeHistoryListTile({
 
 /// 検索対象地域の震度情報を表示する小さなチップ。
 /// 対象範囲の観測震度を、その震度の色で塗りつぶして表示する。
-class const _AreaIntensityChip({
-  required final String label,
-  required final JmaIntensity intensity,
-  required final IntensityColors intensityColors,
-}) extends StatelessWidget {
+class _AreaIntensityChip extends StatelessWidget {
+  const new({
+    required this.label,
+    required this.intensity,
+    required this.intensityColors,
+  });
+
+  final String label;
+  final JmaIntensity intensity;
+  final IntensityColors intensityColors;
+
   @override
   Widget build(BuildContext context) {
     final entry = intensityColors.fromJmaIntensity(intensity);

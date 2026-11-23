@@ -1,5 +1,5 @@
+import 'package:eqmonitor/feature/earthquake_history/data/model/coordinate.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake.dart';
-import 'package:eqmonitor/feature/earthquake_history/data/model/earthquake_history_hypocenter_point.dart';
 import 'package:eqmonitor/feature/earthquake_history/data/model/shindo_db_intensity_tree.dart';
 import 'package:jma_map/jma_map.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -21,7 +21,6 @@ class const EarthquakeHistoryMapBoundsCalculator() {
   List<EarthquakeHistoryMapPoint> calculate({
     required Earthquake earthquake,
     required JmaMap_JmaMapData? regionMap,
-    required List<EarthquakeHistoryHypocenterPoint> hypocenterPoints,
     ShindoDbIntensityTree? dbTree,
   }) {
     final stationPoints = dbTree == null
@@ -32,11 +31,8 @@ class const EarthquakeHistoryMapBoundsCalculator() {
         : regionMap == null
         ? const <EarthquakeHistoryMapPoint>[]
         : regionBoundsPoints(earthquake: earthquake, regionMap: regionMap);
-    return [
-      ...intensityPoints,
-      for (final point in hypocenterPoints)
-        (latitude: point.latitude, longitude: point.longitude),
-    ];
+    final hypocenter = hypocenterPoint(earthquake);
+    return [...intensityPoints, if (hypocenter != null) hypocenter];
   }
 
   bool requiresRegionMap({
@@ -116,4 +112,13 @@ class const EarthquakeHistoryMapBoundsCalculator() {
           ),
     ];
   }
+
+  EarthquakeHistoryMapPoint? hypocenterPoint(Earthquake earthquake) =>
+      switch (earthquake.hypocenter?.coordinates) {
+        CoordinateLatLng(:final latitude, :final longitude) => (
+          latitude: latitude,
+          longitude: longitude,
+        ),
+        _ => null,
+      };
 }

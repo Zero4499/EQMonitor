@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$EarthquakeTelegramBodyIntensityRegionModel {
 
- String get code; String get name; JmaIntensity? get intensity; JmaLpgmIntensity? get lpgmIntensity;
+ String get code; String get name; JmaIntensity? get intensity;
 /// Create a copy of EarthquakeTelegramBodyIntensityRegionModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -26,16 +26,16 @@ $EarthquakeTelegramBodyIntensityRegionModelCopyWith<EarthquakeTelegramBodyIntens
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarthquakeTelegramBodyIntensityRegionModel&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.intensity, intensity) || other.intensity == intensity)&&(identical(other.lpgmIntensity, lpgmIntensity) || other.lpgmIntensity == lpgmIntensity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is EarthquakeTelegramBodyIntensityRegionModel&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.intensity, intensity) || other.intensity == intensity));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,code,name,intensity,lpgmIntensity);
+int get hashCode => Object.hash(runtimeType,code,name,intensity);
 
 @override
 String toString() {
-  return 'EarthquakeTelegramBodyIntensityRegionModel(code: $code, name: $name, intensity: $intensity, lpgmIntensity: $lpgmIntensity)';
+  return 'EarthquakeTelegramBodyIntensityRegionModel(code: $code, name: $name, intensity: $intensity)';
 }
 
 
@@ -46,7 +46,7 @@ abstract mixin class $EarthquakeTelegramBodyIntensityRegionModelCopyWith<$Res>  
   factory $EarthquakeTelegramBodyIntensityRegionModelCopyWith(EarthquakeTelegramBodyIntensityRegionModel value, $Res Function(EarthquakeTelegramBodyIntensityRegionModel) _then) = _$EarthquakeTelegramBodyIntensityRegionModelCopyWithImpl;
 @useResult
 $Res call({
- String code, String name, JmaIntensity? intensity, JmaLpgmIntensity? lpgmIntensity
+ String code, String name, JmaIntensity? intensity
 });
 
 
@@ -63,13 +63,12 @@ class _$EarthquakeTelegramBodyIntensityRegionModelCopyWithImpl<$Res>
 
 /// Create a copy of EarthquakeTelegramBodyIntensityRegionModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? code = null,Object? name = null,Object? intensity = freezed,Object? lpgmIntensity = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? code = null,Object? name = null,Object? intensity = freezed,}) {
   return _then(EarthquakeTelegramBodyIntensityRegionModel(
 code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,intensity: freezed == intensity ? _self.intensity : intensity // ignore: cast_nullable_to_non_nullable
-as JmaIntensity?,lpgmIntensity: freezed == lpgmIntensity ? _self.lpgmIntensity : lpgmIntensity // ignore: cast_nullable_to_non_nullable
-as JmaLpgmIntensity?,
+as JmaIntensity?,
   ));
 }
 
@@ -154,10 +153,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String code,  String name,  JmaIntensity? intensity,  JmaLpgmIntensity? lpgmIntensity)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String code,  String name,  JmaIntensity? intensity)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _EarthquakeTelegramBodyIntensityRegionModel() when $default != null:
-return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case _:
+return $default(_that.code,_that.name,_that.intensity);case _:
   return orElse();
 
 }
@@ -175,10 +174,10 @@ return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String code,  String name,  JmaIntensity? intensity,  JmaLpgmIntensity? lpgmIntensity)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String code,  String name,  JmaIntensity? intensity)  $default,) {final _that = this;
 switch (_that) {
 case _EarthquakeTelegramBodyIntensityRegionModel():
-return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case _:
+return $default(_that.code,_that.name,_that.intensity);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +194,10 @@ return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case 
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String code,  String name,  JmaIntensity? intensity,  JmaLpgmIntensity? lpgmIntensity)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String code,  String name,  JmaIntensity? intensity)?  $default,) {final _that = this;
 switch (_that) {
 case _EarthquakeTelegramBodyIntensityRegionModel() when $default != null:
-return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case _:
+return $default(_that.code,_that.name,_that.intensity);case _:
   return null;
 
 }
@@ -210,13 +209,12 @@ return $default(_that.code,_that.name,_that.intensity,_that.lpgmIntensity);case 
 
 
 class _EarthquakeTelegramBodyIntensityRegionModel implements EarthquakeTelegramBodyIntensityRegionModel {
-  const _EarthquakeTelegramBodyIntensityRegionModel({required this.code, required this.name, this.intensity, this.lpgmIntensity});
+  const _EarthquakeTelegramBodyIntensityRegionModel({required this.code, required this.name, this.intensity});
   
 
 @override final  String code;
 @override final  String name;
 @override final  JmaIntensity? intensity;
-@override final  JmaLpgmIntensity? lpgmIntensity;
 
 /// Create a copy of EarthquakeTelegramBodyIntensityRegionModel
 /// with the given fields replaced by the non-null parameter values.
@@ -228,16 +226,16 @@ _$EarthquakeTelegramBodyIntensityRegionModelCopyWith<_EarthquakeTelegramBodyInte
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarthquakeTelegramBodyIntensityRegionModel&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.intensity, intensity) || other.intensity == intensity)&&(identical(other.lpgmIntensity, lpgmIntensity) || other.lpgmIntensity == lpgmIntensity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _EarthquakeTelegramBodyIntensityRegionModel&&(identical(other.code, code) || other.code == code)&&(identical(other.name, name) || other.name == name)&&(identical(other.intensity, intensity) || other.intensity == intensity));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,code,name,intensity,lpgmIntensity);
+int get hashCode => Object.hash(runtimeType,code,name,intensity);
 
 @override
 String toString() {
-  return 'EarthquakeTelegramBodyIntensityRegionModel(code: $code, name: $name, intensity: $intensity, lpgmIntensity: $lpgmIntensity)';
+  return 'EarthquakeTelegramBodyIntensityRegionModel(code: $code, name: $name, intensity: $intensity)';
 }
 
 
@@ -248,7 +246,7 @@ abstract mixin class _$EarthquakeTelegramBodyIntensityRegionModelCopyWith<$Res> 
   factory _$EarthquakeTelegramBodyIntensityRegionModelCopyWith(_EarthquakeTelegramBodyIntensityRegionModel value, $Res Function(_EarthquakeTelegramBodyIntensityRegionModel) _then) = __$EarthquakeTelegramBodyIntensityRegionModelCopyWithImpl;
 @override @useResult
 $Res call({
- String code, String name, JmaIntensity? intensity, JmaLpgmIntensity? lpgmIntensity
+ String code, String name, JmaIntensity? intensity
 });
 
 
@@ -265,13 +263,12 @@ class __$EarthquakeTelegramBodyIntensityRegionModelCopyWithImpl<$Res>
 
 /// Create a copy of EarthquakeTelegramBodyIntensityRegionModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? code = null,Object? name = null,Object? intensity = freezed,Object? lpgmIntensity = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? code = null,Object? name = null,Object? intensity = freezed,}) {
   return _then(_EarthquakeTelegramBodyIntensityRegionModel(
 code: null == code ? _self.code : code // ignore: cast_nullable_to_non_nullable
 as String,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
 as String,intensity: freezed == intensity ? _self.intensity : intensity // ignore: cast_nullable_to_non_nullable
-as JmaIntensity?,lpgmIntensity: freezed == lpgmIntensity ? _self.lpgmIntensity : lpgmIntensity // ignore: cast_nullable_to_non_nullable
-as JmaLpgmIntensity?,
+as JmaIntensity?,
   ));
 }
 

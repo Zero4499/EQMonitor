@@ -1,7 +1,9 @@
 import 'package:material_ui/material_ui.dart';
 import 'package:m3e_core/m3e_core.dart';
 
-class const EewHistoryNoticeDialog({super.key}) extends StatelessWidget {
+class EewHistoryNoticeDialog extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(

@@ -11,7 +11,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugHttpCachePage({super.key}) extends HookConsumerWidget {
+class DebugHttpCachePage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final entriesAsync = ref.watch(debugHttpCacheEntriesProvider);
@@ -95,10 +97,15 @@ class const DebugHttpCachePage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _HttpCacheHeader({
-  required final String totalSizeLabel,
-  required final int entryCount,
-}) extends StatelessWidget {
+class _HttpCacheHeader extends StatelessWidget {
+  const new({
+    required this.totalSizeLabel,
+    required this.entryCount,
+  });
+
+  final String totalSizeLabel;
+  final int entryCount;
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -111,11 +118,17 @@ class const _HttpCacheHeader({
   }
 }
 
-class const _HttpCacheEntryTile({
-  required final HttpCacheEntrySummary entry,
-  required final ByteSizeFormatter formatter,
-  required final HttpCacheKeyDisplay keyDisplay,
-}) extends HookConsumerWidget {
+class _HttpCacheEntryTile extends HookConsumerWidget {
+  const new({
+    required this.entry,
+    required this.formatter,
+    required this.keyDisplay,
+  });
+
+  final HttpCacheEntrySummary entry;
+  final ByteSizeFormatter formatter;
+  final HttpCacheKeyDisplay keyDisplay;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final expanded = useState(false);

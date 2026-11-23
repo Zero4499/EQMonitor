@@ -17,12 +17,15 @@ abstract interface class HypocenterArchiveEventRepository {
   });
 }
 
-class const HypocenterAnalysisRepository({
-  required api.HypocentersApiClient client,
-  Talker? logger,
-}) implements HypocenterArchiveEventRepository {
-  final api.HypocentersApiClient _client = client;
-  final Talker? _logger = logger;
+class HypocenterAnalysisRepository implements HypocenterArchiveEventRepository {
+  const new({
+    required api.HypocentersApiClient client,
+    Talker? logger,
+  }) : _client = client,
+       _logger = logger;
+
+  final api.HypocentersApiClient _client;
+  final Talker? _logger;
 
   @override
   Future<Result<List<SeismicityEvent>, HypocenterApiException>> fetchArchive({

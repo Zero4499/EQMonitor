@@ -2,8 +2,9 @@ import 'package:eqmonitor/feature/earthquake_history/ui/components/estimated_int
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EstimatedIntensityNoticeDialog({super.key})
-    extends StatelessWidget {
+class EstimatedIntensityNoticeDialog extends StatelessWidget {
+  const new({super.key});
+
   static Future<void> show(BuildContext context) => showDialog<void>(
     context: context,
     builder: (context) => const EstimatedIntensityNoticeDialog(),
@@ -19,7 +20,9 @@ class const EstimatedIntensityNoticeDialog({super.key})
   }
 }
 
-class const _OkButton() extends StatelessWidget {
+class _OkButton extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return M3ETextButton(

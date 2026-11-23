@@ -1,8 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const DioExceptionText({required final DioException exception, super.key})
-    extends StatelessWidget {
+class DioExceptionText extends StatelessWidget {
+  const new({required this.exception, super.key});
+
+  final DioException exception;
+
   @override
   Widget build(BuildContext context) {
     final text = switch (exception.type) {

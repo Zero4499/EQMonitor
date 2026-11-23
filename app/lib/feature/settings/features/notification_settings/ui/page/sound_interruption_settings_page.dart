@@ -16,8 +16,9 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const SoundInterruptionSettingsPage({super.key})
-    extends HookConsumerWidget {
+class SoundInterruptionSettingsPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eewSettings = ref.watch(eewGlobalSettingsProvider).value;
@@ -152,16 +153,25 @@ class const SoundInterruptionSettingsPage({super.key})
   }
 }
 
-class const _SoundInterruptionCard({
-  required final NotificationKind kind,
-  required final String sound,
-  required final InterruptionLevel interruptionLevel,
-  required final bool collapseNotification,
-  required final Future<void> Function(String) onSoundChanged,
-  required final Future<void> Function(InterruptionLevel)
-  onInterruptionLevelChanged,
-  required final Future<void> Function({required bool value}) onCollapseChanged,
-}) extends StatelessWidget {
+class _SoundInterruptionCard extends StatelessWidget {
+  const new({
+    required this.kind,
+    required this.sound,
+    required this.interruptionLevel,
+    required this.collapseNotification,
+    required this.onSoundChanged,
+    required this.onInterruptionLevelChanged,
+    required this.onCollapseChanged,
+  });
+
+  final NotificationKind kind;
+  final String sound;
+  final InterruptionLevel interruptionLevel;
+  final bool collapseNotification;
+  final Future<void> Function(String) onSoundChanged;
+  final Future<void> Function(InterruptionLevel) onInterruptionLevelChanged;
+  final Future<void> Function({required bool value}) onCollapseChanged;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

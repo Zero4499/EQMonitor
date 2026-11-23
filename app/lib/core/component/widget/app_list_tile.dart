@@ -2,17 +2,7 @@ import 'package:eqmonitor/core/component/widget/app_switch.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const AppListTile._({
-  required final String title,
-  required final String subtitle,
-  // ignore: library_private_types_in_public_api
-  required final _AppListTileType type,
-  final bool? value,
-  // ignore: avoid_positional_boolean_parameters
-  final void Function(bool)? onChanged,
-  final void Function()? onTap,
-  final Widget? trailing,
-}) extends StatelessWidget {
+class AppListTile extends StatelessWidget {
   factory switchListTile({
     required String title,
     required String subtitle,
@@ -41,6 +31,26 @@ class const AppListTile._({
     onTap: onTap,
     type: _AppListTileType.listTile,
   );
+
+  const new _({
+    required this.title,
+    required this.subtitle,
+    required this.type,
+    this.value,
+    this.onChanged,
+    this.onTap,
+    this.trailing,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool? value;
+  // ignore: avoid_positional_boolean_parameters
+  final void Function(bool)? onChanged;
+  final void Function()? onTap;
+  final Widget? trailing;
+  // ignore: library_private_types_in_public_api
+  final _AppListTileType type;
 
   @override
   Widget build(BuildContext context) {

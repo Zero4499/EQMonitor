@@ -13,22 +13,26 @@ class const EewWarningOverlayRenderPolicy() {
     required AppLifecycleState lifecycle,
     required EewWarningOverlayMode mode,
     required bool hasDisplayModel,
+    required bool liveMonitorActive,
   }) {
     return lifecycle == AppLifecycleState.resumed &&
         mode != EewWarningOverlayMode.hidden &&
-        hasDisplayModel;
+        hasDisplayModel &&
+        !liveMonitorActive;
   }
 
   bool shouldInterceptBack({
     required AppLifecycleState lifecycle,
     required EewWarningOverlayMode mode,
     required bool hasDisplayModel,
+    required bool liveMonitorActive,
   }) {
     return mode == EewWarningOverlayMode.fullscreen &&
         shouldRender(
           lifecycle: lifecycle,
           mode: mode,
           hasDisplayModel: hasDisplayModel,
+          liveMonitorActive: liveMonitorActive,
         );
   }
 }

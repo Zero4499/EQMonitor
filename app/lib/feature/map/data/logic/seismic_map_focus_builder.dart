@@ -11,8 +11,7 @@ const seismicMapFocusMargin = 0.1;
 /// EEW は震源1点しか対象を持たないため、余白のみでは bounds が極小になり
 /// [mapAutomaticFocusMaxZoom] に張り付いて過度に寄った表示になる。
 /// 中心から最低この半径ぶんは映るように bounds を広げる。
-/// 震源の周辺だけでなく、揺れが広がる範囲まで一度に見渡せる広さにしている。
-const seismicMapFocusMinimumRadiusKm = 150.0;
+const seismicMapFocusMinimumRadiusKm = 50.0;
 
 const _kilometersPerLatitudeDegree = 111.32;
 
@@ -55,6 +54,9 @@ class const SeismicMapFocusBuilder() {
   static Iterable<SeismicMapGeoCoordinate> shakeTargetCoordinates(
     ShakeDetectionEvent shake,
   ) sync* {
+    if (shake.correlatedEewEventId != null) {
+      return;
+    }
     final minimum = seismicMapGeoCoordinate(
       latitude: shake.minLat,
       longitude: shake.minLng,

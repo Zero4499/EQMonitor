@@ -16,7 +16,6 @@ final class const HomeRegionSelectionAction() {
         title: '指定地域を選択',
         initialSelection: converter.initial(initialParameter),
         allowEmpty: true,
-        hierarchical: true,
       ),
     ).push<List<RegionOption>>(context);
     return selected == null ? null : converter.parameter(selected.firstOrNull);

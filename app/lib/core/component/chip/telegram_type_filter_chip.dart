@@ -4,11 +4,12 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const TelegramTypeFilterChip({
-  final List<EarthquakeTelegramType>? telegramTypes,
-  final ValueChanged<List<EarthquakeTelegramType>?>? onChanged,
-  super.key,
-}) extends StatelessWidget {
+class TelegramTypeFilterChip extends StatelessWidget {
+  const new({this.telegramTypes, this.onChanged, super.key});
+
+  final List<EarthquakeTelegramType>? telegramTypes;
+  final ValueChanged<List<EarthquakeTelegramType>?>? onChanged;
+
   @override
   Widget build(BuildContext context) {
     final telegramTypes = this.telegramTypes;
@@ -58,9 +59,11 @@ class const TelegramTypeFilterChip({
   }
 }
 
-class const _TelegramTypeFilterModal({
-  final List<EarthquakeTelegramType>? current,
-}) extends HookWidget {
+class _TelegramTypeFilterModal extends HookWidget {
+  const new({this.current});
+
+  final List<EarthquakeTelegramType>? current;
+
   @override
   Widget build(BuildContext context) {
     final selected = useState<Set<EarthquakeTelegramType>>(

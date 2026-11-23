@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
-import 'package:eqmonitor/core/data/network/native_dio_factory.dart';
 import 'package:eqmonitor/core/foundation/result.dart';
 import 'package:eqmonitor/core/provider/dio_base_options.dart';
 import 'package:eqmonitor/core/provider/telegram_url/provider/telegram_url_provider.dart';
@@ -22,25 +21,31 @@ Future<BetterAuthApiClient> betterAuthApiClient(Ref ref) async {
   final sessionRepository = await ref.watch(
     betterAuthSessionRepositoryProvider.future,
   );
-  final dio = const NativeDioFactory().build(
-    options: DioBaseOptionsFactory.build(baseUrl: telegramUrl.restApiUrl),
-  );
-  ref.onDispose(() => dio.close(force: true));
   return BetterAuthApiClient(
-    dio: dio,
+    dio: Dio(
+      DioBaseOptionsFactory.build(baseUrl: telegramUrl.restApiUrl),
+    ),
     sessionRepository: sessionRepository,
     cookieJar: CookieJar(),
   );
 }
 
-final class BetterAuthApiClient({
-  required Dio dio,
-  required BetterAuthSessionRepository sessionRepository,
-  required CookieJar cookieJar,
-  CookieJar Function()? createCookieJar,
-  BetterAuthSessionEstablishmentGate? establishmentGate,
-}) {
-  this {
+final class BetterAuthApiClient {
+  new({
+    required Dio dio,
+    required BetterAuthSessionRepository sessionRepository,
+    required CookieJar cookieJar,
+    CookieJar Function()? createCookieJar,
+    BetterAuthSessionEstablishmentGate? establishmentGate,
+  }) : _dio = dio,
+       _sessionRepository = sessionRepository,
+       _cookieStore = BetterAuthCookieStore(
+         initialCookieJar: cookieJar,
+         createCookieJar:
+             createCookieJar ?? const BetterAuthCookieJarFactory().create,
+       ),
+       _establishmentGate =
+           establishmentGate ?? BetterAuthSessionEstablishmentGate() {
     _establishmentFactory = _BetterAuthSessionEstablishmentFactory(
       dio: _dio,
       sessionRepository: _sessionRepository,
@@ -60,15 +65,10 @@ final class BetterAuthApiClient({
     ]);
   }
 
-  final Dio _dio = dio;
-  final BetterAuthSessionRepository _sessionRepository = sessionRepository;
-  final BetterAuthCookieStore _cookieStore = BetterAuthCookieStore(
-    initialCookieJar: cookieJar,
-    createCookieJar:
-        createCookieJar ?? const BetterAuthCookieJarFactory().create,
-  );
-  final BetterAuthSessionEstablishmentGate _establishmentGate =
-      establishmentGate ?? BetterAuthSessionEstablishmentGate();
+  final Dio _dio;
+  final BetterAuthSessionRepository _sessionRepository;
+  final BetterAuthCookieStore _cookieStore;
+  final BetterAuthSessionEstablishmentGate _establishmentGate;
   late final _BetterAuthSessionEstablishmentFactory _establishmentFactory;
   late final _BetterAuthPasskeyClient _passkeyClient;
 
@@ -193,10 +193,14 @@ final class BetterAuthApiClient({
   }
 }
 
-enum _BetterAuthSessionEndpoint(final String path) {
+enum _BetterAuthSessionEndpoint {
   socialSignIn('/api/auth/sign-in/social'),
   passkeyRegistration('/api/auth/passkey/generate-register-options'),
-  passkeyAuthentication('/api/auth/passkey/generate-authenticate-options'),
+  passkeyAuthentication('/api/auth/passkey/generate-authenticate-options');
+
+  new(this.path);
+
+  final String path;
 }
 
 enum _BetterAuthPasskeyCeremonyState {
@@ -236,13 +240,15 @@ final class _BetterAuthPasskeyCeremony {
   }
 }
 
-final class const _BetterAuthPasskeyClient({
-  required Dio dio,
-  required _BetterAuthSessionEstablishmentFactory establishmentFactory,
-}) {
-  final Dio _dio = dio;
-  final _BetterAuthSessionEstablishmentFactory _establishmentFactory =
-      establishmentFactory;
+final class _BetterAuthPasskeyClient {
+  const new({
+    required Dio dio,
+    required _BetterAuthSessionEstablishmentFactory establishmentFactory,
+  }) : _dio = dio,
+       _establishmentFactory = establishmentFactory;
+
+  final Dio _dio;
+  final _BetterAuthSessionEstablishmentFactory _establishmentFactory;
 
   Future<Result<BetterAuthPasskeyRegistrationOperation, AuthFailure>>
   generateRegistrationOptions() async {
@@ -325,16 +331,22 @@ final class const _BetterAuthPasskeyClient({
   }
 }
 
-final class BetterAuthPasskeyRegistrationOperation({
-  required final Map<String, dynamic> options,
-  required Dio dio,
-  required _BetterAuthSessionEstablishment establishment,
-  _BetterAuthPasskeyRegistrationResponseParser? responseParser,
-}) {
-  final Dio _dio = dio;
-  final _BetterAuthSessionEstablishment _establishment = establishment;
-  final _BetterAuthPasskeyRegistrationResponseParser _responseParser =
-      responseParser ?? const _BetterAuthPasskeyRegistrationResponseParser();
+final class BetterAuthPasskeyRegistrationOperation {
+  new({
+    required this.options,
+    required Dio dio,
+    required _BetterAuthSessionEstablishment establishment,
+    _BetterAuthPasskeyRegistrationResponseParser? responseParser,
+  }) : _dio = dio,
+       _establishment = establishment,
+       _responseParser =
+           responseParser ??
+           const _BetterAuthPasskeyRegistrationResponseParser();
+
+  final Map<String, dynamic> options;
+  final Dio _dio;
+  final _BetterAuthSessionEstablishment _establishment;
+  final _BetterAuthPasskeyRegistrationResponseParser _responseParser;
   final _ceremony = _BetterAuthPasskeyCeremony();
 
   Future<Result<void, AuthFailure>> verify({
@@ -393,13 +405,17 @@ final class BetterAuthPasskeyRegistrationOperation({
   }
 }
 
-final class BetterAuthPasskeyAuthenticationOperation({
-  required final Map<String, dynamic> options,
-  required Dio dio,
-  required _BetterAuthSessionEstablishment establishment,
-}) {
-  final Dio _dio = dio;
-  final _BetterAuthSessionEstablishment _establishment = establishment;
+final class BetterAuthPasskeyAuthenticationOperation {
+  new({
+    required this.options,
+    required Dio dio,
+    required _BetterAuthSessionEstablishment establishment,
+  }) : _dio = dio,
+       _establishment = establishment;
+
+  final Map<String, dynamic> options;
+  final Dio _dio;
+  final _BetterAuthSessionEstablishment _establishment;
   final _ceremony = _BetterAuthPasskeyCeremony();
 
   Future<Result<BetterAuthSessionAcceptance, AuthFailure>> verify({
@@ -469,17 +485,21 @@ final class const _BetterAuthPasskeyRegistrationResponseParser() {
   }
 }
 
-final class const _BetterAuthSessionEstablishmentFactory({
-  required Dio dio,
-  required BetterAuthSessionRepository sessionRepository,
-  required BetterAuthCookieStore cookieStore,
-  required BetterAuthSessionEstablishmentGate establishmentGate,
-}) {
-  final Dio _dio = dio;
-  final BetterAuthSessionRepository _sessionRepository = sessionRepository;
-  final BetterAuthCookieStore _cookieStore = cookieStore;
-  final BetterAuthSessionEstablishmentGate _establishmentGate =
-      establishmentGate;
+final class _BetterAuthSessionEstablishmentFactory {
+  const new({
+    required Dio dio,
+    required BetterAuthSessionRepository sessionRepository,
+    required BetterAuthCookieStore cookieStore,
+    required BetterAuthSessionEstablishmentGate establishmentGate,
+  }) : _dio = dio,
+       _sessionRepository = sessionRepository,
+       _cookieStore = cookieStore,
+       _establishmentGate = establishmentGate;
+
+  final Dio _dio;
+  final BetterAuthSessionRepository _sessionRepository;
+  final BetterAuthCookieStore _cookieStore;
+  final BetterAuthSessionEstablishmentGate _establishmentGate;
 
   Future<Result<_BetterAuthSessionEstablishment, AuthFailure>> begin({
     required _BetterAuthSessionEndpoint endpoint,
@@ -718,13 +738,15 @@ final class const _BetterAuthSessionEstablishment({
   }
 }
 
-final class BetterAuthSessionAcceptance({
-  required BetterAuthSessionEstablishmentGate establishmentGate,
-  required int establishmentId,
-}) {
-  final BetterAuthSessionEstablishmentGate _establishmentGate =
-      establishmentGate;
-  final int _establishmentId = establishmentId;
+final class BetterAuthSessionAcceptance {
+  new({
+    required BetterAuthSessionEstablishmentGate establishmentGate,
+    required int establishmentId,
+  }) : _establishmentGate = establishmentGate,
+       _establishmentId = establishmentId;
+
+  final BetterAuthSessionEstablishmentGate _establishmentGate;
+  final int _establishmentId;
   var _released = false;
 
   void release() {
@@ -759,16 +781,17 @@ final class BetterAuthSessionEstablishmentGate {
   }
 }
 
-final class BetterAuthCookieStore({
-  required CookieJar initialCookieJar,
-  required CookieJar Function() createCookieJar,
-}) {
+final class BetterAuthCookieStore {
   static const transactionExtraKey = 'better_auth_cookie_transaction';
 
-  final CookieJar Function() _createCookieJar = createCookieJar;
-  BetterAuthCookieSnapshot _snapshot = BetterAuthCookieSnapshot(
-    cookieJar: initialCookieJar,
-  );
+  new({
+    required CookieJar initialCookieJar,
+    required CookieJar Function() createCookieJar,
+  }) : _createCookieJar = createCookieJar,
+       _snapshot = BetterAuthCookieSnapshot(cookieJar: initialCookieJar);
+
+  final CookieJar Function() _createCookieJar;
+  BetterAuthCookieSnapshot _snapshot;
 
   BetterAuthCookieSnapshot get snapshot => _snapshot;
 
@@ -824,10 +847,14 @@ final class const BetterAuthCookieRequestContext({
   required final int sessionGeneration,
 });
 
-final class BetterAuthCookieInterceptor({
-  required final BetterAuthCookieStore cookieStore,
-  required final BetterAuthSessionRepository sessionRepository,
-}) extends Interceptor {
+final class BetterAuthCookieInterceptor extends Interceptor {
+  new({
+    required this.cookieStore,
+    required this.sessionRepository,
+  });
+
+  final BetterAuthCookieStore cookieStore;
+  final BetterAuthSessionRepository sessionRepository;
   final Expando<BetterAuthCookieRequestContext> _requestContexts = Expando();
 
   @override
@@ -894,9 +921,11 @@ final class BetterAuthCookieInterceptor({
   }
 }
 
-final class BetterAuthSessionInterceptor({
-  required final BetterAuthSessionRepository sessionRepository,
-}) extends Interceptor {
+final class BetterAuthSessionInterceptor extends Interceptor {
+  new({required this.sessionRepository});
+
+  final BetterAuthSessionRepository sessionRepository;
+
   @override
   Future<void> onRequest(
     RequestOptions options,

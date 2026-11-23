@@ -8,7 +8,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const HomeMapLabelLayer({super.key}) extends HookConsumerWidget {
+class HomeMapLabelLayer extends HookConsumerWidget {
+  const new({super.key});
+
   static const _regionLabelLayerId = 'home-map-region-label';
   static const _cityLabelLayerId = 'home-map-city-label';
 

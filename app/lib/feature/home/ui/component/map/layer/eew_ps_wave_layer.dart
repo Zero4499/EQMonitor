@@ -17,10 +17,11 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:latlong2/latlong.dart' as latlong2;
 import 'package:maplibre/maplibre.dart';
 
-class const EewPsWaveLayer({
-  required final List<EewTelegramItem> eews,
-  super.key,
-}) extends ConsumerWidget {
+class EewPsWaveLayer extends ConsumerWidget {
+  const new({required this.eews, super.key});
+
+  final List<EewTelegramItem> eews;
+
   static const ({String pWave, String sWave}) sourceId = (
     pWave: 'eew-p-wave',
     sWave: 'eew-s-wave',
@@ -46,8 +47,11 @@ class const EewPsWaveLayer({
   }
 }
 
-class const _EewPsWaveLayerBody({required final List<EewTelegramItem> eews})
-    extends HookConsumerWidget {
+class _EewPsWaveLayerBody extends HookConsumerWidget {
+  const new({required this.eews});
+
+  final List<EewTelegramItem> eews;
+
   static const _geoJsonUpdater = EewPsWaveLayerGeoJsonUpdater();
 
   @override
@@ -129,7 +133,6 @@ class const _EewPsWaveLayerBody({required final List<EewTelegramItem> eews})
               sourceId: EewPsWaveLayer.sourceId.pWave,
               paint: const {'line-color': '#0000FF', 'line-width': 1},
             ),
-            belowLayerId: BaseLayer.waveLineAnchor.name,
           ),
           styleController.addLayer(
             LineStyleLayer(
@@ -140,7 +143,6 @@ class const _EewPsWaveLayerBody({required final List<EewTelegramItem> eews})
                 'line-width': 2,
               },
             ),
-            belowLayerId: BaseLayer.waveLineAnchor.name,
           ),
           styleController.addLayer(
             FillStyleLayer(

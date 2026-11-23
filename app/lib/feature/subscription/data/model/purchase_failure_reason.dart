@@ -9,7 +9,6 @@ enum PurchaseFailureReason {
   paymentPending,
   restoreNotFound,
   restoreFailed,
-  betaDistribution,
 }
 
 extension PurchaseFailureReasonMessage on PurchaseFailureReason {
@@ -24,6 +23,5 @@ extension PurchaseFailureReasonMessage on PurchaseFailureReason {
       '支払いの完了を待っています。完了すると Pro プランが有効になります。',
     PurchaseFailureReason.restoreNotFound => '復元できる購入が見つかりませんでした',
     PurchaseFailureReason.restoreFailed => '購入の復元に失敗しました',
-    PurchaseFailureReason.betaDistribution => 'ベータ版では EQMonitor Pro を利用できません',
   };
 }

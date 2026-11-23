@@ -2,6 +2,7 @@ import 'package:eqmonitor_api/eqmonitor_api.dart'
     hide
         RealtimeEarthquakeUpsertEvent,
         RealtimeEewUpsertEvent,
+        RealtimeShakeDetectionSnapshotEvent,
         RealtimeTsunamiUpsertEvent,
         RealtimeTsunamiDeleteEvent,
         RealtimeEstimatedIntensityUpsertEvent;
@@ -42,6 +43,11 @@ sealed class RealtimeEvent with _$RealtimeEvent {
     required RealtimeSource source,
     String? groupId,
   }) = RealtimeTsunamiDeleteEvent;
+
+  const factory shakeSnapshot({
+    required RealtimeShakeDetectionSnapshotPayload record,
+    required RealtimeSource source,
+  }) = RealtimeShakeSnapshotEvent;
 
   const factory estimatedIntensityUpsert({
     required String eventId,

@@ -4,8 +4,12 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:cryptography/cryptography.dart';
 import 'package:eqmonitor/feature/asset_pack/data/model/asset_pack_signature.dart';
 
-class AssetPackSignatureVerifier({required Map<String, List<int>> publicKeys}) {
-  this {
+class AssetPackSignatureVerifier {
+  new({required Map<String, List<int>> publicKeys})
+    : publicKeys = Map.unmodifiable({
+        for (final MapEntry(:key, :value) in publicKeys.entries)
+          key: Uint8List.fromList(value),
+      }) {
     if (this.publicKeys.values.any((key) => key.length != 32)) {
       throw ArgumentError.value(
         publicKeys,
@@ -15,10 +19,7 @@ class AssetPackSignatureVerifier({required Map<String, List<int>> publicKeys}) {
     }
   }
 
-  final Map<String, Uint8List> publicKeys = Map.unmodifiable({
-    for (final MapEntry(:key, :value) in publicKeys.entries)
-      key: Uint8List.fromList(value),
-  });
+  final Map<String, Uint8List> publicKeys;
 
   Future<bool> verify({
     required Uint8List content,

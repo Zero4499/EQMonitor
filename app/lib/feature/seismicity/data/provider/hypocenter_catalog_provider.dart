@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:eqmonitor/core/api/api_client_provider.dart';
-import 'package:eqmonitor/core/data/network/native_dio_factory.dart';
 import 'package:eqmonitor/core/foundation/result.dart';
 import 'package:eqmonitor/core/provider/cached_notifier.dart';
 import 'package:eqmonitor/core/provider/log/talker.dart';
@@ -46,25 +45,21 @@ Future<void> hypocenterArchiveAvailable(
   Ref ref,
   HypocenterArchive archive,
 ) async {
-  final dio = const NativeDioFactory().build(
-    options: BaseOptions(
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 10),
-    ),
-  );
-  try {
-    final result = await HypocenterArchiveProbe(dio: dio)
-        .probe(url: archive.url);
-    return switch (result) {
-      Success() => null,
-      Failure(:final exception, :final stackTrace) => Error.throwWithStackTrace(
-        exception,
-        stackTrace ?? StackTrace.current,
+  final result = await HypocenterArchiveProbe(
+    dio: Dio(
+      BaseOptions(
+        connectTimeout: const Duration(seconds: 10),
+        receiveTimeout: const Duration(seconds: 10),
       ),
-    };
-  } finally {
-    dio.close(force: true);
-  }
+    ),
+  ).probe(url: archive.url);
+  return switch (result) {
+    Success() => null,
+    Failure(:final exception, :final stackTrace) => Error.throwWithStackTrace(
+      exception,
+      stackTrace ?? StackTrace.current,
+    ),
+  };
 }
 
 @riverpod
@@ -171,7 +166,9 @@ class HypocenterAnalysisProgressNotifier
 }
 
 /// [HypocenterAnalysis.build] から呼び出す震源分析取得処理をまとめる。
-class const HypocenterAnalysisRunner._() {
+class HypocenterAnalysisRunner {
+  const new _();
+
   static Future<Result<List<SeismicityEvent>, HypocenterApiException>>
   loadArchives({
     required HypocenterAnalysisRequest request,

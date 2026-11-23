@@ -13,8 +13,9 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const DebugNotificationWebhookPage({super.key})
-    extends HookConsumerWidget {
+class DebugNotificationWebhookPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final webhooks = useState<List<DeviceNotificationWebhook>>([]);
@@ -127,8 +128,11 @@ class const DebugNotificationWebhookPage({super.key})
   }
 }
 
-class const _WebhookTile({required final DeviceNotificationWebhook webhook})
-    extends StatelessWidget {
+class _WebhookTile extends StatelessWidget {
+  const new({required this.webhook});
+
+  final DeviceNotificationWebhook webhook;
+
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm:ss');
@@ -170,10 +174,12 @@ class const _WebhookTile({required final DeviceNotificationWebhook webhook})
   }
 }
 
-class const _ErrorBody({
-  required final Exception exception,
-  required final Future<void> Function() onRetry,
-}) extends StatelessWidget {
+class _ErrorBody extends StatelessWidget {
+  const new({required this.exception, required this.onRetry});
+
+  final Exception exception;
+  final Future<void> Function() onRetry;
+
   @override
   Widget build(BuildContext context) {
     return Center(

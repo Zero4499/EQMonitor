@@ -1,5 +1,5 @@
-import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_event.dart';
 import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_level.dart';
+import 'package:eqmonitor_api/eqmonitor_api.dart' as api;
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'shake_detection_grid_cell_builder.g.dart';
@@ -33,35 +33,33 @@ class const ShakeDetectionGridCell({
 
 /// 観測点を 0.25° グリッドに集約し、セルごとの最大レベルを求める
 class ShakeDetectionGridCellBuilder {
-  /// 検知エンジンの `ShakeEventLevel.fromIntensity` と同じ閾値
+  /// バックエンド `getShakeLevelFromIntensity` と同じ閾値
   ShakeDetectionLevel levelFromIntensity(num intensity) => switch (intensity) {
-    >= 5.5 => .stronger,
-    >= 3.5 => .strong,
-    >= 2.5 => .medium,
-    >= 0.5 => .weak,
+    > 4.5 => .stronger,
+    > 2.5 => .strong,
+    > 0.5 => .medium,
+    > -1 => .weak,
     _ => .weaker,
   };
 
   /// 複数イベントの観測点を集約し、レベル昇順（高レベルが末尾＝上）で返す
   List<ShakeDetectionGridCell> buildFromPointGroups({
-    required List<List<ShakeDetectionPoint>> pointGroups,
+    required List<List<api.Points>> pointGroups,
   }) {
     final cells = [for (final points in pointGroups) ...build(points: points)];
     cells.sort((a, b) => a.level.index.compareTo(b.level.index));
     return cells;
   }
 
-  List<ShakeDetectionGridCell> build({
-    required List<ShakeDetectionPoint> points,
-  }) {
+  List<ShakeDetectionGridCell> build({required List<api.Points> points}) {
     if (points.isEmpty) {
       return const [];
     }
 
     final maxByCell = <(int, int), ShakeDetectionLevel>{};
     for (final point in points) {
-      final lat = point.latitude;
-      final lng = point.longitude;
+      final lat = point.location.latitude.toDouble();
+      final lng = point.location.longitude.toDouble();
       final latIndex = (lat / ShakeDetectionGridCell.step).floor();
       final lngIndex = (lng / ShakeDetectionGridCell.step).floor();
       final level = switch (point.intensity) {

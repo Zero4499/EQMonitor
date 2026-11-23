@@ -5,11 +5,16 @@ import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
-class const EarthquakeHistoryControllerCard({
-  super.key,
-  final void Function()? onLocationButtonTap,
-  final void Function()? onDebugButtonTap,
-}) extends StatelessWidget {
+class EarthquakeHistoryControllerCard extends StatelessWidget {
+  const new({
+    super.key,
+    this.onLocationButtonTap,
+    this.onDebugButtonTap,
+  });
+
+  final void Function()? onLocationButtonTap;
+  final void Function()? onDebugButtonTap;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

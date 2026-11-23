@@ -3,9 +3,7 @@ import 'dart:convert';
 import 'package:eqmonitor/core/data/preferences/shared/shared_preferences_data_source.dart';
 import 'package:eqmonitor/core/data/preferences/shared/shared_preferences_key.dart';
 import 'package:eqmonitor/core/provider/environment/environment.dart';
-import 'package:eqmonitor/core/provider/telegram_url/model/api_endpoint_url.dart';
 import 'package:eqmonitor/core/provider/telegram_url/model/telegram_url_model.dart';
-import 'package:riverpod/experimental/mutation.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'telegram_url_provider.g.dart';
@@ -53,12 +51,11 @@ class TelegramUrl extends _$TelegramUrl {
     );
   }
 
-  static final updateMutation = Mutation<void>();
-
   Future<void> updateRestUrl(String url) async {
-    final normalized = const ApiEndpointUrl().normalize(url);
-    final current = await future;
-    await updateServer(restApiUrl: normalized, wsApiUrl: current.wsApiUrl);
+    final current = state.value ?? _defaultTelegramUrl();
+    final updated = current.copyWith(restApiUrl: url);
+    state = AsyncValue.data(updated);
+    await _save(updated);
   }
 
   Future<void> updateServer({
@@ -69,13 +66,13 @@ class TelegramUrl extends _$TelegramUrl {
       restApiUrl: restApiUrl,
       wsApiUrl: wsApiUrl,
     );
-    await _save(updated);
     state = AsyncValue.data(updated);
+    await _save(updated);
   }
 
   Future<void> resetToDefault() async {
     final updated = _defaultTelegramUrl();
-    await _save(updated);
     state = AsyncValue.data(updated);
+    await _save(updated);
   }
 }

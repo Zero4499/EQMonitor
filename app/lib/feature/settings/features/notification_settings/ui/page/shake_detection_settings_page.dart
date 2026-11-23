@@ -1,18 +1,13 @@
 import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
+import 'package:eqmonitor/core/component/selector/controlled_dropdown.dart';
 import 'package:eqmonitor/feature/location/data/background_location_permission_provider.dart';
 import 'package:eqmonitor/feature/location/data/notifier/current_device_location_notifier.dart';
+import 'package:eqmonitor/feature/parameter/data/model/earthquake/earthquake_parameter.dart';
 import 'package:eqmonitor/feature/permission/ui/component/notification_permission_banner.dart';
-import 'package:eqmonitor/feature/region_selection/data/model/region_option.dart';
-import 'package:eqmonitor/feature/region_selection/data/model/region_selection_request.dart';
-import 'package:eqmonitor/feature/region_selection/ui/page/region_selection_page.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/action/current_location_permission_action.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/action/shake_detection_settings_action.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/flow/shake_detection_enable_flow.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/model/shake_detection_settings.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/notifier/shake_detection_settings_notifier.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/data/provider/shake_detection_notification_availability_provider.dart';
 import 'package:eqmonitor/feature/settings/features/notification_settings/data/provider/shake_detection_regions_provider.dart';
-import 'package:eqmonitor/feature/settings/features/notification_settings/ui/component/shake_detection_notification_min_level_dropdown.dart';
 import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_level.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -20,24 +15,17 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
-class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
+class ShakeDetectionSettingsPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(shakeDetectionSettingsProvider);
     final regions = ref.watch(shakeDetectionRegionsProvider);
     final permission = ref.watch(backgroundLocationPermissionProvider);
     final mutation = ref.watch(ShakeDetectionSettingsNotifier.saveMutation);
-    final availability = ref.watch(
-      isShakeDetectionNotificationAvailableProvider,
-    );
-    final busy =
-        availability.value != true ||
-        availability.isLoading ||
-        availability.hasError ||
-        settings.isLoading ||
-        mutation is MutationPending;
+    final busy = settings.isLoading || mutation is MutationPending;
     const action = ShakeDetectionSettingsAction();
-    const enableFlow = ShakeDetectionEnableFlow();
     ref.listen(ShakeDetectionSettingsNotifier.saveMutation, (_, next) {
       if (next is MutationError) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -45,14 +33,15 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
         );
       }
     });
-    final state = settings.hasError ? null : settings.value;
+    final state = settings.value;
     return Scaffold(
       appBar: AppBar(title: const Text('揺れ検知の通知')),
       body: state == null
           ? Center(
               child: settings.hasError
                   ? M3EFilledButton(
-                      onPressed: () => action.reload(ref),
+                      onPressed: () =>
+                          ref.invalidate(shakeDetectionSettingsProvider),
                       child: const Text('設定の読み込みを再試行'),
                     )
                   : const AccessibleCircularProgressIndicator(),
@@ -60,13 +49,7 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
           : ListView(
               children: [
                 const NotificationPermissionBanner(),
-                if (settings.isLoading || mutation is MutationPending)
-                  const AccessibleLinearProgressIndicator(),
-                if (availability.value == false)
-                  const ListTile(
-                    leading: Icon(Icons.lock_outline),
-                    title: Text('このビルドでは Admin ロールとデバッグモードが必要です'),
-                  ),
+                if (busy) const AccessibleLinearProgressIndicator(),
                 if (state.requiresReconfiguration)
                   const ListTile(
                     leading: Icon(Icons.info_outline),
@@ -89,8 +72,7 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
                       subtitle: const Text(
                         'バックグラウンドでも現在地を更新できるよう、位置情報の権限を確認してください。',
                       ),
-                      onTap: () =>
-                          const CurrentLocationPermissionAction().request(ref),
+                      onTap: () => action.requestLocationPermission(ref),
                     ),
                 ],
                 for (final entry in state.entries)
@@ -109,15 +91,10 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
                             '地域 ${entry.regionCode}',
                     },
                     busy: busy,
-                    onEnabled: (value) => enableFlow.save(
-                      ref: ref,
-                      context: context,
-                      previous: state.entries,
-                      next: [
-                        for (final e in state.entries)
-                          e.id == entry.id ? e.copyWith(enabled: value) : e,
-                      ],
-                    ),
+                    onEnabled: (value) => action.save(ref, [
+                      for (final e in state.entries)
+                        e.id == entry.id ? e.copyWith(enabled: value) : e,
+                    ]),
                     onLevel: (value) => action.save(ref, [
                       for (final e in state.entries)
                         e.id == entry.id ? e.copyWith(minLevel: value) : e,
@@ -141,21 +118,16 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
                           busy ||
                               state.entries.any((e) => e.targetType == target)
                           ? null
-                          : () => enableFlow.save(
-                              ref: ref,
-                              context: context,
-                              previous: state.entries,
-                              next: [
-                                ...state.entries,
-                                ShakeDetectionEntry(
-                                  id: '',
-                                  targetType: target,
-                                  regionCode: null,
-                                  enabled: true,
-                                  minLevel: ShakeDetectionLevel.medium,
-                                ),
-                              ],
-                            ),
+                          : () => action.save(ref, [
+                              ...state.entries,
+                              ShakeDetectionEntry(
+                                id: '',
+                                targetType: target,
+                                regionCode: null,
+                                enabled: true,
+                                minLevel: ShakeDetectionLevel.medium,
+                              ),
+                            ]),
                       child: Text(
                         target == ShakeDetectionTargetType.currentLocation
                             ? '現在地を追加'
@@ -169,46 +141,34 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
                     onPressed: busy || !regions.hasValue
                         ? null
                         : () async {
-                            final result = await Navigator.of(context)
-                                .push<List<RegionOption>>(
-                                  MaterialPageRoute(
-                                    builder: (_) => RegionSelectionPage(
-                                      request: RegionSelectionRequest(
-                                        title: '通知する細分化地域を選択',
-                                        kinds: const [.region],
-                                        hierarchical: true,
-                                        unavailable: [
-                                          for (final entry in state.entries)
-                                            if (entry.regionCode
-                                                case final code?)
-                                              RegionOption(
-                                                kind: .region,
-                                                code: code,
-                                                name: code,
-                                              ),
-                                        ],
-                                        unavailableLabel: '追加済み',
-                                      ),
+                            final selected =
+                                await showModalBottomSheet<
+                                  EarthquakeParameterRegionItem
+                                >(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  builder: (context) => FractionallySizedBox(
+                                    heightFactor: 0.8,
+                                    child: _ShakeRegionPicker(
+                                      prefectures: regions.requireValue,
+                                      selectedCodes: state.entries
+                                          .map((e) => e.regionCode)
+                                          .nonNulls
+                                          .toSet(),
                                     ),
                                   ),
                                 );
-                            final selected = result?.firstOrNull;
                             if (selected == null || !context.mounted) return;
-                            await enableFlow.save(
-                              ref: ref,
-                              context: context,
-                              previous: state.entries,
-                              next: [
-                                ...state.entries,
-                                ShakeDetectionEntry(
-                                  id: '',
-                                  targetType: ShakeDetectionTargetType.region,
-                                  regionCode: selected.code,
-                                  enabled: true,
-                                  minLevel: ShakeDetectionLevel.medium,
-                                ),
-                              ],
-                            );
+                            await action.save(ref, [
+                              ...state.entries,
+                              ShakeDetectionEntry(
+                                id: '',
+                                targetType: ShakeDetectionTargetType.region,
+                                regionCode: selected.code,
+                                enabled: true,
+                                minLevel: ShakeDetectionLevel.medium,
+                              ),
+                            ]);
                           },
                     child: const Text('都道府県から細分化地域を追加'),
                   ),
@@ -233,7 +193,9 @@ class const ShakeDetectionSettingsPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _CurrentLocationStatus() extends ConsumerWidget {
+class _CurrentLocationStatus extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = ref.watch(currentDeviceLocationProvider);
@@ -266,14 +228,21 @@ class const _CurrentLocationStatus() extends ConsumerWidget {
   }
 }
 
-class const _ShakeEntryCard({
-  required final ShakeDetectionEntry entry,
-  required final String name,
-  required final bool busy,
-  required final ValueChanged<bool> onEnabled,
-  required final ValueChanged<ShakeDetectionLevel> onLevel,
-  required final VoidCallback onDelete,
-}) extends StatelessWidget {
+class _ShakeEntryCard extends StatelessWidget {
+  const new({
+    required this.entry,
+    required this.name,
+    required this.busy,
+    required this.onEnabled,
+    required this.onLevel,
+    required this.onDelete,
+  });
+  final ShakeDetectionEntry entry;
+  final String name;
+  final bool busy;
+  final ValueChanged<bool> onEnabled;
+  final ValueChanged<ShakeDetectionLevel> onLevel;
+  final VoidCallback onDelete;
   @override
   Widget build(BuildContext context) => Card(
     child: Column(
@@ -284,10 +253,27 @@ class const _ShakeEntryCard({
           onChanged: busy ? null : onEnabled,
         ),
         ListTile(
-          title: ShakeDetectionNotificationMinLevelDropdown(
-            minLevel: entry.minLevel,
+          title: ControlledDropdown<ShakeDetectionLevel>(
             enabled: !busy,
-            onChanged: onLevel,
+            items: ShakeDetectionLevel.values
+                .map(
+                  (level) => M3EDropdownItem(
+                    value: level,
+                    label: switch (level) {
+                      .weaker => '微弱な揺れ以上',
+                      .weak => '弱い揺れ以上',
+                      .medium => 'やや強い揺れ以上',
+                      .strong => '強い揺れ以上',
+                      .stronger => '非常に強い揺れ',
+                    },
+                    selected: level == entry.minLevel,
+                  ),
+                )
+                .toList(),
+            onSelectionChanged: (items) {
+              final selected = items.firstOrNull;
+              if (selected != null) onLevel(selected.value);
+            },
           ),
           trailing: IconButton(
             tooltip: '削除',
@@ -295,6 +281,35 @@ class const _ShakeEntryCard({
             icon: const Icon(Icons.delete_outline),
           ),
         ),
+      ],
+    ),
+  );
+}
+
+class _ShakeRegionPicker extends StatelessWidget {
+  const new({required this.prefectures, required this.selectedCodes});
+  final List<EarthquakeParameterPrefectureItem> prefectures;
+  final Set<String> selectedCodes;
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: ListView(
+      children: [
+        const ListTile(title: Text('通知する細分化地域を選択')),
+        for (final prefecture in prefectures)
+          ExpansionTile(
+            title: Text(prefecture.name.ja),
+            children: [
+              for (final region in prefecture.regions)
+                ListTile(
+                  title: Text(region.name.ja),
+                  enabled: !selectedCodes.contains(region.code),
+                  trailing: selectedCodes.contains(region.code)
+                      ? const Icon(Icons.check)
+                      : null,
+                  onTap: () => Navigator.of(context).pop(region),
+                ),
+            ],
+          ),
       ],
     ),
   );

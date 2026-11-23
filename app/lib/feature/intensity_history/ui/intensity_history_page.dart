@@ -29,11 +29,16 @@ import 'package:material_ui/material_ui.dart';
 ///
 /// - [initialCityCode] と [initialPrefectureCode] の両方が指定されたとき、
 ///   起動直後に当該市区町村の詳細モーダルを自動表示する。カメラは動かさない。
-class const IntensityHistoryPage({
-  final String? initialPrefectureCode,
-  final String? initialCityCode,
-  super.key,
-}) extends ConsumerWidget {
+class IntensityHistoryPage extends ConsumerWidget {
+  const new({
+    this.initialPrefectureCode,
+    this.initialCityCode,
+    super.key,
+  });
+
+  final String? initialPrefectureCode;
+  final String? initialCityCode;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = ref.watch(intensityHistoryPageActionProvider);
@@ -69,15 +74,21 @@ class const IntensityHistoryPage({
   }
 }
 
-class const _MapContent({
-  required final String styleString,
-  required final String? initialPrefectureCode,
-  required final String? initialCityCode,
-}) extends HookConsumerWidget {
+class _MapContent extends HookConsumerWidget {
+  const new({
+    required this.styleString,
+    required this.initialPrefectureCode,
+    required this.initialCityCode,
+  });
+
+  final String styleString;
+  final String? initialPrefectureCode;
+  final String? initialCityCode;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final action = ref.watch(intensityHistoryMapActionProvider);
-    final mapController = useState<MapController?>(null);
+    final isMapCreated = useState(false);
     final didInitializeDeepLink = useRef(false);
     // パラメータ到着を effect の再実行契機にするため watch する。
     final hasParameter =
@@ -89,7 +100,7 @@ class const _MapContent({
       () {
         final prefectureCode = initialPrefectureCode;
         if (didInitializeDeepLink.value ||
-            mapController.value == null ||
+            !isMapCreated.value ||
             !hasParameter ||
             prefectureCode == null ||
             initialCityCode == null) {
@@ -107,7 +118,7 @@ class const _MapContent({
         return null;
       },
       [
-        mapController.value,
+        isMapCreated.value,
         hasParameter,
         initialPrefectureCode,
         initialCityCode,
@@ -120,8 +131,8 @@ class const _MapContent({
         children: [
           MapOperationQueueScope(
             child: MapLibreMap(
-              onMapCreated: (controller) {
-                mapController.value = controller;
+              onMapCreated: (_) {
+                isMapCreated.value = true;
               },
               options: const MapZoomCalculator().japanViewMapOptions(
                 context: context,
@@ -133,15 +144,13 @@ class const _MapContent({
                   MapEventLongClick(:final point) => point,
                   _ => null,
                 };
-                final controller = mapController.value;
-                if (point == null || controller == null) {
+                if (point == null) {
                   return;
                 }
                 await action.handleMapTap(
                   ref: ref,
                   context: context,
                   point: point,
-                  mapController: controller,
                 );
               },
               children: const [IntensityHistoryMapLayers()],

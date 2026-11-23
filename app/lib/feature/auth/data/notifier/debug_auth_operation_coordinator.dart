@@ -66,11 +66,14 @@ final class DebugAuthPresentationOperationCoordinator {
   }
 }
 
-final class DebugAuthPresentationOperationCapability._({
-  required DebugAuthPresentationOperationCoordinator coordinator,
-  required final DebugAuthOperation operation,
-}) {
-  final DebugAuthPresentationOperationCoordinator _coordinator = coordinator;
+final class DebugAuthPresentationOperationCapability {
+  new _({
+    required DebugAuthPresentationOperationCoordinator coordinator,
+    required this.operation,
+  }) : _coordinator = coordinator;
+
+  final DebugAuthPresentationOperationCoordinator _coordinator;
+  final DebugAuthOperation operation;
   var _released = false;
   var _sessionMutationCount = 0;
 

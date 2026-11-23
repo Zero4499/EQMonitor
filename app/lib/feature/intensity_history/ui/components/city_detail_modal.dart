@@ -20,40 +20,40 @@ import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
 class CityDetailModalAction {
-  static const initialChildSize = 0.6;
-
   Future<void> show(
     BuildContext context, {
     required String cityCode,
     required String cityName,
     required String prefectureName,
     JmaIntensity? maxIntensity,
-  }) => showModalBottomSheet<void>(
+  }) => showM3EModalBottomSheet<void>(
     useSafeArea: false,
+    style: const M3EBottomSheetStyle(padding: EdgeInsets.zero),
     context: context,
     isScrollControlled: true,
-    showDragHandle: false,
-    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHigh,
     clipBehavior: .antiAlias,
-    builder: (context) => SafeArea(
-      top: false,
-      bottom: false,
-      child: _CityDetailModal(
-        cityCode: cityCode,
-        cityName: cityName,
-        prefectureName: prefectureName,
-        maxIntensity: maxIntensity,
-      ),
+    builder: (context) => _CityDetailModal(
+      cityCode: cityCode,
+      cityName: cityName,
+      prefectureName: prefectureName,
+      maxIntensity: maxIntensity,
     ),
   );
 }
 
-class const _CityDetailModal({
-  required final String cityCode,
-  required final String cityName,
-  required final String prefectureName,
-  required final JmaIntensity? maxIntensity,
-}) extends HookConsumerWidget {
+class _CityDetailModal extends HookConsumerWidget {
+  const new({
+    required this.cityCode,
+    required this.cityName,
+    required this.prefectureName,
+    required this.maxIntensity,
+  });
+
+  final String cityCode;
+  final String cityName;
+  final String prefectureName;
+  final JmaIntensity? maxIntensity;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sort = useState(
@@ -72,7 +72,7 @@ class const _CityDetailModal({
 
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: CityDetailModalAction.initialChildSize,
+      initialChildSize: 0.6,
       minChildSize: 0.3,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
@@ -107,7 +107,6 @@ class const _CityDetailModal({
               child: EarthquakeSortChips(
                 sortBy: sort.value.sortBy,
                 sortOrder: sort.value.sortOrder,
-                showRegionalIntensity: true,
                 onChanged: (value) {
                   sort.value = sort.value.selecting(value);
                 },
@@ -148,10 +147,15 @@ class const _CityDetailModal({
   }
 }
 
-class const _AreaEarthquakeListSliverGroup({
-  required final EarthquakeHistoryParameter parameter,
-  required final PaginatedResponse<EarthquakePartial> page,
-}) extends HookConsumerWidget {
+class _AreaEarthquakeListSliverGroup extends HookConsumerWidget {
+  const new({
+    required this.parameter,
+    required this.page,
+  });
+
+  final EarthquakeHistoryParameter parameter;
+  final PaginatedResponse<EarthquakePartial> page;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (page.items.isEmpty) {
@@ -216,7 +220,9 @@ class const _AreaEarthquakeListSliverGroup({
   }
 }
 
-class const _InitialLoadingSliver() extends StatelessWidget {
+class _InitialLoadingSliver extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return const SliverFillRemaining(
@@ -254,11 +260,17 @@ class _DragHandle extends StatelessWidget {
   }
 }
 
-class const _SummarySection({
-  required final String prefectureName,
-  required final String cityName,
-  required final JmaIntensity? maxIntensity,
-}) extends StatelessWidget {
+class _SummarySection extends StatelessWidget {
+  const new({
+    required this.prefectureName,
+    required this.cityName,
+    required this.maxIntensity,
+  });
+
+  final String prefectureName;
+  final String cityName;
+  final JmaIntensity? maxIntensity;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

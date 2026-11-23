@@ -13,7 +13,11 @@ part 'push_notification_repository.g.dart';
 Future<PushNotificationRepository> pushNotificationRepository(Ref ref) async =>
     PushNotificationRepository(await ref.watch(apiClientProvider.future));
 
-class PushNotificationRepository(final api.ApiClient _api) {
+class PushNotificationRepository {
+  new(this._api);
+
+  final api.ApiClient _api;
+
   Future<Result<GeneralNotificationSettings, Exception>>
   getNotificationSettings(String deviceId) => Result.capture(() async {
     final response = await _api.device.getV2DeviceMeSettingsNotification();
@@ -60,5 +64,30 @@ class PushNotificationRepository(final api.ApiClient _api) {
       body: kind.toApiRequest,
     );
     return response.data.toTestNotificationDeliveryResult;
+  });
+
+  /// 指定したイベントIDの実データをDBから取得し、実際の通知パイプラインを
+  /// 通してこのデバイスにのみ通知を配信する（EEW + VXSE51/52/53）
+  Future<Result<TestScenarioDeliveryResult, Exception>> sendTestScenario({
+    required String deviceId,
+    required String eventId,
+  }) => Result.capture(() async {
+    final response = await _api.notification
+        .postV2DeviceMeNotificationTestScenario(
+          body: api.TestScenarioRequest(eventId: eventId),
+        );
+    return response.data.toTestScenarioDeliveryResult;
+  });
+
+  Future<Result<TestScenarioTypeDeliveryResult, Exception>>
+  sendTestScenarioType({
+    required String deviceId,
+    required TestScenarioType scenario,
+  }) => Result.capture(() async {
+    final response = await _api.notification
+        .postV2DeviceMeNotificationTestScenarioType(
+          body: scenario.toApiRequest,
+        );
+    return response.data.toTestScenarioTypeDeliveryResult;
   });
 }

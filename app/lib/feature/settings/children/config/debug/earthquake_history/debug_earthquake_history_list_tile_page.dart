@@ -21,8 +21,9 @@ import 'package:material_ui/material_ui.dart';
 /// - 検索対象地域の震度情報
 /// - 海外遠地地震情報
 /// - 海外の大規模な火山の噴火
-class const DebugEarthquakeHistoryListTilePage({super.key})
-    extends StatelessWidget {
+class DebugEarthquakeHistoryListTilePage extends StatelessWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -204,7 +205,11 @@ _searchAreaSamples = [
   ),
 ];
 
-class const _SectionHeader(final String title) extends StatelessWidget {
+class _SectionHeader extends StatelessWidget {
+  const new(this.title);
+
+  final String title;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

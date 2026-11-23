@@ -16,13 +16,7 @@ import 'package:workflows/workflows.dart';
 
 part 'notification_preset_applier.g.dart';
 
-// 適用先が変わってもカスタム設定の退避済み状態だけは残すため、スロット等を
-// 変更するステップとは instanceId を分ける
-const _snapshotInstanceId = 'notification-preset-apply-v1';
-
-// 破棄の途中でアプリが終了しても別の適用先のステップ結果を再利用しないよう、
-// 適用先ごとに instanceId を分ける
-const _stepsInstanceIdPrefix = 'notification-preset-apply-steps-v2:';
+const _workflowInstanceId = 'notification-preset-apply-v1';
 
 // UI から ref.read で取得後、API 呼び出しの await を跨いで Ref を使うため
 // autoDispose だと途中で dispose され UnmountedRefException になる
@@ -30,13 +24,16 @@ const _stepsInstanceIdPrefix = 'notification-preset-apply-steps-v2:';
 NotificationPresetApplier notificationPresetApplier(Ref ref) =>
     NotificationPresetApplier(ref);
 
-class NotificationPresetApplier(final Ref _ref) {
+class NotificationPresetApplier {
+  new(this._ref);
+
+  final Ref _ref;
+
   /// プリセットを適用する。
   ///
   /// カスタムから離脱する場合は現在の設定をスナップショットへ退避し、カスタムを
   /// 選び直した場合はスナップショットから復元する。スロットはサーバ側で全件置換
-  /// する。中断後に同じプリセットを適用すると未完了ステップから続行し、別の
-  /// プリセットを適用すると退避済みのスナップショットを保ったまま最初からやり直す。
+  /// する。中断しても同じ instanceId で再開すると未完了ステップから続行する。
   Future<void> apply(NotificationPreset preset) async {
     final previous = await _ref.read(notificationPresetProvider.future);
     final runner = WorkflowRunner(
@@ -45,27 +42,14 @@ class NotificationPresetApplier(final Ref _ref) {
       ),
     );
 
-    if (previous != NotificationPreset.custom) {
-      await runner.clear(_snapshotInstanceId);
-    }
-    for (final other in NotificationPreset.values) {
-      if (other != preset) {
-        await runner.clear('$_stepsInstanceIdPrefix${other.name}');
-      }
-    }
-
-    if (previous == NotificationPreset.custom &&
-        preset != NotificationPreset.custom) {
-      await runner.run<void>(
-        instanceId: _snapshotInstanceId,
-        workflow: (step) => step('saveCustomSnapshot', _saveCustomSnapshot),
-      );
-    }
-
-    final stepsInstanceId = '$_stepsInstanceIdPrefix${preset.name}';
     await runner.run<void>(
-      instanceId: stepsInstanceId,
+      instanceId: _workflowInstanceId,
       workflow: (step) async {
+        if (previous == NotificationPreset.custom &&
+            preset != NotificationPreset.custom) {
+          await step('saveCustomSnapshot', _saveCustomSnapshot);
+        }
+
         final snapshot = preset == NotificationPreset.custom
             ? await _ref
                   .read(notificationCustomSnapshotRepositoryProvider.future)
@@ -89,8 +73,7 @@ class NotificationPresetApplier(final Ref _ref) {
       },
     );
 
-    await runner.clear(_snapshotInstanceId);
-    await runner.clear(stepsInstanceId);
+    await runner.clear(_workflowInstanceId);
   }
 
   Future<void> _saveCustomSnapshot() async {

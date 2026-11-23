@@ -280,7 +280,7 @@ class AppBootstrap {
           ),
         ],
         startupProfilerProvider.overrideWithValue(profiler),
-      ],
+          ],
       observers: [if (kDebugMode) CustomProviderObserver(talker)],
       retry: (_, _) => null,
     );

@@ -24,28 +24,27 @@ import 'package:maplibre/maplibre.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
-class const EewDetailsByEventIdPage({
-  required final String eventId,
-  final VoidCallback? onClose,
-  super.key,
-}) extends StatelessWidget {
+class EewDetailsByEventIdPage extends StatelessWidget {
+  const new({required this.eventId, this.onClose, super.key});
+
+  final String eventId;
+  final VoidCallback? onClose;
+
   @override
   Widget build(BuildContext context) => ProFeatureGate(
     title: '緊急地震速報の履歴',
     isPage: true,
     onClose: onClose,
-    child: ProviderScope(
-      key: ValueKey(eventId),
-      overrides: [eewSimulationProvider.overrideWith(EewSimulation.new)],
-      child: _EewDetailsByEventIdContent(eventId: eventId, onClose: onClose),
-    ),
+    child: _EewDetailsByEventIdContent(eventId: eventId, onClose: onClose),
   );
 }
 
-class const _EewDetailsByEventIdContent({
-  required final String eventId,
-  final VoidCallback? onClose,
-}) extends HookConsumerWidget {
+class _EewDetailsByEventIdContent extends HookConsumerWidget {
+  const new({required this.eventId, this.onClose});
+
+  final String eventId;
+  final VoidCallback? onClose;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eewsAsyncValue = ref.watch(eewsByEventIdProvider(eventId));
@@ -53,20 +52,14 @@ class const _EewDetailsByEventIdContent({
     final selectedIndex = useState<int?>(null);
     final displayMode = useState(EewDisplayMode.intensity);
 
+    // Auto-select the latest report during simulation
     useEffect(() {
-      if (simulation != null) {
-        final reports = eewsAsyncValue.value?.sorted(
-          (a, b) => a.serialNo.compareTo(b.serialNo),
-        );
-        final index = reports?.indexWhere(
-          (report) => report.serialNo == simulation.currentReport.serialNo,
-        );
-        if (index != null && index >= 0) {
-          selectedIndex.value = index;
-        }
+      if (simulation != null && simulation.isPlaying) {
+        selectedIndex.value = simulation.currentIndex;
       }
       return null;
-    }, [simulation, eewsAsyncValue]);
+      // isPlaying だけが変わる場合も追従する必要があるため simulation 全体を見る
+    }, [simulation]);
 
     return Scaffold(
       appBar: AppBar(
@@ -75,19 +68,9 @@ class const _EewDetailsByEventIdContent({
         actions: [
           if (simulation != null) ...[
             IconButton(
-              icon: Icon(
-                simulation.isComplete
-                    ? Icons.replay
-                    : simulation.isPlaying
-                    ? Icons.pause
-                    : Icons.play_arrow,
-              ),
+              icon: Icon(simulation.isPlaying ? Icons.pause : Icons.play_arrow),
               onPressed: () {
-                if (simulation.isComplete) {
-                  ref
-                      .read(eewSimulationProvider.notifier)
-                      .start(simulation.reports);
-                } else if (simulation.isPlaying) {
+                if (simulation.isPlaying) {
                   ref.read(eewSimulationProvider.notifier).pause();
                 } else {
                   ref.read(eewSimulationProvider.notifier).resume();
@@ -187,11 +170,17 @@ class const _EewDetailsByEventIdContent({
   }
 }
 
-class const _SimulationView({
-  required final EewTelegramItem? selectedEew,
-  required final EewDisplayMode displayMode,
-  required final Geographic initialCenter,
-}) extends HookConsumerWidget {
+class _SimulationView extends HookConsumerWidget {
+  const new({
+    required this.selectedEew,
+    required this.displayMode,
+    required this.initialCenter,
+  });
+
+  final EewTelegramItem? selectedEew;
+  final EewDisplayMode displayMode;
+  final Geographic initialCenter;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final simulation = ref.watch(eewSimulationProvider);
@@ -202,7 +191,13 @@ class const _SimulationView({
     // timeTickerProvider を watch して毎秒リビルドさせる
     ref.watch(timeTickerProvider());
 
-    final virtualNow = simulation?.playbackTimeAt(clock.now());
+    // シミュレーション仮想時刻: P/S波円と同じ計算
+    DateTime? virtualNow;
+    if (simulation != null) {
+      final firstReportTime = simulation.reports.first.reportTime;
+      final elapsed = simulation.playbackElapsedAt(clock.now());
+      virtualNow = firstReportTime.add(elapsed);
+    }
 
     final estimatedRegions = EewEstimatedRegionsStaleCacheHook.use(
       ref: ref,
@@ -246,7 +241,9 @@ class const _SimulationView({
   }
 }
 
-class const _EewDetailsByEventIdSkeleton() extends StatelessWidget {
+class _EewDetailsByEventIdSkeleton extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     return Skeletonizer(
@@ -265,10 +262,12 @@ class const _EewDetailsByEventIdSkeleton() extends StatelessWidget {
   }
 }
 
-class const _DisplayModeSelector({
-  required final EewDisplayMode displayMode,
-  required final void Function(EewDisplayMode) onChanged,
-}) extends StatelessWidget {
+class _DisplayModeSelector extends StatelessWidget {
+  const new({required this.displayMode, required this.onChanged});
+
+  final EewDisplayMode displayMode;
+  final void Function(EewDisplayMode) onChanged;
+
   @override
   Widget build(BuildContext context) {
     return M3EToggleButtonGroup(
@@ -296,16 +295,27 @@ class const _DisplayModeSelector({
   }
 }
 
-class const _ResponsiveLayout({
-  required final List<EewTelegramItem> eews,
-  required final int? selectedIndex,
-  required final void Function(int) onSelect,
-  required final EewTelegramItem? selectedEew,
-  required final EewDisplayMode displayMode,
-  required final Geographic initialCenter,
-  required final double initZoom,
-  final bool useSheet = false,
-}) extends HookConsumerWidget {
+class _ResponsiveLayout extends HookConsumerWidget {
+  const new({
+    required this.eews,
+    required this.selectedIndex,
+    required this.onSelect,
+    required this.selectedEew,
+    required this.displayMode,
+    required this.initialCenter,
+    required this.initZoom,
+    this.useSheet = false,
+  });
+
+  final List<EewTelegramItem> eews;
+  final int? selectedIndex;
+  final void Function(int) onSelect;
+  final EewTelegramItem? selectedEew;
+  final EewDisplayMode displayMode;
+  final Geographic initialCenter;
+  final double initZoom;
+  final bool useSheet;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isEstimatedAllowed =
@@ -379,8 +389,11 @@ class const _ResponsiveLayout({
   }
 }
 
-class const _SimulationStartBanner({required final VoidCallback onStart})
-    extends StatelessWidget {
+class _SimulationStartBanner extends StatelessWidget {
+  const new({required this.onStart});
+
+  final VoidCallback onStart;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

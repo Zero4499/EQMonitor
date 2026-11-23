@@ -1,10 +1,11 @@
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const NotificationSettingsInfoCard({
-  required final String text,
-  super.key,
-}) extends StatelessWidget {
+class NotificationSettingsInfoCard extends StatelessWidget {
+  const new({required this.text, super.key});
+
+  final String text;
+
   @override
   Widget build(BuildContext context) {
     final designSystem = context.designSystem;

@@ -10,14 +10,22 @@ typedef LatLngRange = ({
   double? longitudeLte,
 });
 
-class const LatLngFilterChip({
-  final double? latitudeGte,
-  final double? latitudeLte,
-  final double? longitudeGte,
-  final double? longitudeLte,
-  final ValueChanged<LatLngRange?>? onChanged,
-  super.key,
-}) extends StatelessWidget {
+class LatLngFilterChip extends StatelessWidget {
+  const new({
+    this.latitudeGte,
+    this.latitudeLte,
+    this.longitudeGte,
+    this.longitudeLte,
+    this.onChanged,
+    super.key,
+  });
+
+  final double? latitudeGte;
+  final double? latitudeLte;
+  final double? longitudeGte;
+  final double? longitudeLte;
+  final ValueChanged<LatLngRange?>? onChanged;
+
   bool get _isActive =>
       latitudeGte != null ||
       latitudeLte != null ||
@@ -114,12 +122,19 @@ class const LatLngFilterChip({
   }
 }
 
-class const _LatLngFilterModal({
-  final double? latitudeGte,
-  final double? latitudeLte,
-  final double? longitudeGte,
-  final double? longitudeLte,
-}) extends HookWidget {
+class _LatLngFilterModal extends HookWidget {
+  const new({
+    this.latitudeGte,
+    this.latitudeLte,
+    this.longitudeGte,
+    this.longitudeLte,
+  });
+
+  final double? latitudeGte;
+  final double? latitudeLte;
+  final double? longitudeGte;
+  final double? longitudeLte;
+
   @override
   Widget build(BuildContext context) {
     final latGte = useState<double?>(latitudeGte);
@@ -319,12 +334,19 @@ class const _LatLngFilterModal({
   }
 }
 
-class const _CoordField({
-  required final String label,
-  required final double? value,
-  required final ValueChanged<double?> onChanged,
-  final String? errorText,
-}) extends HookWidget {
+class _CoordField extends HookWidget {
+  const new({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.errorText,
+  });
+
+  final String label;
+  final double? value;
+  final ValueChanged<double?> onChanged;
+  final String? errorText;
+
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController(

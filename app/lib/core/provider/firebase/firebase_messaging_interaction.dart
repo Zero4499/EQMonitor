@@ -34,19 +34,11 @@ Stream<RemoteMessage> firebaseMessagingInteraction(Ref ref) async* {
     final openedMessages = StreamController<RemoteMessage>();
     final fcmSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
       openedMessages.add,
-      onError: (Object error, StackTrace stackTrace) => talker.error(
-        'FCM notification opened stream failed',
-        error,
-        stackTrace,
-      ),
+      onError: openedMessages.addError,
     );
     final localSubscription = localNotifications.openedMessages.listen(
       openedMessages.add,
-      onError: (Object error, StackTrace stackTrace) => talker.error(
-        'Local notification opened stream failed',
-        error,
-        stackTrace,
-      ),
+      onError: openedMessages.addError,
     );
     ref.onDispose(() {
       unawaited(fcmSubscription.cancel());
@@ -103,25 +95,14 @@ Stream<RemoteMessage> firebaseMessagingInteraction(Ref ref) async* {
           coldStart: false,
         ),
       );
-      try {
-        final link = NotificationDeepLink.fromData(message.data);
-        switch (link) {
-          case NotificationRouteLink(location: '/'):
-            ref.read(goRouterProvider).go(const HomeRoute().location);
-          case NotificationRouteLink(:final location):
-            // 詳細画面を閉じる前でも、後続の EEW 通知タップを受け付ける。
-            unawaited(ref.read(goRouterProvider).push<void>(location));
-          case NotificationUrlLink(:final uri):
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          case null:
-            break;
-        }
-      } on Object catch (error, stackTrace) {
-        talker.error(
-          'Notification deep link handling failed',
-          error,
-          stackTrace,
-        );
+      final link = NotificationDeepLink.fromData(message.data);
+      switch (link) {
+        case NotificationRouteLink(:final location):
+          await ref.read(goRouterProvider).push(location);
+        case NotificationUrlLink(:final uri):
+          await launchUrl(uri, mode: LaunchMode.externalApplication);
+        case null:
+          break;
       }
       yield message;
     }
@@ -131,7 +112,9 @@ Stream<RemoteMessage> firebaseMessagingInteraction(Ref ref) async* {
 }
 
 /// FCM 通知タップの計測記録を行う。
-class const NotificationOpenedRecorder._() {
+class NotificationOpenedRecorder {
+  const new _();
+
   static Future<void> record({
     required TelemetryRecorder recorder,
     required TelemetryUploader uploader,

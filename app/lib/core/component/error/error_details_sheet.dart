@@ -43,11 +43,17 @@ class const ErrorDetailsSheetAction() {
   }
 }
 
-class const _ErrorDetailsSheet({
-  required final Object error,
-  required final StackTrace? stackTrace,
-  required final DateTime occurredAt,
-}) extends ConsumerWidget {
+class _ErrorDetailsSheet extends ConsumerWidget {
+  const new({
+    required this.error,
+    required this.stackTrace,
+    required this.occurredAt,
+  });
+
+  final Object error;
+  final StackTrace? stackTrace;
+  final DateTime occurredAt;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);

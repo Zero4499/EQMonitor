@@ -1,9 +1,7 @@
 import 'package:eqmonitor/core/component/progress/accessible_progress_indicator.dart';
 import 'package:eqmonitor/core/designsystem/design_system_build_context_x.dart';
 import 'package:eqmonitor/core/gen/fonts.gen.dart';
-import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/feature/subscription/data/flow/paywall_flow.dart';
-import 'package:eqmonitor/feature/subscription/data/model/pro_benefit.dart';
 import 'package:eqmonitor/feature/subscription/data/notifier/subscription_notifier.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:eqmonitor/feature/subscription/data/provider/monthly_subscription_package_provider.dart';
@@ -16,16 +14,14 @@ import 'package:material_ui/material_ui.dart';
 import 'package:riverpod/experimental/mutation.dart';
 
 /// EQMonitor Pro へアップグレードするための Paywall 画面。
-class const PaywallPage({super.key}) extends ConsumerWidget {
+class PaywallPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final flow = ref.watch(paywallFlowProvider);
     final subscription = ref.watch(subscriptionProvider);
-    final isSubscriptionAvailable = ref.watch(
-      buildConfigProvider.select((config) => config.isSubscriptionAvailable),
-    );
     final canPurchase =
-        isSubscriptionAvailable &&
         !subscription.isLoading &&
         !subscription.hasError &&
         subscription.value is SubscriptionStatusInactive &&
@@ -44,24 +40,14 @@ class const PaywallPage({super.key}) extends ConsumerWidget {
     final isPurchasing = purchaseState is MutationPending;
     final isRestoring = restoreState is MutationPending;
     final isBusy = isPurchasing || isRestoring;
-    final designSystem = context.designSystem;
-    final colorTheme = designSystem.colorTheme;
-    final spacing = designSystem.spacing;
-    final textTheme = Theme.of(context).textTheme;
+    final colorTheme = context.designSystem.colorTheme;
+
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
 
     return Scaffold(
       backgroundColor: colorTheme.surfaceContainerLow,
-      bottomNavigationBar: _PurchaseBar(
-        packageState: packageState,
-        isPurchasing: isPurchasing,
-        isSubscriptionAvailable: isSubscriptionAvailable,
-        onRetry: isBusy
-            ? null
-            : () => ref.invalidate(monthlySubscriptionPackageProvider),
-        onPurchase: isBusy || !canPurchase || package == null
-            ? null
-            : () async => flow.purchaseMonthly(ref, context, package: package),
-      ),
+
       body: CustomScrollView(
         slivers: [
           SliverAppBar.large(
@@ -74,10 +60,7 @@ class const PaywallPage({super.key}) extends ConsumerWidget {
           SliverSafeArea(
             top: false,
             sliver: SliverPadding(
-              padding: EdgeInsets.symmetric(
-                horizontal: spacing.lg,
-                vertical: spacing.sm,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
                   Text(
@@ -85,22 +68,59 @@ class const PaywallPage({super.key}) extends ConsumerWidget {
                     'いただいた支援は、サービスの継続的な運営を行うための費用に充てられます。',
                     style: textTheme.bodyMedium,
                   ),
-                  SizedBox(height: spacing.md),
+                  const SizedBox(height: 12),
                   const DeviceProvisioningBanner(),
-                  SubscriptionSyncBanner(
-                    padding: EdgeInsets.only(bottom: spacing.md),
-                  ),
-                  SizedBox(height: spacing.sm),
+                  const SubscriptionSyncBanner(),
                   const _BenefitsSection(),
-                  SizedBox(height: spacing.lg),
+                  const SizedBox(height: 12),
+                  _PlanCard(
+                    packageState: packageState,
+                    onRetry: isBusy
+                        ? null
+                        : () => ref.invalidate(
+                            monthlySubscriptionPackageProvider,
+                          ),
+                  ),
+                  const SizedBox(height: 12),
+                  M3EButton(
+                    style: .filled,
+                    decoration: .new(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
+                      textStyle: .new(
+                        fontWeight: .bold,
+                        fontFamily: FontFamily.googleSansFlex,
+                        fontSize: 16,
+                        color: theme.colorScheme.onPrimary,
+                      ),
+                    ),
+                    onPressed: isBusy || !canPurchase || package == null
+                        ? null
+                        : () async => flow.purchaseMonthly(
+                            ref,
+                            context,
+                            package: package,
+                          ),
+                    child: isPurchasing
+                        ? const SizedBox.square(
+                            dimension: 20,
+                            child: AccessibleCircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text('Pro にアップグレード'),
+                  ),
+                  const SizedBox(height: 8),
                   M3EButton(
                     style: .text,
-                    onPressed: isBusy || !isSubscriptionAvailable
+                    onPressed: isBusy
                         ? null
                         : () async => flow.restorePurchases(ref, context),
                     child: const Text('購入を復元する'),
                   ),
-                  SizedBox(height: spacing.sm),
+                  const SizedBox(height: 16),
                   _LegalLinksRow(
                     onTerms: () async => flow.openExternalUrl(
                       "https://eqmonitor.app/term_of_service",
@@ -111,9 +131,8 @@ class const PaywallPage({super.key}) extends ConsumerWidget {
                     onTokushoho: () async =>
                         flow.openExternalUrl("https://eqmonitor.app/asctl"),
                   ),
-                  SizedBox(height: spacing.lg),
+                  const SizedBox(height: 16),
                   const _AutoRenewNotice(),
-                  SizedBox(height: spacing.lg),
                 ]),
               ),
             ),
@@ -124,107 +143,88 @@ class const PaywallPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _BenefitsSection() extends StatelessWidget {
+class const _Benefit({
+  required final IconData icon,
+  required final String title,
+  required final String description,
+});
+
+class _BenefitsSection extends StatelessWidget {
+  const new();
+
+  static const _benefits = <_Benefit>[
+    _Benefit(
+      icon: Icons.notifications_active_rounded,
+      title: '通知地域を追加',
+      description: '通知を受け取る地域を無料プランより多く登録できます',
+    ),
+    _Benefit(
+      icon: Icons.history_rounded,
+      title: '緊急地震速報の履歴',
+      description: '過去に発表された緊急地震速報の一覧と詳細を確認できます',
+    ),
+    _Benefit(
+      icon: Icons.location_on_rounded,
+      title: 'この震源の近傍で発生した地震',
+      description: '地震の詳細ページから、付近で発生した地震の履歴を確認できます',
+    ),
+    _Benefit(
+      icon: Icons.favorite_rounded,
+      title: '開発・運営を支援',
+      description: 'いただいた支援は EQMonitor の運営に充てられます。',
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    final designSystem = context.designSystem;
-    final colorTheme = designSystem.colorTheme;
-    final spacing = designSystem.spacing;
-    return Column(
-      crossAxisAlignment: .start,
-      children: [
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: spacing.xs),
-          child: Text(
-            'Pro で利用できる機能',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              color: colorTheme.secondary,
-            ),
-          ),
-        ),
-        SizedBox(height: spacing.sm),
-        DecoratedBox(
-          decoration: ShapeDecoration(
-            color: colorTheme.surfaceContainerHigh,
-            shape: RoundedSuperellipseBorder(
-              borderRadius: BorderRadius.circular(designSystem.shape.card),
-              side: BorderSide(color: colorTheme.outlineVariant),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: spacing.sm),
-            child: Column(
-              children: [
-                for (final (index, benefit) in ProBenefit.values.indexed) ...[
-                  if (index > 0)
-                    Divider(
-                      height: 1,
-                      indent: spacing.lg + _BenefitRow.iconExtent + spacing.lg,
-                      endIndent: spacing.lg,
-                      color: colorTheme.outlineVariant,
-                    ),
-                  _BenefitRow(benefit: benefit),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ],
+    final colorTheme = context.designSystem.colorTheme;
+    return Container(
+      clipBehavior: .antiAlias,
+      decoration: BoxDecoration(
+        color: colorTheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colorTheme.outlineVariant),
+      ),
+      padding: const EdgeInsets.symmetric(
+        vertical: 8,
+        horizontal: 8,
+      ),
+      child: Column(
+        children: _benefits
+            .map((benefit) => _BenefitRow(benefit: benefit))
+            .toList(),
+      ),
     );
   }
 }
 
-class const _BenefitRow({required final ProBenefit benefit})
-    extends StatelessWidget {
-  static const iconExtent = 40.0;
+class _BenefitRow extends StatelessWidget {
+  const new({required this.benefit});
+
+  final _Benefit benefit;
 
   @override
   Widget build(BuildContext context) {
-    final designSystem = context.designSystem;
-    final colorTheme = designSystem.colorTheme;
-    final spacing = designSystem.spacing;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final textTheme = theme.textTheme;
     return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: spacing.lg,
-        vertical: spacing.md,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       child: Row(
         crossAxisAlignment: .start,
         children: [
-          DecoratedBox(
-            decoration: ShapeDecoration(
-              color: colorTheme.primaryContainer,
-              shape: RoundedSuperellipseBorder(
-                borderRadius: BorderRadius.circular(designSystem.shape.sm),
-              ),
-            ),
-            child: SizedBox.square(
-              dimension: iconExtent,
-              child: Icon(
-                switch (benefit) {
-                  .notificationRegions => Icons.add_location_alt_rounded,
-                  .eewHistory => Icons.history_rounded,
-                  .nearbyEarthquakes => Icons.travel_explore_rounded,
-                },
-                color: colorTheme.onPrimaryContainer,
-                size: 22,
-              ),
-            ),
+          Icon(
+            benefit.icon,
+            color: context.designSystem.colorTheme.primary,
+            size: 24,
           ),
-          SizedBox(width: spacing.lg),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: .start,
               children: [
-                Text(benefit.title, style: textTheme.titleMedium),
-                SizedBox(height: spacing.xs),
-                Text(
-                  benefit.description,
-                  style: textTheme.bodyMedium?.copyWith(
-                    color: colorTheme.onSurfaceVariant,
-                  ),
-                ),
+                Text(benefit.title, style: textTheme.titleSmall),
+                const SizedBox(height: 4),
+                Text(benefit.description, style: textTheme.bodySmall),
               ],
             ),
           ),
@@ -234,139 +234,74 @@ class const _BenefitRow({required final ProBenefit benefit})
   }
 }
 
-/// 価格と購入ボタン。機能の一覧が増えても見失わないよう、画面の下部に固定する。
-class const _PurchaseBar({
-  required final AsyncValue<rc.Package?> packageState,
-  required final bool isPurchasing,
-  required final bool isSubscriptionAvailable,
-  required final VoidCallback? onRetry,
-  required final VoidCallback? onPurchase,
-}) extends StatelessWidget {
+class _PlanCard extends StatelessWidget {
+  const new({required this.packageState, required this.onRetry});
+
+  final AsyncValue<rc.Package?> packageState;
+  final VoidCallback? onRetry;
+
   @override
   Widget build(BuildContext context) {
-    final designSystem = context.designSystem;
-    final colorTheme = designSystem.colorTheme;
-    final spacing = designSystem.spacing;
     final theme = Theme.of(context);
-    return DecoratedBox(
+    final textTheme = theme.textTheme;
+    final colorTheme = context.designSystem.colorTheme;
+    return Container(
       decoration: BoxDecoration(
-        color: colorTheme.surfaceContainer,
-        border: Border(top: BorderSide(color: colorTheme.outlineVariant)),
+        color: colorTheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(color: colorTheme.primary, width: 1.5),
       ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            spacing.lg,
-            spacing.md,
-            spacing.lg,
-            spacing.md,
-          ),
-          child: Column(
-            mainAxisSize: .min,
-            crossAxisAlignment: .stretch,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: .start,
+        children: [
+          Row(
             children: [
-              _PlanPrice(packageState: packageState, onRetry: onRetry),
-              SizedBox(height: spacing.md),
-              if (!isSubscriptionAvailable) ...[
-                Text(
-                  'ベータ版では EQMonitor Pro を利用できません。購入済みの場合も無料版として動作します。',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorTheme.onSurfaceVariant,
-                  ),
-                  textAlign: .center,
-                ),
-                SizedBox(height: spacing.sm),
-              ],
-              M3EButton(
-                style: .filled,
-                decoration: .new(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: spacing.lg,
-                    vertical: spacing.lg,
-                  ),
-                  // テーマの文字スタイルから作り、日本語のフォールバックを引き継ぐ。
-                  textStyle: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: .bold,
-                    fontFamily: FontFamily.googleSansFlex,
-                    fontSize: 16,
-                    color: theme.colorScheme.onPrimary,
-                  ),
-                ),
-                onPressed: onPurchase,
-                child: isPurchasing
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: AccessibleCircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text('Pro にアップグレード'),
+              Expanded(
+                child: Text('月額プラン', style: textTheme.titleMedium),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 12),
+          if (packageState.isLoading)
+            const AccessibleCircularProgressIndicator()
+          else
+            switch (packageState) {
+              AsyncData(value: final package?) => Text(
+                '${package.storeProduct.priceString} / 月',
+                style: textTheme.headlineLarge?.copyWith(
+                  fontFamily: FontFamily.googleSansFlex,
+                ),
+              ),
+              _ => Column(
+                crossAxisAlignment: .start,
+                children: [
+                  const Text('プラン情報を取得できませんでした。通信状況を確認して再試行してください。'),
+                  M3EButton(
+                    style: .text,
+                    onPressed: onRetry,
+                    child: const Text('再試行'),
+                  ),
+                ],
+              ),
+            },
+        ],
       ),
     );
   }
 }
 
-class const _PlanPrice({
-  required final AsyncValue<rc.Package?> packageState,
-  required final VoidCallback? onRetry,
-}) extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final spacing = context.designSystem.spacing;
-    final label = Text('月額プラン', style: textTheme.titleMedium);
-    if (packageState.isLoading) {
-      return Row(
-        children: [
-          Expanded(child: label),
-          const SizedBox.square(
-            dimension: 20,
-            child: AccessibleCircularProgressIndicator(strokeWidth: 2),
-          ),
-        ],
-      );
-    }
-    return switch (packageState) {
-      AsyncData(value: final package?) => Wrap(
-        alignment: .spaceBetween,
-        crossAxisAlignment: .center,
-        spacing: spacing.lg,
-        children: [
-          label,
-          Text(
-            '${package.storeProduct.priceString} / 月',
-            style: textTheme.headlineSmall?.copyWith(
-              fontFamily: FontFamily.googleSansCode,
-              fontWeight: .bold,
-            ),
-          ),
-        ],
-      ),
-      _ => Column(
-        crossAxisAlignment: .start,
-        children: [
-          const Text('プラン情報を取得できませんでした。通信状況を確認して再試行してください。'),
-          M3EButton(
-            style: .text,
-            onPressed: onRetry,
-            child: const Text('再試行'),
-          ),
-        ],
-      ),
-    };
-  }
-}
+class _LegalLinksRow extends StatelessWidget {
+  const new({
+    required this.onTerms,
+    required this.onPrivacy,
+    required this.onTokushoho,
+  });
 
-class const _LegalLinksRow({
-  required final Future<void> Function() onTerms,
-  required final Future<void> Function() onPrivacy,
-  required final Future<void> Function() onTokushoho,
-}) extends StatelessWidget {
+  final Future<void> Function() onTerms;
+  final Future<void> Function() onPrivacy;
+  final Future<void> Function() onTokushoho;
+
   @override
   Widget build(BuildContext context) {
     return Wrap(
@@ -395,7 +330,9 @@ class const _LegalLinksRow({
   }
 }
 
-class const _AutoRenewNotice() extends StatelessWidget {
+class _AutoRenewNotice extends StatelessWidget {
+  const new();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

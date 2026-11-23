@@ -6,18 +6,21 @@ import 'package:eqmonitor/feature/devices/data/retry/interruptible_backoff.dart'
 
 typedef PushTokenUpsert = Future<void> Function(String token);
 
-final class PushTokenSyncWorker({
-  required PushTokenUpsert upsert,
-  required InterruptibleBackoff backoff,
-  PushTokenBackoff policy = const PushTokenBackoff(),
-  DateTime Function()? clock,
-  Future<bool> Function(String token)? shouldSync,
-}) {
-  final PushTokenUpsert _upsert = upsert;
-  final InterruptibleBackoff _backoff = backoff;
-  final PushTokenBackoff _policy = policy;
-  final DateTime Function() _clock = clock ?? DateTime.now;
-  final Future<bool> Function(String token)? _shouldSync = shouldSync;
+final class PushTokenSyncWorker {
+  new({
+    required PushTokenUpsert upsert,
+    required InterruptibleBackoff backoff,
+    PushTokenBackoff policy = const PushTokenBackoff(),
+    DateTime Function()? clock,
+  }) : _upsert = upsert,
+       _backoff = backoff,
+       _policy = policy,
+       _clock = clock ?? DateTime.now;
+
+  final PushTokenUpsert _upsert;
+  final InterruptibleBackoff _backoff;
+  final PushTokenBackoff _policy;
+  final DateTime Function() _clock;
   final StreamController<PushTokenSyncWorkerState> _statesController =
       StreamController<PushTokenSyncWorkerState>.broadcast();
 
@@ -39,8 +42,7 @@ final class PushTokenSyncWorker({
     }
 
     final isNewToken = token != _latestToken;
-    if (!isNewToken &&
-        (_shouldSync == null || _pumpFuture != null || _blockedToken != null)) {
+    if (!isNewToken) {
       return;
     }
 
@@ -51,7 +53,7 @@ final class PushTokenSyncWorker({
     if (_pumpFuture != null) {
       return;
     }
-    if (token == _lastSyncedToken && _shouldSync == null) {
+    if (token == _lastSyncedToken) {
       _state = const PushTokenSyncWorkerState.synced();
       _statesController.add(_state);
       return;
@@ -111,21 +113,10 @@ final class PushTokenSyncWorker({
       if (attemptedToken == null || attemptedToken.isEmpty) {
         return;
       }
+      _state = PushTokenSyncWorkerState.syncing(attempt: _attempt);
+      _statesController.add(_state);
       try {
-        final shouldSync = _shouldSync;
-        final needsSync =
-            shouldSync == null || await shouldSync(attemptedToken);
-        if (_disposed) {
-          return;
-        }
-        if (_latestToken != attemptedToken) {
-          continue;
-        }
-        if (needsSync) {
-          _state = PushTokenSyncWorkerState.syncing(attempt: _attempt);
-          _statesController.add(_state);
-          await _upsert(attemptedToken);
-        }
+        await _upsert(attemptedToken);
         if (_disposed) {
           return;
         }

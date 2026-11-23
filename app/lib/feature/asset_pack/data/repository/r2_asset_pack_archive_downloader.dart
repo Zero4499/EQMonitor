@@ -18,15 +18,19 @@ class const AssetPackArchiveDownloadException(final String message)
   String toString() => 'AssetPackArchiveDownloadException: $message';
 }
 
-class R2AssetPackArchiveDownloader({
-  RunAssetPackDownloadTask? runTask,
-  ResolveAssetPackDownloadTaskFile? resolveTaskFile,
-  final String baseUrl = assetPackDistributionBaseUrl,
-}) {
-  final RunAssetPackDownloadTask _runTask =
-      runTask ?? runBackgroundAssetPackDownloadTask;
-  final ResolveAssetPackDownloadTaskFile _resolveTaskFile =
-      resolveTaskFile ?? resolveBackgroundAssetPackDownloadTaskFile;
+class R2AssetPackArchiveDownloader {
+  new({
+    RunAssetPackDownloadTask? runTask,
+    ResolveAssetPackDownloadTaskFile? resolveTaskFile,
+    this.baseUrl = assetPackDistributionBaseUrl,
+  }) : _runTask = runTask ?? runBackgroundAssetPackDownloadTask,
+       _resolveTaskFile =
+           resolveTaskFile ?? resolveBackgroundAssetPackDownloadTaskFile;
+
+  final RunAssetPackDownloadTask _runTask;
+  final ResolveAssetPackDownloadTaskFile _resolveTaskFile;
+  final String baseUrl;
+
   Future<File> download({
     required AssetPackDistributionEntry entry,
     required void Function(double progress) onProgress,

@@ -29,10 +29,10 @@ class UsgsPushTile extends ConsumerWidget {
     final status =
         ref.watch(ntfyPushStatusProvider).value ?? NtfyPushStatus.idle;
     final s = ref.watch(appStringsProvider);
-    final isEn = ref.watch(appLocaleProvider).languageCode != 'zh';
+    final language = ref.watch(appLocaleProvider).languageCode;
     return ListTile(
       title: Text(s.pushTileTitle),
-      subtitle: Text('${s.pushTileSubtitleNtfy} · ${isEn ? status.labelEn : status.label}'),
+      subtitle: Text('${s.pushTileSubtitleNtfy} · ${status.displayLabel(language)}'),
       leading: const Icon(Icons.public),
       trailing: const Icon(Icons.chevron_right),
       onTap: () async => openUsgsPushSheet(context),
@@ -92,13 +92,13 @@ class _UsgsPushSheet extends HookConsumerWidget {
         children: [
           _StatusRow(
             label: s.link1Label,
-            value: language == 'zh' ? status.label : status.labelEn,
+            value: status.displayLabel(language),
             ok: status == .connected,
           ),
           const SizedBox(height: 6),
           _StatusRow(
             label: s.link2Label,
-            value: language == 'zh' ? direct.label : direct.labelEn,
+            value: direct.displayLabel(language),
             ok: direct == .ok,
           ),
           const SizedBox(height: 12),

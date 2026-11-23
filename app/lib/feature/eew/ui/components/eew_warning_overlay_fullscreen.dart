@@ -9,12 +9,18 @@ import 'package:eqmonitor/feature/map/features/icon/data/model/intensity_icon.da
 import 'package:m3e_core/m3e_core.dart';
 import 'package:material_ui/material_ui.dart';
 
-class const EewWarningOverlayFullscreen({
-  required final EewWarningOverlayDisplayModel displayModel,
-  required final VoidCallback onMinimize,
-  required final VoidCallback onClose,
-  super.key,
-}) extends StatelessWidget {
+class EewWarningOverlayFullscreen extends StatelessWidget {
+  const new({
+    required this.displayModel,
+    required this.onMinimize,
+    required this.onClose,
+    super.key,
+  });
+
+  final EewWarningOverlayDisplayModel displayModel;
+  final VoidCallback onMinimize;
+  final VoidCallback onClose;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -138,9 +144,11 @@ class const EewWarningOverlayFullscreen({
   }
 }
 
-class const _EewWarningHeadline({
-  required final EewWarningOverlayDisplayModel displayModel,
-}) extends StatelessWidget {
+class _EewWarningHeadline extends StatelessWidget {
+  const new({required this.displayModel});
+
+  final EewWarningOverlayDisplayModel displayModel;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -162,11 +170,17 @@ class const _EewWarningHeadline({
   }
 }
 
-class const _EewWarningLocalIntensity({
-  required final EewWarningOverlayDisplayModel displayModel,
-  required final String? arrivalText,
-  required final String intensityText,
-}) extends StatelessWidget {
+class _EewWarningLocalIntensity extends StatelessWidget {
+  const new({
+    required this.displayModel,
+    required this.arrivalText,
+    required this.intensityText,
+  });
+
+  final EewWarningOverlayDisplayModel displayModel;
+  final String? arrivalText;
+  final String intensityText;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -214,11 +228,17 @@ class const _EewWarningLocalIntensity({
   }
 }
 
-class const _EewWarningDetails({
-  required final EewWarningOverlayDisplayModel displayModel,
-  required final String magnitudeText,
-  required final String depthText,
-}) extends StatelessWidget {
+class _EewWarningDetails extends StatelessWidget {
+  const new({
+    required this.displayModel,
+    required this.magnitudeText,
+    required this.depthText,
+  });
+
+  final EewWarningOverlayDisplayModel displayModel;
+  final String magnitudeText;
+  final String depthText;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -256,10 +276,12 @@ class const _EewWarningDetails({
   }
 }
 
-class const _EewWarningDetailRow({
-  required final String label,
-  required final String value,
-}) extends StatelessWidget {
+class _EewWarningDetailRow extends StatelessWidget {
+  const new({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

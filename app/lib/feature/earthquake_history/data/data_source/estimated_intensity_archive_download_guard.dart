@@ -5,12 +5,12 @@ import 'package:eqmonitor/feature/earthquake_history/data/model/estimated_intens
 import 'package:eqmonitor/feature/earthquake_history/data/model/estimated_intensity_archive_stop_reason.dart';
 
 /// 一回のHTTP操作にcancel/total timeoutを結び付けるlifecycle owner。
-final class EstimatedIntensityArchiveDownloadGuard({
-  required final EstimatedIntensityArchiveHttpOperation operation,
-  required Duration totalTimeout,
-  EstimatedIntensityArchiveDownloadCancellation? cancellation,
-}) {
-  this {
+final class EstimatedIntensityArchiveDownloadGuard {
+  new({
+    required this.operation,
+    required Duration totalTimeout,
+    EstimatedIntensityArchiveDownloadCancellation? cancellation,
+  }) : cancelled = cancellation?.isCancelled ?? false {
     cancellationSubscription = cancellation?.onCancel.listen((_) {
       cancelled = true;
       if (!_stopRequested.isCompleted) {
@@ -32,11 +32,12 @@ final class EstimatedIntensityArchiveDownloadGuard({
     });
   }
 
+  final EstimatedIntensityArchiveHttpOperation operation;
   late final Timer totalTimer;
   final Completer<EstimatedIntensityArchiveStopReason> _stopRequested =
       Completer<EstimatedIntensityArchiveStopReason>();
   StreamSubscription<void>? cancellationSubscription;
-  bool cancelled = cancellation?.isCancelled ?? false;
+  bool cancelled;
   var timedOut = false;
 
   EstimatedIntensityArchiveStopReason get stopReason => cancelled

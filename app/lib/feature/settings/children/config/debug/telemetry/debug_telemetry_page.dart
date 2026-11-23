@@ -13,7 +13,9 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:telemetry_store/telemetry_store.dart';
 
-class const DebugTelemetryPage({super.key}) extends HookConsumerWidget {
+class DebugTelemetryPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final events = useState<List<TelemetryEventRow>>([]);
@@ -103,10 +105,15 @@ class const DebugTelemetryPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _SummaryCard({
-  required final int totalCount,
-  required final int unsyncedCount,
-}) extends StatelessWidget {
+class _SummaryCard extends StatelessWidget {
+  const new({
+    required this.totalCount,
+    required this.unsyncedCount,
+  });
+
+  final int totalCount;
+  final int unsyncedCount;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -139,8 +146,11 @@ class const _SummaryCard({
   }
 }
 
-class const _EventTile({required final TelemetryEventRow event})
-    extends StatelessWidget {
+class _EventTile extends StatelessWidget {
+  const new({required this.event});
+
+  final TelemetryEventRow event;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -277,8 +287,12 @@ class const _EventTile({required final TelemetryEventRow event})
   }
 }
 
-class const _DetailRow(final String label, final String value)
-    extends StatelessWidget {
+class _DetailRow extends StatelessWidget {
+  const new(this.label, this.value);
+
+  final String label;
+  final String value;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

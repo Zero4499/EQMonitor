@@ -61,12 +61,15 @@ class const VibrationPackageGateway()
   Future<void> cancel() => Vibration.cancel();
 }
 
-class const EewWarningOverlayVibrationService({
-  required EewWarningOverlayVibrationGateway gateway,
-  required Talker talker,
-}) {
-  final EewWarningOverlayVibrationGateway _gateway = gateway;
-  final Talker _talker = talker;
+class EewWarningOverlayVibrationService {
+  const new({
+    required EewWarningOverlayVibrationGateway gateway,
+    required Talker talker,
+  }) : _gateway = gateway,
+       _talker = talker;
+
+  final EewWarningOverlayVibrationGateway _gateway;
+  final Talker _talker;
 
   Future<bool> start() async {
     try {

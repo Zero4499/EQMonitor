@@ -16,12 +16,15 @@ Future<ParameterRepository> parameterRepository(Ref ref) async {
 /// Loads [ParameterSet] from the active Asset Pack. This is the sole source of
 /// parameter data (no HTTP fetch). If a downloaded pack cannot be parsed, it is
 /// deactivated and the pack bundled with the app is parsed instead.
-final class const ParameterRepository({
-  required ParameterAssetDataSource assetDataSource,
-  required ParameterJsonParser parser,
-}) {
-  final ParameterAssetDataSource _assetDataSource = assetDataSource;
-  final ParameterJsonParser _parser = parser;
+final class ParameterRepository {
+  const new({
+    required ParameterAssetDataSource assetDataSource,
+    required ParameterJsonParser parser,
+  }) : _assetDataSource = assetDataSource,
+       _parser = parser;
+
+  final ParameterAssetDataSource _assetDataSource;
+  final ParameterJsonParser _parser;
 
   Future<ParameterSet> loadAsset() => _assetDataSource.readParameters(
     (manifest, parameterJsonByType) => _parser.parseSet(

@@ -8,7 +8,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugAppGroupPage({super.key}) extends HookConsumerWidget {
+class DebugAppGroupPage extends HookConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final values = ref.watch(appGroupValuesProvider);
@@ -36,10 +38,12 @@ class const DebugAppGroupPage({super.key}) extends HookConsumerWidget {
   }
 }
 
-class const _Body({
-  required final AppGroupValues values,
-  required final DebugAppGroupAction action,
-}) extends ConsumerWidget {
+class _Body extends ConsumerWidget {
+  const new({required this.values, required this.action});
+
+  final AppGroupValues values;
+  final DebugAppGroupAction action;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
@@ -83,7 +87,11 @@ class const _Body({
   }
 }
 
-class const _SectionHeader(final String title) extends StatelessWidget {
+class _SectionHeader extends StatelessWidget {
+  const new(this.title);
+
+  final String title;
+
   @override
   Widget build(BuildContext context) {
     return Padding(

@@ -9,11 +9,9 @@ import 'package:eqmonitor/core/gen/fonts.gen.dart';
 import 'package:eqmonitor/core/provider/chuck_provider.dart';
 import 'package:eqmonitor/core/provider/environment/environment.dart';
 import 'package:eqmonitor/core/provider/estimated_intensity/provider/estimated_intensity_on_eew_replay_allowed_provider.dart';
+import 'package:eqmonitor/core/provider/telegram_url/provider/telegram_url_provider.dart';
 import 'package:eqmonitor/core/router/router.dart';
-import 'package:eqmonitor/feature/debug/data/action/debug_mode_action.dart';
-import 'package:eqmonitor/feature/debug/data/model/debug_access_level.dart';
-import 'package:eqmonitor/feature/debug/data/provider/debug_access_level_provider.dart';
-import 'package:eqmonitor/feature/devices/data/notifier/device_role_notifier.dart';
+import 'package:eqmonitor/feature/devices/data/provider/device_role_provider.dart';
 import 'package:eqmonitor/feature/devices/data/provider/notification_token_stream.dart';
 import 'package:eqmonitor/feature/earthquake_history/ui/components/modal/earthquake_history_debug_modal.dart';
 import 'package:eqmonitor/feature/home/data/notifier/home_eew_estimation_debug_notifier.dart';
@@ -38,7 +36,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 
-class const DebugPage({super.key}) extends ConsumerWidget {
+class DebugPage extends ConsumerWidget {
+  const new({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
@@ -48,11 +48,12 @@ class const DebugPage({super.key}) extends ConsumerWidget {
   }
 }
 
-class const _DebugWidget() extends ConsumerWidget {
+class _DebugWidget extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isAdmin =
-        ref.watch(debugAccessLevelProvider) == DebugAccessLevel.full;
+    final isDebugEnabled = ref.watch(debugProvider).value ?? false;
     final notificationToken = ref.watch(notificationTokenStreamProvider).value;
     final buildCfg = ref.watch(buildConfigProvider);
 
@@ -64,16 +65,17 @@ class const _DebugWidget() extends ConsumerWidget {
           children: [
             ListTile(
               title: const Text('デバッグモード'),
-              subtitle: const Text('オフにするとデバッグ画面を閉じます'),
+              subtitle: Text(isDebugEnabled ? 'ON' : 'OFF'),
               trailing: AppSwitch(
-                value: true,
-                onChanged: (_) async =>
-                    ref.read(debugModeActionProvider).disable(ref, context),
+                value: isDebugEnabled,
+                onChanged: (value) async =>
+                    ref.read(debugProvider.notifier).save(isEnabled: value),
               ),
-              onTap: () async =>
-                  ref.read(debugModeActionProvider).disable(ref, context),
+              onTap: () async => ref
+                  .read(debugProvider.notifier)
+                  .save(isEnabled: !isDebugEnabled),
             ),
-            if (isAdmin && chuckBuildModePolicy.showInspector)
+            if (chuckBuildModePolicy.showInspector)
               ListTile(
                 title: const Text('Chuck'),
                 leading: const Icon(Icons.list),
@@ -84,42 +86,61 @@ class const _DebugWidget() extends ConsumerWidget {
               leading: const Icon(Icons.flag),
               subtitle: Text(buildCfg.flavor.name),
             ),
-            if (isAdmin) ...[
-              ListTile(
-                title: const Text('オンボーディング'),
-                subtitle: const Text('オンボーディングフローをプレビュー'),
-                leading: const Icon(Icons.start),
-                onTap: () async => const OnboardingRoute().push<void>(context),
+            ListTile(
+              title: const Text('ビルド時刻'),
+              leading: const Icon(Icons.schedule),
+              subtitle: Text(
+                buildCfg.buildTimestamp.toString(),
+                style: const TextStyle(fontFamily: FontFamily.googleSansCode),
               ),
-              ListTile(
-                title: const Text('オンボーディングリセット'),
-                subtitle: const Text('完了フラグを消去してオンボーディングを再表示'),
-                leading: const Icon(Icons.restart_alt),
-                onTap: () async => OnboardingCompleted.resetMutation.run(
-                  ref,
-                  (tsx) async =>
-                      tsx.get(onboardingCompletedProvider.notifier).reset(),
-                ),
+            ),
+            ListTile(
+              title: const Text('ビルド時コミットメッセージ'),
+              leading: const Icon(Icons.commit),
+              subtitle: Text(
+                buildCfg.buildCommitMessage.isEmpty
+                    ? '(not set)'
+                    : buildCfg.buildCommitMessage,
+                style: const TextStyle(fontFamily: FontFamily.googleSansCode),
               ),
-              ListTile(
-                title: const Text('ログ'),
-                leading: const Icon(Icons.list),
-                onTap: () async => const TalkerRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('オンボーディング'),
+              subtitle: const Text('オンボーディングフローをプレビュー'),
+              leading: const Icon(Icons.start),
+              onTap: () async => const OnboardingRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('オンボーディングリセット'),
+              subtitle: const Text('完了フラグを消去してオンボーディングを再表示'),
+              leading: const Icon(Icons.restart_alt),
+              onTap: () async => OnboardingCompleted.resetMutation.run(
+                ref,
+                (tsx) async =>
+                    tsx.get(onboardingCompletedProvider.notifier).reset(),
               ),
-              ListTile(
-                title: const Text('サーバ選択'),
-                leading: const Icon(Icons.dns),
-                onTap: () async =>
-                    const HttpApiEndpointSelectorRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('ログ'),
+              leading: const Icon(Icons.list),
+              onTap: () async => const TalkerRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('サーバ選択'),
+              leading: const Icon(Icons.dns),
+              subtitle: Text(
+                ref.watch(telegramUrlProvider).requireValue.restApiUrl,
               ),
-              ListTile(
-                title: const Text('認証'),
-                subtitle: const Text('Google・Apple・Passkey・JWT疎通を確認'),
-                leading: const Icon(Icons.verified_user_outlined),
-                onTap: () async => const DebugAuthRoute().push<void>(context),
-              ),
-            ],
-            if (isAdmin && Platform.isIOS)
+              onTap: () async =>
+                  const HttpApiEndpointSelectorRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('Native認証'),
+              subtitle: const Text('Google・Apple・Passkey・JWT疎通を確認'),
+              leading: const Icon(Icons.verified_user_outlined),
+              onTap: () async => const DebugAuthRoute().push<void>(context),
+            ),
+            if (Platform.isIOS)
               ListTile(
                 title: const Text('App Groups UserDefaults'),
                 subtitle: const Text('Widget が参照する UserDefaults を直接操作'),
@@ -130,7 +151,7 @@ class const _DebugWidget() extends ConsumerWidget {
               ListTile(
                 title: const Text('Live Activity テスト'),
                 subtitle: const Text(
-                  'アプリ内から EEW の Live Activity を開始・更新・終了',
+                  'アプリ内から EEW / 揺れ検知の Live Activity を開始・更新・終了',
                 ),
                 leading: const Icon(Icons.bolt_outlined),
                 onTap: () => Navigator.of(context).push<void>(
@@ -146,46 +167,44 @@ class const _DebugWidget() extends ConsumerWidget {
               onTap: () async =>
                   const AssetPackDebugRoute().push<void>(context),
             ),
-            if (isAdmin) ...[
-              ListTile(
-                title: const Text('SharedPreferences'),
-                subtitle: const Text('保存されている Key-Value の一覧・編集'),
-                leading: const Icon(Icons.data_object),
-                onTap: () async =>
-                    const DebugSharedPreferencesRoute().push<void>(context),
-              ),
-              ListTile(
-                title: const Text('SecureStorage'),
-                subtitle: const Text('保存されている Key-Value の一覧・編集'),
-                leading: const Icon(Icons.lock_outline),
-                onTap: () async =>
-                    const DebugSecureStorageRoute().push<void>(context),
-              ),
-              Builder(
-                builder: (context) {
-                  final isDisabled =
-                      ref.watch(httpCacheDisabledProvider).value ?? false;
-                  return ListTile(
-                    title: const Text('HTTPキャッシュを無効化'),
-                    subtitle: const Text('キャッシュの読み書きをスキップします'),
-                    leading: const Icon(Icons.cached),
-                    trailing: AppSwitch(
-                      value: isDisabled,
-                      onChanged: (value) async => ref
-                          .read(httpCacheDisabledProvider.notifier)
-                          .save(isDisabled: value),
-                    ),
-                  );
-                },
-              ),
-              ListTile(
-                title: const Text('HTTPキャッシュ'),
-                subtitle: const Text('キャッシュエントリの一覧・削除'),
-                leading: const Icon(Icons.storage_outlined),
-                onTap: () async =>
-                    const DebugHttpCacheRoute().push<void>(context),
-              ),
-            ],
+            ListTile(
+              title: const Text('SharedPreferences'),
+              subtitle: const Text('保存されている Key-Value の一覧・編集'),
+              leading: const Icon(Icons.data_object),
+              onTap: () async =>
+                  const DebugSharedPreferencesRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('SecureStorage'),
+              subtitle: const Text('保存されている Key-Value の一覧・編集'),
+              leading: const Icon(Icons.lock_outline),
+              onTap: () async =>
+                  const DebugSecureStorageRoute().push<void>(context),
+            ),
+            Builder(
+              builder: (context) {
+                final isDisabled =
+                    ref.watch(httpCacheDisabledProvider).value ?? false;
+                return ListTile(
+                  title: const Text('HTTPキャッシュを無効化'),
+                  subtitle: const Text('キャッシュの読み書きをスキップします'),
+                  leading: const Icon(Icons.cached),
+                  trailing: AppSwitch(
+                    value: isDisabled,
+                    onChanged: (value) async => ref
+                        .read(httpCacheDisabledProvider.notifier)
+                        .save(isDisabled: value),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              title: const Text('HTTPキャッシュ'),
+              subtitle: const Text('キャッシュエントリの一覧・削除'),
+              leading: const Icon(Icons.storage_outlined),
+              onTap: () async =>
+                  const DebugHttpCacheRoute().push<void>(context),
+            ),
             if (!buildCfg.isProduction)
               ListTile(
                 title: const Text('Telemetry Events'),
@@ -204,14 +223,13 @@ class const _DebugWidget() extends ConsumerWidget {
                 ),
               ),
             ),
-            if (isAdmin)
-              ListTile(
-                title: const Text('WebSocket'),
-                leading: const Icon(Icons.cable),
-                subtitle: const Text('WebSocket 接続状況と受信ログ'),
-                onTap: () async =>
-                    const DebugWebSocketRoute().push<void>(context),
-              ),
+            ListTile(
+              title: const Text('WebSocket'),
+              leading: const Icon(Icons.cable),
+              subtitle: const Text('WebSocket 接続状況と受信ログ'),
+              onTap: () async =>
+                  const DebugWebSocketRoute().push<void>(context),
+            ),
             ListTile(
               title: const Text('KyoshinMonitor'),
               leading: const Icon(Icons.list),
@@ -267,6 +285,13 @@ class const _DebugWidget() extends ConsumerWidget {
               onTap: () async => const EewHistoryRoute().push<void>(context),
             ),
             ListTile(
+              title: const Text('Tsunami Details'),
+              subtitle: const Text('津波情報詳細画面のデバッグ'),
+              leading: const Icon(Icons.tsunami),
+              onTap: () async =>
+                  const DebugTsunamiDetailsRoute().push<void>(context),
+            ),
+            ListTile(
               title: const Text('地震履歴 Card'),
               subtitle: Text(
                 '各地の震度表示（速報値・確定値）をパラメータ検証',
@@ -296,7 +321,7 @@ class const _DebugWidget() extends ConsumerWidget {
               onTap: () async =>
                   const DebugEarthquakeHistoryListTileRoute().push(context),
             ),
-            if (buildCfg.isShakeDetectionEnabled)
+            if (buildCfg.isShakeDetectionAvailable)
               ListTile(
                 title: const Text('揺れ検知 Card'),
                 subtitle: Text(
@@ -307,24 +332,15 @@ class const _DebugWidget() extends ConsumerWidget {
                 onTap: () async =>
                     const DebugShakeDetectionCardRoute().push(context),
               ),
-            ListTile(
-              title: const Text('揺れ検知の通知設定'),
-              subtitle: const Text('現在地・全国・細分化地域の通知条件を設定'),
-              leading: const Icon(Icons.notifications_active_outlined),
-              onTap: () async =>
-                  const DebugShakeDetectionSettingsRoute().push(context),
-            ),
-            ListTile(
-              title: const Text('揺れ検知エンジン'),
-              subtitle: Text(
-                '端末内検知の有効化・履歴の作り直し・検知パラメータの変更',
-                style: Theme.of(context).textTheme.bodySmall,
+            if (buildCfg.isShakeDetectionAvailable)
+              ListTile(
+                title: const Text('揺れ検知の通知設定'),
+                subtitle: const Text('現在地・全国・細分化地域の通知条件を設定'),
+                leading: const Icon(Icons.notifications_active_outlined),
+                onTap: () async =>
+                    const DebugShakeDetectionSettingsRoute().push(context),
               ),
-              leading: const Icon(Icons.tune_rounded),
-              onTap: () async =>
-                  const DebugShakeDetectionEngineRoute().push(context),
-            ),
-            if (buildCfg.isShakeDetectionEnabled)
+            if (buildCfg.isShakeDetectionAvailable)
               ListTile(
                 title: const Text('揺れ検知を挿入'),
                 subtitle: Text(
@@ -340,14 +356,23 @@ class const _DebugWidget() extends ConsumerWidget {
               leading: const Icon(Icons.map),
               onTap: () async => const DebugJmaMapRoute().push(context),
             ),
-            if (isAdmin)
-              ListTile(
-                title: const Text('ナビゲーション'),
-                subtitle: const Text('ルート一覧から画面へ直接遷移'),
-                leading: const Icon(Icons.navigation),
-                onTap: () async =>
-                    const DebugNavigationRoute().push<void>(context),
-              ),
+            ListTile(
+              title: const Text('EQMonitor Map (Flutter Scene)'),
+              leading: const Icon(Icons.layers),
+              onTap: () async => const EqmonitorMapDebugRoute().push(context),
+            ),
+            ListTile(
+              title: const Text('NIED'),
+              leading: const Icon(Icons.science),
+              onTap: () async => const NiedRoute().push(context),
+            ),
+            ListTile(
+              title: const Text('ナビゲーション'),
+              subtitle: const Text('ルート一覧から画面へ直接遷移'),
+              leading: const Icon(Icons.navigation),
+              onTap: () async =>
+                  const DebugNavigationRoute().push<void>(context),
+            ),
             ListTile(
               title: const Text('Playground'),
               leading: const Icon(Icons.list),
@@ -373,14 +398,13 @@ class const _DebugWidget() extends ConsumerWidget {
                 ),
               ),
             ),
-            if (isAdmin)
-              ListTile(
-                title: const Text('デバイス・通知'),
-                subtitle: const Text('登録・トークン同期・設定・テスト通知・履歴'),
-                leading: const Icon(Icons.phonelink_setup),
-                onTap: () async =>
-                    const DebugDeviceSettingsRoute().push<void>(context),
-              ),
+            ListTile(
+              title: const Text('デバイス・通知'),
+              subtitle: const Text('登録・トークン同期・設定・テスト通知・履歴'),
+              leading: const Icon(Icons.phonelink_setup),
+              onTap: () async =>
+                  const DebugDeviceSettingsRoute().push<void>(context),
+            ),
             ListTile(
               title: const Text('通知配信ログ'),
               subtitle: const Text('GET /v2/device/{id}/notification/history'),
@@ -388,22 +412,20 @@ class const _DebugWidget() extends ConsumerWidget {
               onTap: () async =>
                   const DebugNotificationDeliveryLogRoute().push<void>(context),
             ),
-            if (isAdmin) ...[
-              ListTile(
-                title: const Text('通知Webhook'),
-                subtitle: const Text('Webhookの発行・一覧表示'),
-                leading: const Icon(Icons.webhook),
-                onTap: () async =>
-                    const DebugNotificationWebhookRoute().push<void>(context),
-              ),
-              ListTile(
-                title: const Text('デバイス管理'),
-                subtitle: const Text('登録・再登録・削除・通知条件の設定'),
-                leading: const Icon(Icons.manage_accounts_outlined),
-                onTap: () async =>
-                    const DebugDeviceAdminRoute().push<void>(context),
-              ),
-            ],
+            ListTile(
+              title: const Text('通知Webhook'),
+              subtitle: const Text('Webhookの発行・一覧表示'),
+              leading: const Icon(Icons.webhook),
+              onTap: () async =>
+                  const DebugNotificationWebhookRoute().push<void>(context),
+            ),
+            ListTile(
+              title: const Text('デバイス管理'),
+              subtitle: const Text('登録・再登録・削除・通知条件の設定'),
+              leading: const Icon(Icons.manage_accounts_outlined),
+              onTap: () async =>
+                  const DebugDeviceAdminRoute().push<void>(context),
+            ),
             const Divider(),
             const _BackgroundLocationDebugSection(),
             const Divider(),
@@ -440,12 +462,10 @@ class const _DebugWidget() extends ConsumerWidget {
               ),
             ),
             const _ParameterDebugSection(),
-            if (isAdmin) ...[
-              const Divider(),
-              const _StartApiDebugSection(),
-              const Divider(),
-              const _AppCheckSection(),
-            ],
+            const Divider(),
+            const _StartApiDebugSection(),
+            const Divider(),
+            const _AppCheckSection(),
           ],
         ),
       ),
@@ -453,7 +473,9 @@ class const _DebugWidget() extends ConsumerWidget {
   }
 }
 
-class const _AppCheckSection() extends ConsumerWidget {
+class _AppCheckSection extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final tokenAsync = ref.watch(appCheckTokenProvider);
@@ -536,7 +558,9 @@ class const _AppCheckSection() extends ConsumerWidget {
   }
 }
 
-class const _ParameterDebugSection() extends HookConsumerWidget {
+class _ParameterDebugSection extends HookConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isRefreshing = useState(false);
@@ -621,7 +645,9 @@ class const _ParameterDebugSection() extends HookConsumerWidget {
   }
 }
 
-class const _HomeEewEstimationTile() extends ConsumerWidget {
+class _HomeEewEstimationTile extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDebugEnabled = ref.watch(debugProvider).value ?? false;
@@ -662,7 +688,9 @@ class const _HomeEewEstimationTile() extends ConsumerWidget {
   }
 }
 
-class const _BackgroundLocationDebugSection() extends ConsumerWidget {
+class _BackgroundLocationDebugSection extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(backgroundLocationDebugSettingsProvider).value;
@@ -708,7 +736,9 @@ class const _BackgroundLocationDebugSection() extends ConsumerWidget {
   }
 }
 
-class const _StartApiDebugSection() extends ConsumerWidget {
+class _StartApiDebugSection extends ConsumerWidget {
+  const new();
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final startAsync = ref.watch(startProvider);
@@ -754,11 +784,17 @@ class const _StartApiDebugSection() extends ConsumerWidget {
   }
 }
 
-class const _StartApiDebugContent({
-  required final api.StartResponse data,
-  required final bool hasError,
-  required final Object? error,
-}) extends ConsumerWidget {
+class _StartApiDebugContent extends ConsumerWidget {
+  const new({
+    required this.data,
+    required this.hasError,
+    required this.error,
+  });
+
+  final api.StartResponse data;
+  final bool hasError;
+  final Object? error;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
@@ -800,6 +836,15 @@ class const _StartApiDebugContent({
                 free: data.planConstraints.free.copyWith(isPro: v),
               ),
             ),
+          ),
+        ),
+        AppSwitchListTile(
+          title: 'flags.ads_enabled',
+          subtitle: '広告有効フラグ',
+          value: data.flags.adsEnabled,
+          onChanged: (v) => _override(
+            ref,
+            data.copyWith(flags: data.flags.copyWith(adsEnabled: v)),
           ),
         ),
         ListTile(

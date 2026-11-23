@@ -7,7 +7,6 @@ import 'package:eqmonitor/core/util/map/remove_map_style_resources.dart';
 import 'package:eqmonitor/feature/home/data/model/home_configuration_model.dart';
 import 'package:eqmonitor/feature/home/data/notifier/home_configuration_notifier.dart';
 import 'package:eqmonitor/feature/home/ui/component/map/layer/shake_detection_layer_geojson_updater.dart';
-import 'package:eqmonitor/feature/map/data/provider/map_style_util.dart';
 import 'package:eqmonitor/feature/shake_detection/data/logic/shake_detection_grid_cell_builder.dart';
 import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_event.dart';
 import 'package:eqmonitor/feature/shake_detection/data/model/shake_detection_level.dart';
@@ -16,10 +15,11 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:maplibre/maplibre.dart';
 
-class const ShakeDetectionLayer({
-  required final List<ShakeDetectionEvent> events,
-  super.key,
-}) extends ConsumerWidget {
+class ShakeDetectionLayer extends ConsumerWidget {
+  const new({required this.events, super.key});
+
+  final List<ShakeDetectionEvent> events;
+
   static const sourceId = 'shake-detection';
   static const _lineLayerId = 'shake-detection-line';
 
@@ -37,10 +37,15 @@ class const ShakeDetectionLayer({
   }
 }
 
-class const _ShakeDetectionLayerBody({
-  required final List<ShakeDetectionEvent> events,
-  required final HomeShakeDetectionSettings settings,
-}) extends HookConsumerWidget {
+class _ShakeDetectionLayerBody extends HookConsumerWidget {
+  const new({
+    required this.events,
+    required this.settings,
+  });
+
+  final List<ShakeDetectionEvent> events;
+  final HomeShakeDetectionSettings settings;
+
   static const _geoJsonUpdater = ShakeDetectionLayerGeoJsonUpdater();
 
   @override
@@ -84,7 +89,6 @@ class const _ShakeDetectionLayerBody({
               'line-opacity': 1,
             },
           ),
-          belowLayerId: BaseLayer.markerLowerAnchor.name,
         );
 
         isInitialized.value = true;
