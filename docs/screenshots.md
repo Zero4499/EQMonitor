@@ -1,33 +1,16 @@
 # 截图
 
-都是模拟器上 `adb exec-out screencap` 直接抓的原图，没修、没拼。机器是 Android 16，1080×2400。旧图（Positron 矢量时代、开屏 Q 图那批）已经过期，别再翻出来对照。
+都是 release 包真机实跑抓的原图，没修、没拼。验证机型：Redmi K80（24117RK2CC），Android 17，HyperOS V816，1440×3200。
 
-## 现在这版
+> 旧图（Positron 矢量底图时代、模拟器 Android 16 那批）已经过期，别再翻出来对照。下面的真机截图待补公网链接；UI 改了不一定回来换，**以跑起来的实际效果为准。**
 
-首页（简体中文）。底图换成 USGS Topo 栅格（The National Map），板块边界是内置的 USGS GHSC GeoJSON，海沟沿线那条橙红线就是：
+## 现在这版（build 4014）
 
-![首页 简体中文](https://aka.doubaocdn.com/s/h5tWil2Jgf)
-
-首页（English）：
-
-![首页 English](https://aka.doubaocdn.com/s/twV3Fkc0VF)
-
-首页（日本語）：
-
-![首页 日本語](https://aka.doubaocdn.com/s/z3kidghnsa)
-
-点一下震中圆点，弹出详情：震级、位置、时间、坐标、PAGER 等级，右上角按钮直接跳 USGS 页面：
-
-![点震中出详情](https://aka.doubaocdn.com/s/D9LjOqSo55)
-
-设置页：通知权限、勿扰例外、推送条件、三语切换都在这儿：
-
-![设置页](https://aka.doubaocdn.com/s/bQ7CnjVqhU)
-
-推送测试面板：点首页状态卡打开，两条链路状态、ntfy 服务器和主题、端到端 / 本地 / 警报级三个测试按钮：
-
-![推送测试面板](https://aka.doubaocdn.com/s/WIqnLppTbO)
+- **首页地图**：USGS Topo 栅格底图（The National Map），板块边界是内置的 USGS GHSC GeoJSON 叠加；震中按震级上色放大，点圆点弹详情；标题行右侧有「更新于 HH:mm:ss」时间戳。
+- **海啸标记**：空心分级色环 + 三道白浪；同一次事件被两条公报各报一次时合并成一个标记；地图右上角没有图例。
+- **设置页 · 通知区**：只剩两条 —— 一键申请全部通知权限，和测试通知（端到端 / 本地 / 警报级）。点测试通知弹出推送测试面板，显示两条链路状态和三个测试按钮。
+- **设置页 · 关于区**：检查更新条目，查询本仓库最新 GitHub Release，有新版时跳浏览器下载页，不在 App 内安装。
 
 ## 其它
 
-列表分级配色、海啸公报按 Warning / Watch / Information 配色、首启那几个权限弹窗，在主界面里直接就能看到。这些图随时会过时 —— UI 改了我大概想不起来回来换，**以跑起来的实际效果为准。**
+列表分级配色、海啸公报按 Warning / Watch / Information 配色、首启那几个权限弹窗，在主界面里直接就能看到。这些画面随时会过时，**以实际运行效果为准。**
